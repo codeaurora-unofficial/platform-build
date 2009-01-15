@@ -32,13 +32,13 @@ libwpa_client.so        0xADC00000
 libnetutils.so          0xADB00000
 
 # core dalvik runtime support
-libandroid_servers.so   0xAD900000
-libicudata.so           0xAD600000
-libicuuc.so             0xAD500000
-libicui18n.so           0xAD400000
-libandroid_runtime.so   0xAD300000
-libnativehelper.so      0xAD200000
-libdvm-ARM.so           0xAD100000
+libandroid_servers.so   0xADA00000
+libicudata.so           0xAD700000
+libicuuc.so             0xAD600000
+libicui18n.so           0xAD500000
+libandroid_runtime.so   0xAD400000
+libnativehelper.so      0xAD300000
+libdvm-ARM.so           0xAD200000
 libdvm.so               0xAD000000
 
 # graphics
@@ -77,18 +77,19 @@ libcamera.so            0xA9680000
 libqcamera.so           0xA9400000
 
 # pv libraries
-libpvasf.so                   0xA7BC0000
-libpvasfreg.so                0xA7B70000
-libopencoredownload.so        0xA7B40000
-libopencoredownloadreg.so     0xA7B00000
-libopencorenet_support.so     0xA7A00000
-libopencorertsp.so            0xA7900000
-libopencorertspreg.so         0xA7800000
-libopencoreauthor.so          0xA7600000
-libopencorecommon.so          0xA7500000
-libopencoremp4.so             0xA7400000
-libopencoremp4reg.so          0xA7300000
-libopencoreplayer.so          0xA7000000
+libpvasf.so             0xA7BF0000
+libpvasfreg.so          0xA7BC0000
+libpvdownload.so        0xA7B70000
+libpvdownloadreg.so     0xA7B30000
+libpvnet_support.so     0xA7A30000
+libpvrtsp.so            0xA7930000
+libpvrtspreg.so         0xA7830000
+libpvauthor.so          0xA7630000
+libpvcommon.so          0xA7530000
+libpvmp4.so             0xA7430000
+libpvmp4reg.so          0xA7330000
+libpvplayer.so          0xA7000000
+#libpvplayer.so          0xB0000000
 
 # libraries for specific apps or temporary libraries
 libcam_ipl.so           0x9F000000
@@ -113,3 +114,12 @@ libctest.so             0x9A700000
 libUAPI_jni.so          0x9A500000
 librpc.so               0x9A400000 
 libtrace_test.so        0x9A300000 
+libopencorecommon.so	0x99000000
+libopencoreauthor.so    0x98000000
+libopencoreplayer.so	0x97000000
+libopencoredownloadreg.so  0x96000000
+libopencoremp4reg.so    0x95000000
+libopencorertspreg.so	0x94000000
+libopencoredownload.so	0x93000000
+libopencoremp4.so	0x92000000
+libopencorertsp.so	0x91000000
