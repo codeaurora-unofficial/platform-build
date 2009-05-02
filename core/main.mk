@@ -360,6 +360,7 @@ INTERNAL_DEFAULT_DOCS_TARGETS :=
 subdirs := \
 	bionic \
 	system/core \
+	bootable/bootloader/legacy \
 	build/libs \
 	build/target \
 	build/tools/acp \
@@ -369,7 +370,8 @@ subdirs := \
 	external/elfcopy \
 	external/elfutils \
 	external/yaffs2 \
-	external/zlib
+	external/zlib \
+	frameworks/base/libs/utils
 else	# !BUILD_TINY_ANDROID
 
 #
@@ -387,7 +389,7 @@ endif	# !SDK_ONLY
 # Can't use first-makefiles-under here because
 # --mindepth=2 makes the prunes not work.
 subdir_makefiles += \
-	$(shell build/tools/findleaves.sh --prune="./out" $(subdirs) Android.mk)
+	$(shell build/tools/findleaves.sh --prune="./vendor/*proprietary" --prune="./out" $(subdirs) Android.mk)
 
 # Boards may be defined under $(SRC_TARGET_DIR)/board/$(TARGET_DEVICE)
 # or under vendor/*/$(TARGET_DEVICE).  Search in both places, but
