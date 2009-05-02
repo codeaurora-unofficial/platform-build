@@ -1,6 +1,7 @@
 #
 # Copyright (C) 2008 The Android Open Source Project
-#
+# Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -793,6 +794,10 @@ $(transform-s-to-o-no-deps)
 $(hide) $(transform-d-to-p)
 endef
 
+ifeq ($(shell cat /proc/version | tr '[a-z]' '[A-Z]' | grep -o SUSE),SUSE)
+    HOST_OS_SUSE=1
+endif
+
 ###########################################################
 ## Commands for running gcc to compile a host C++ file
 ###########################################################
@@ -810,6 +815,7 @@ $(hide) $(PRIVATE_CXX) \
 	  , \
 	    -I $(incdir) \
 	 ) \
+        $(if $(HOST_OS_SUSE),-m32,) \
 	-c \
 	$(if $(PRIVATE_NO_DEFAULT_COMPILER_FLAGS),, \
 	    $(HOST_GLOBAL_CFLAGS) \
@@ -840,6 +846,7 @@ $(hide) $(PRIVATE_CC) \
 	  , \
 	    -I $(incdir) \
 	 ) \
+        $(if $(HOST_OS_SUSE),-m32,) \
 	-c \
 	$(if $(PRIVATE_NO_DEFAULT_COMPILER_FLAGS),, \
 	    $(HOST_GLOBAL_CFLAGS) \
@@ -920,6 +927,7 @@ $(HOST_CXX) \
 	-Wl,--no-whole-archive \
 	$(call normalize-host-libraries,$(PRIVATE_ALL_STATIC_LIBRARIES)) \
 	$(call normalize-host-libraries,$(PRIVATE_ALL_SHARED_LIBRARIES)) \
+        $(if $(HOST_OS_SUSE),-m32,) \
 	-o $@ \
 	$(PRIVATE_LDLIBS)
 endef
@@ -1082,6 +1090,7 @@ $(HOST_CXX) \
 	-Wl,--no-whole-archive \
 	$(call normalize-host-libraries,$(PRIVATE_ALL_STATIC_LIBRARIES)) \
 	$(call normalize-host-libraries,$(PRIVATE_ALL_SHARED_LIBRARIES)) \
+        $(if $(HOST_OS_SUSE),-m32,) \
 	-o $@ \
 	$(PRIVATE_LDLIBS)
 endef

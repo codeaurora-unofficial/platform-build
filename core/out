@@ -1,0 +1,6 @@
+nshulg@anshulg-lnx:/local/mnt/workspace/anshulg/test_cupcake/build/core$ git cherry-pick 8e5a4deb8f4942a747e6c5babb504406740e3d99
+Auto-merged core/prelink-linux-arm.map
+CONFLICT (content): Merge conflict in core/prelink-linux-arm.map
+                    Automatic cherry-pick failed.  After resolving the conflicts,
+                    mark the corrected paths with 'git add <paths>' or 'git rm <paths>' and commit the result.
+                    When commiting, use the option '-c 8e5a4de' to retain authorship and message.

@@ -359,6 +359,7 @@ INTERNAL_DEFAULT_DOCS_TARGETS :=
 subdirs := \
 	bionic \
 	system/core \
+	bootable/bootloader/legacy \
 	build/libs \
 	build/target \
 	build/tools/acp \
@@ -368,7 +369,8 @@ subdirs := \
 	external/elfcopy \
 	external/elfutils \
 	external/yaffs2 \
-	external/zlib
+	external/zlib \
+	frameworks/base/libs/utils
 else	# !BUILD_TINY_ANDROID
 
 #
