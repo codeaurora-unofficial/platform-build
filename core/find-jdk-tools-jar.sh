@@ -1,4 +1,6 @@
-if [[ "x$ANDROID_JAVA_HOME" != x && -e $ANDROID_JAVA_HOME/lib/tools.jar ]] ; then
+if [ -f /etc/gentoo-release ]; then
+    java-config -t
+elif [[ "x$ANDROID_JAVA_HOME" != x && -e $ANDROID_JAVA_HOME/lib/tools.jar ]] ; then
     echo $ANDROID_JAVA_HOME/lib/tools.jar
 else
     JAVAC=$(which javac)
