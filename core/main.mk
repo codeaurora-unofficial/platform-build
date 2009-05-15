@@ -385,10 +385,12 @@ endif	# !BUILD_TINY_ANDROID
 
 endif	# !SDK_ONLY
 
+ifneq ($(BUILD_TINY_ANDROID), true)
 # Can't use first-makefiles-under here because
 # --mindepth=2 makes the prunes not work.
 subdir_makefiles += \
 	$(shell build/tools/findleaves.sh --prune="./out" $(subdirs) Android.mk)
+endif
 
 -include vendor/qcom-proprietary/common/build/defines.mk
 
@@ -413,6 +415,16 @@ board_config_mk :=
 
 # Clean up/verify variables defined by the board config file.
 TARGET_BOOTLOADER_BOARD_NAME := $(strip $(TARGET_BOOTLOADER_BOARD_NAME))
+
+ifeq ($(BUILD_TINY_ANDROID), true)
+# For tiny android, run findleaves after the board config is included.
+# This allows board specific modifications to subdirs for tiny android
+# within the board config.
+# Can't use first-makefiles-under here because
+# --mindepth=2 makes the prunes not work.
+subdir_makefiles += \
+	$(shell build/tools/findleaves.sh --prune="./out" $(subdirs) Android.mk)
+endif
 
 #
 # Include all of the makefiles in the system
