@@ -275,6 +275,8 @@ ifdef BOARD_KERNEL_BASE
 endif
 
 INSTALLED_BOOTIMAGE_TARGET := $(PRODUCT_OUT)/boot.img
+kernel: $(INSTALLED_BOOTIMAGE_TARGET)
+.PHONY: kernel
 
 ifeq ($(TARGET_BOOTIMAGE_USE_EXT2),true)
 tmp_dir_for_image := $(call intermediates-dir-for,EXECUTABLES,boot_img)/bootimg
@@ -528,6 +530,7 @@ endif
 $(INSTALLED_SYSTEMIMAGE): $(BUILT_SYSTEMIMAGE) | $(ACP)
 	@echo "Install system fs image: $@"
 	$(copy-file-to-target)
+	$(hide) chmod a+r $@
 	$(hide) $(call assert-max-file-size,$@,$(BOARD_SYSTEMIMAGE_MAX_SIZE))
 
 systemimage: $(INSTALLED_SYSTEMIMAGE)
@@ -584,6 +587,7 @@ define build-userdataimage-target
     $(call pretty,"Target userdata fs image: $(INSTALLED_USERDATAIMAGE_TARGET)")
     @mkdir -p $(TARGET_OUT_DATA)
     $(hide) $(MKYAFFS2) -f $(TARGET_OUT_DATA) $(INSTALLED_USERDATAIMAGE_TARGET)
+    $(hide) chmod a+r $(INSTALLED_USERDATAIMAGE_TARGET)
     $(hide) $(call assert-max-file-size,$(INSTALLED_USERDATAIMAGE_TARGET),$(BOARD_USERDATAIMAGE_MAX_SIZE))
 endef
 endif # TARGET_USERIMAGES_USE_EXT2
