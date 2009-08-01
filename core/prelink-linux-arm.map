@@ -149,3 +149,5 @@ libUAPI_jni.so          0x2A500000
 librpc.so               0x2A400000
 libtrace_test.so        0x2A300000
 libsrec_jni.so          0x2A200000
+libcerttool_jni.so      0x2A100000
+
