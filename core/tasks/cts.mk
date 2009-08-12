@@ -58,12 +58,16 @@ CTS_CASE_LIST := \
 	CtsGraphicsTestCases \
 	CtsHardwareTestCases \
 	CtsLocationTestCases \
+	CtsMediaTestCases \
 	CtsOsTestCases \
 	CtsPermissionTestCases \
+	CtsPermission2TestCases \
 	CtsProviderTestCases \
+	CtsTelephonyTestCases \
 	CtsTextTestCases \
 	CtsUtilTestCases \
 	CtsViewTestCases \
+	CtsWebkitTestCases \
 	CtsWidgetTestCases \
 	CtsNetTestCases \
 	SignatureTest \

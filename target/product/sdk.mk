@@ -22,9 +22,9 @@ PRODUCT_PACKAGES := \
 	OpenWnn \
 	libWnnEngDic \
 	libWnnJpnDic \
-	libWnnZHCNDic \
 	libwnndict \
 	ApiDemos \
+	GestureBuilder \
 	SoftKeyboard
 
 PRODUCT_COPY_FILES := \

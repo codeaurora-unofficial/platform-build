@@ -17,7 +17,7 @@ ifneq ($(TARGET_SIMULATOR),true)
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
-LOCAL_SRC_FILES := applypatch.c bsdiff.c freecache.c imgpatch.c
+LOCAL_SRC_FILES := applypatch.c bsdiff.c freecache.c imgpatch.c utils.c
 LOCAL_MODULE := libapplypatch
 LOCAL_MODULE_TAGS := eng
 LOCAL_C_INCLUDES += external/bzip2 external/zlib bootable/recovery
@@ -29,17 +29,25 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := main.c
 LOCAL_MODULE := applypatch
-LOCAL_FORCE_STATIC_EXECUTABLE := true
-LOCAL_MODULE_TAGS := eng
-LOCAL_STATIC_LIBRARIES += libapplypatch
-LOCAL_STATIC_LIBRARIES += libmtdutils libmincrypt libbz libz
-LOCAL_STATIC_LIBRARIES += libcutils libstdc++ libc
+LOCAL_STATIC_LIBRARIES += libapplypatch libmtdutils libmincrypt libbz
+LOCAL_SHARED_LIBRARIES += libz libcutils libstdc++ libc
 
 include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
 
-LOCAL_SRC_FILES := imgdiff.c
+LOCAL_SRC_FILES := main.c
+LOCAL_MODULE := applypatch_static
+LOCAL_FORCE_STATIC_EXECUTABLE := true
+LOCAL_MODULE_TAGS := eng
+LOCAL_STATIC_LIBRARIES += libapplypatch libmtdutils libmincrypt libbz
+LOCAL_STATIC_LIBRARIES += libz libcutils libstdc++ libc
+
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES := imgdiff.c utils.c
 LOCAL_MODULE := imgdiff
 LOCAL_FORCE_STATIC_EXECUTABLE := true
 LOCAL_MODULE_TAGS := eng
