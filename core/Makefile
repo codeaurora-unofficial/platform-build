@@ -279,6 +279,11 @@ ifdef BOARD_KERNEL_CMDLINE
   INTERNAL_BOOTIMAGE_ARGS += --cmdline "$(BOARD_KERNEL_CMDLINE)"
 endif
 
+PAGE_SIZE_OPTION :=
+ifdef NAND_PAGE_SIZE
+  PAGE_SIZE_OPTION += -s "$(NAND_PAGE_SIZE)"
+endif
+
 BOARD_KERNEL_BASE := $(strip $(BOARD_KERNEL_BASE))
 ifdef BOARD_KERNEL_BASE
   INTERNAL_BOOTIMAGE_ARGS += --base $(BOARD_KERNEL_BASE)
@@ -620,7 +625,7 @@ else # TARGET_USERIMAGES_USE_EXT2 != true
 define build-systemimage-target
     @echo "Target system fs image: $(1)"
     @mkdir -p $(dir $(1))
-    $(hide) $(MKYAFFS2) -f $(TARGET_OUT) $(1)
+    $(hide) $(MKYAFFS2) -f  $(PAGE_SIZE_OPTION) $(TARGET_OUT) $(1)
 endef
 endif # TARGET_USERIMAGES_USE_EXT2
 
@@ -721,7 +726,7 @@ else # TARGET_USERIMAGES_USE_EXT2 != true
 define build-userdataimage-target
     $(call pretty,"Target userdata fs image: $(INSTALLED_USERDATAIMAGE_TARGET)")
     @mkdir -p $(TARGET_OUT_DATA)
-    $(hide) $(MKYAFFS2) -f $(TARGET_OUT_DATA) $(INSTALLED_USERDATAIMAGE_TARGET)
+    $(hide) $(MKYAFFS2) -f  $(PAGE_SIZE_OPTION) $(TARGET_OUT_DATA) $(INSTALLED_USERDATAIMAGE_TARGET)
     $(hide) chmod a+r $(INSTALLED_USERDATAIMAGE_TARGET)
     $(hide) $(call assert-max-file-size,$(INSTALLED_USERDATAIMAGE_TARGET),$(BOARD_USERDATAIMAGE_MAX_SIZE))
 endef
