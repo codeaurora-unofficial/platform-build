@@ -386,12 +386,13 @@ endif	# !BUILD_TINY_ANDROID
 
 endif	# !SDK_ONLY
 
+-include vendor/qcom-proprietary/common/build/defines.mk
+
 # Can't use first-makefiles-under here because
 # --mindepth=2 makes the prunes not work.
 subdir_makefiles += \
 	$(shell build/tools/findleaves.sh --prune="./out" $(subdirs) Android.mk)
 
--include vendor/qcom-proprietary/common/build/defines.mk
 
 # Boards may be defined under $(SRC_TARGET_DIR)/board/$(TARGET_DEVICE)
 # or under vendor/*/$(TARGET_DEVICE).  Search in both places, but
