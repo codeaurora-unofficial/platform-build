@@ -450,6 +450,9 @@ TARGET_DEVICE_DIR := $(patsubst %/,%,$(dir $(board_config_mk)))
 board_config_mk :=
 
 # Clean up/verify variables defined by the board config file.
+ifeq ($(TARGET_BOOTLOADER_BOARD_NAME),)
+  TARGET_BOOTLOADER_BOARD_NAME := $(TARGET_DEVICE)
+endif
 TARGET_BOOTLOADER_BOARD_NAME := $(strip $(TARGET_BOOTLOADER_BOARD_NAME))
 #TARGET_CPU_ABI := $(strip $(TARGET_CPU_ABI))
 #ifeq ($(TARGET_CPU_ABI),)
