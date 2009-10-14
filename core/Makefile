@@ -615,7 +615,7 @@ ifeq ($(TARGET_USERIMAGES_USE_EXT2),true)
 # $(1): output file
 define build-systemimage-target
     @echo "Target system fs image: $(1)"
-    $(call build-userimage-ext2-target,$(TARGET_OUT),$(1),system,)
+    $(call build-userimage-ext2-target,$(TARGET_OUT),$(1),system,,)
 endef
 
 else # TARGET_USERIMAGES_USE_EXT2 != true
@@ -718,7 +718,7 @@ ifeq ($(TARGET_USERIMAGES_USE_EXT2),true)
 define build-userdataimage-target
     $(call pretty,"Target userdata fs image: $(INSTALLED_USERDATAIMAGE_TARGET)")
     @mkdir -p $(TARGET_OUT_DATA)
-    $(call build-userimage-ext2-target,$(TARGET_OUT_DATA),$(INSTALLED_USERDATAIMAGE_TARGET),userdata,)
+    $(call build-userimage-ext2-target,$(TARGET_OUT_DATA),$(INSTALLED_USERDATAIMAGE_TARGET),userdata,,80000)
     $(hide) $(call assert-max-file-size,$(INSTALLED_USERDATAIMAGE_TARGET),$(BOARD_USERDATAIMAGE_MAX_SIZE),yaffs)
 endef
 
