@@ -588,6 +588,13 @@ endif
 recoveryimage: $(INSTALLED_RECOVERYIMAGE_TARGET)
 
 # -----------------------------------------------------------------
+# Define nand page size if not already defined in BoardConfig
+# -----------------------------------------------------------------
+ifndef TARGET_NAND_PAGE_SIZE
+TARGET_NAND_PAGE_SIZE := 2048
+endif
+
+# -----------------------------------------------------------------
 # system yaffs image
 #
 # First, the "unoptimized" image, which contains .apk/.jar files
@@ -618,7 +625,7 @@ else # TARGET_USERIMAGES_USE_EXT2 != true
 define build-systemimage-target
     @echo "Target system fs image: $(1)"
     @mkdir -p $(dir $(1))
-    $(hide) $(MKYAFFS2) -f $(TARGET_OUT) $(1)
+    $(hide) $(MKYAFFS2) -f -s $(TARGET_NAND_PAGE_SIZE) $(TARGET_OUT) $(1)
 endef
 endif # TARGET_USERIMAGES_USE_EXT2
 
@@ -718,7 +725,7 @@ else # TARGET_USERIMAGES_USE_EXT2 != true
 define build-userdataimage-target
     $(call pretty,"Target userdata fs image: $(INSTALLED_USERDATAIMAGE_TARGET)")
     @mkdir -p $(TARGET_OUT_DATA)
-    $(hide) $(MKYAFFS2) -f $(TARGET_OUT_DATA) $(INSTALLED_USERDATAIMAGE_TARGET)
+    $(hide) $(MKYAFFS2) -f -s $(TARGET_NAND_PAGE_SIZE) $(TARGET_OUT_DATA) $(INSTALLED_USERDATAIMAGE_TARGET)
     $(hide) $(call assert-max-image-size,$(INSTALLED_USERDATAIMAGE_TARGET),$(BOARD_USERDATAIMAGE_PARTITION_SIZE),yaffs)
 endef
 endif # TARGET_USERIMAGES_USE_EXT2
