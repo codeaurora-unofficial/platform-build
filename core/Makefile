@@ -286,6 +286,8 @@ ifdef BOARD_KERNEL_BASE
 endif
 
 INSTALLED_BOOTIMAGE_TARGET := $(PRODUCT_OUT)/boot.img
+kernel: $(INSTALLED_BOOTIMAGE_TARGET)
+.PHONY: kernel
 
 ifeq ($(TARGET_BOOTIMAGE_USE_EXT2),true)
 tmp_dir_for_image := $(call intermediates-dir-for,EXECUTABLES,boot_img)/bootimg
