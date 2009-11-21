@@ -299,6 +299,11 @@ $(INSTALLED_BOOTIMAGE_TARGET): $(MKEXT2IMG) $(INTERNAL_BOOTIMAGE_FILES)
 
 else # TARGET_BOOTIMAGE_USE_EXT2 != true
 
+# add optional NAND flash page size parameter if present
+ifdef BOARD_NAND_PAGE_SIZE
+  INTERNAL_BOOTIMAGE_ARGS += --pagesize $(BOARD_NAND_PAGE_SIZE)
+endif
+
 $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES)
 	$(call pretty,"Target boot image: $@")
 	$(hide) $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) --output $@
@@ -592,8 +597,8 @@ recoveryimage: $(INSTALLED_RECOVERYIMAGE_TARGET)
 # -----------------------------------------------------------------
 # Define nand page size if not already defined in BoardConfig
 # -----------------------------------------------------------------
-ifndef TARGET_NAND_PAGE_SIZE
-TARGET_NAND_PAGE_SIZE := 2048
+ifndef BOARD_NAND_PAGE_SIZE
+BOARD_NAND_PAGE_SIZE := 2048
 endif
 
 # -----------------------------------------------------------------
@@ -627,7 +632,7 @@ else # TARGET_USERIMAGES_USE_EXT2 != true
 define build-systemimage-target
     @echo "Target system fs image: $(1)"
     @mkdir -p $(dir $(1))
-    $(hide) $(MKYAFFS2) -f -s $(TARGET_NAND_PAGE_SIZE) $(TARGET_OUT) $(1)
+    $(hide) $(MKYAFFS2) -f -s $(BOARD_NAND_PAGE_SIZE) $(TARGET_OUT) $(1)
 endef
 endif # TARGET_USERIMAGES_USE_EXT2
 
@@ -729,7 +734,7 @@ else # TARGET_USERIMAGES_USE_EXT2 != true
 define build-userdataimage-target
     $(call pretty,"Target userdata fs image: $(INSTALLED_USERDATAIMAGE_TARGET)")
     @mkdir -p $(TARGET_OUT_DATA)
-    $(hide) $(MKYAFFS2) -f -s $(TARGET_NAND_PAGE_SIZE) $(TARGET_OUT_DATA) $(INSTALLED_USERDATAIMAGE_TARGET)
+    $(hide) $(MKYAFFS2) -f -s $(BOARD_NAND_PAGE_SIZE) $(TARGET_OUT_DATA) $(INSTALLED_USERDATAIMAGE_TARGET)
     $(hide) chmod a+r $(INSTALLED_USERDATAIMAGE_TARGET)
     $(hide) $(call assert-max-image-size,$(INSTALLED_USERDATAIMAGE_TARGET),$(BOARD_USERDATAIMAGE_PARTITION_SIZE),yaffs)
 endef
