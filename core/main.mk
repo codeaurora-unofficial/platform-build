@@ -423,6 +423,13 @@ subdirs := \
 	external/elfutils \
 	external/yaffs2 \
 	external/zlib
+
+ifeq ($(TARGET_USERIMAGES_USE_EXT2), true)
+subdirs += \
+	external/e2fsprogs \
+	external/genext2fs
+endif
+
 else	# !BUILD_TINY_ANDROID
 
 #
