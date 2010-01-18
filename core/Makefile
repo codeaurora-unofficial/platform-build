@@ -532,6 +532,11 @@ INTERNAL_RECOVERYIMAGE_ARGS := \
 	--kernel $(recovery_kernel) \
 	--ramdisk $(recovery_ramdisk)
 
+# add optional NAND flash page size parameter if present for recovery image
+ifdef BOARD_NAND_PAGE_SIZE
+  INTERNAL_RECOVERYIMAGE_ARGS += --pagesize $(BOARD_NAND_PAGE_SIZE)
+endif
+
 # Assumes this has already been stripped
 ifdef BOARD_KERNEL_CMDLINE
   INTERNAL_RECOVERYIMAGE_ARGS += --cmdline "$(BOARD_KERNEL_CMDLINE)"
