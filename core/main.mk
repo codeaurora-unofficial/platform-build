@@ -429,6 +429,12 @@ subdirs += \
 	external/genext2fs
 endif
 
+ifeq ($(TARGET_PERSISTIMAGES_USE_EXT2), true)
+subdirs += \
+	external/e2fsprogs \
+	external/genext2fs
+endif
+
 else	# !BUILD_TINY_ANDROID
 
 #
@@ -586,7 +592,8 @@ ifdef is_sdk_build
               $(filter \
                       $(TARGET_OUT_INTERMEDIATES)/% \
                       $(TARGET_OUT)/% \
-                      $(TARGET_OUT_DATA)/%, \
+                      $(TARGET_OUT_DATA)/% \
+                      $(TARGET_OUT_PERSIST)/%, \
                               $(sort $(call get-tagged-modules,gnu)))
   $(info Removing from sdk:)$(foreach d,$(target_gnu_MODULES),$(info : $(d)))
   modules_to_install := \
@@ -658,6 +665,12 @@ userdataimage: $(INSTALLED_USERDATAIMAGE_TARGET)
 .PHONY: userdatatarball
 userdatatarball: $(INSTALLED_USERDATATARBALL_TARGET)
 
+.PHONY: persistimage
+persistimage: $(INSTALLED_PERSISTIMAGE_TARGET)
+
+.PHONY: persisttarball
+persisttarball: $(INSTALLED_PERSISTTARBALL_TARGET)
+
 .PHONY: bootimage
 bootimage: $(INSTALLED_BOOTIMAGE_TARGET)
 
@@ -672,6 +685,7 @@ droidcore: files \
 	$(INSTALLED_BOOTIMAGE_TARGET) \
 	$(INSTALLED_RECOVERYIMAGE_TARGET) \
 	$(INSTALLED_USERDATAIMAGE_TARGET) \
+	$(INSTALLED_PERSISTIMAGE_TARGET) \
 	$(INSTALLED_FILES_FILE)
 
 # The actual files built by the droidcore target changes depending
