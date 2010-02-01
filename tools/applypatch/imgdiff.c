@@ -172,14 +172,14 @@ unsigned char* ReadZip(const char* filename,
                        int include_pseudo_chunk) {
   struct stat st;
   if (stat(filename, &st) != 0) {
-    fprintf(stderr, "failed to stat \"%s\": %s\n", filename, strerror(errno));
+    printf("failed to stat \"%s\": %s\n", filename, strerror(errno));
     return NULL;
   }
 
   unsigned char* img = malloc(st.st_size);
   FILE* f = fopen(filename, "rb");
   if (fread(img, 1, st.st_size, f) != st.st_size) {
-    fprintf(stderr, "failed to read \"%s\" %s\n", filename, strerror(errno));
+    printf("failed to read \"%s\" %s\n", filename, strerror(errno));
     fclose(f);
     return NULL;
   }
@@ -196,7 +196,7 @@ unsigned char* ReadZip(const char* filename,
   }
   // double-check: this archive consists of a single "disk"
   if (!(img[i+4] == 0 && img[i+5] == 0 && img[i+6] == 0 && img[i+7] == 0)) {
-    fprintf(stderr, "can't process multi-disk archive\n");
+    printf("can't process multi-disk archive\n");
     return NULL;
   }
 
@@ -209,7 +209,7 @@ unsigned char* ReadZip(const char* filename,
   unsigned char* cd = img+cdoffset;
   for (i = 0; i < cdcount; ++i) {
     if (!(cd[0] == 0x50 && cd[1] == 0x4b && cd[2] == 0x01 && cd[3] == 0x02)) {
-      fprintf(stderr, "bad central directory entry %d\n", i);
+      printf("bad central directory entry %d\n", i);
       return NULL;
     }
 
@@ -236,12 +236,12 @@ unsigned char* ReadZip(const char* filename,
     unsigned char* lh = img + hoffset;
 
     if (!(lh[0] == 0x50 && lh[1] == 0x4b && lh[2] == 0x03 && lh[3] == 0x04)) {
-      fprintf(stderr, "bad local file header entry %d\n", i);
+      printf("bad local file header entry %d\n", i);
       return NULL;
     }
 
     if (Read2(lh+26) != nlen || memcmp(lh+30, filename, nlen) != 0) {
-      fprintf(stderr, "central dir filename doesn't match local header\n");
+      printf("central dir filename doesn't match local header\n");
       return NULL;
     }
 
@@ -311,7 +311,7 @@ unsigned char* ReadZip(const char* filename,
       strm.next_out = curr->data;
       ret = inflate(&strm, Z_NO_FLUSH);
       if (ret != Z_STREAM_END) {
-        fprintf(stderr, "failed to inflate \"%s\"; %d\n", curr->filename, ret);
+        printf("failed to inflate \"%s\"; %d\n", curr->filename, ret);
         return NULL;
       }
 
@@ -359,14 +359,14 @@ unsigned char* ReadImage(const char* filename,
                          int* num_chunks, ImageChunk** chunks) {
   struct stat st;
   if (stat(filename, &st) != 0) {
-    fprintf(stderr, "failed to stat \"%s\": %s\n", filename, strerror(errno));
+    printf("failed to stat \"%s\": %s\n", filename, strerror(errno));
     return NULL;
   }
 
   unsigned char* img = malloc(st.st_size + 4);
   FILE* f = fopen(filename, "rb");
   if (fread(img, 1, st.st_size, f) != st.st_size) {
-    fprintf(stderr, "failed to read \"%s\" %s\n", filename, strerror(errno));
+    printf("failed to read \"%s\" %s\n", filename, strerror(errno));
     fclose(f);
     return NULL;
   }
@@ -463,7 +463,7 @@ unsigned char* ReadImage(const char* filename,
       // the decompression.
       size_t footer_size = Read4(p-4);
       if (footer_size != curr[-2].len) {
-        fprintf(stderr, "Error: footer size %d != decompressed size %d\n",
+        printf("Error: footer size %d != decompressed size %d\n",
                 footer_size, curr[-2].len);
         free(img);
         return NULL;
@@ -508,7 +508,7 @@ int TryReconstruction(ImageChunk* chunk, unsigned char* out) {
   size_t p = 0;
 
 #if 0
-  fprintf(stderr, "trying %d %d %d %d %d\n",
+  printf("trying %d %d %d %d %d\n",
           chunk->level, chunk->method, chunk->windowBits,
           chunk->memLevel, chunk->strategy);
 #endif
@@ -551,7 +551,7 @@ int TryReconstruction(ImageChunk* chunk, unsigned char* out) {
  */
 int ReconstructDeflateChunk(ImageChunk* chunk) {
   if (chunk->type != CHUNK_DEFLATE) {
-    fprintf(stderr, "attempt to reconstruct non-deflate chunk\n");
+    printf("attempt to reconstruct non-deflate chunk\n");
     return -1;
   }
 
@@ -600,12 +600,12 @@ unsigned char* MakePatch(ImageChunk* src, ImageChunk* tgt, size_t* size) {
 
   FILE* f = fopen(stemp, "wb");
   if (f == NULL) {
-    fprintf(stderr, "failed to open src chunk %s: %s\n",
+    printf("failed to open src chunk %s: %s\n",
             stemp, strerror(errno));
     return NULL;
   }
   if (fwrite(src->data, 1, src->len, f) != src->len) {
-    fprintf(stderr, "failed to write src chunk to %s: %s\n",
+    printf("failed to write src chunk to %s: %s\n",
             stemp, strerror(errno));
     return NULL;
   }
@@ -613,12 +613,12 @@ unsigned char* MakePatch(ImageChunk* src, ImageChunk* tgt, size_t* size) {
 
   f = fopen(ttemp, "wb");
   if (f == NULL) {
-    fprintf(stderr, "failed to open tgt chunk %s: %s\n",
+    printf("failed to open tgt chunk %s: %s\n",
             ttemp, strerror(errno));
     return NULL;
   }
   if (fwrite(tgt->data, 1, tgt->len, f) != tgt->len) {
-    fprintf(stderr, "failed to write tgt chunk to %s: %s\n",
+    printf("failed to write tgt chunk to %s: %s\n",
             ttemp, strerror(errno));
     return NULL;
   }
@@ -627,13 +627,13 @@ unsigned char* MakePatch(ImageChunk* src, ImageChunk* tgt, size_t* size) {
   char cmd[200];
   sprintf(cmd, "bsdiff %s %s %s", stemp, ttemp, ptemp);
   if (system(cmd) != 0) {
-    fprintf(stderr, "failed to run bsdiff: %s\n", strerror(errno));
+    printf("failed to run bsdiff: %s\n", strerror(errno));
     return NULL;
   }
 
   struct stat st;
   if (stat(ptemp, &st) != 0) {
-    fprintf(stderr, "failed to stat patch file %s: %s\n",
+    printf("failed to stat patch file %s: %s\n",
             ptemp, strerror(errno));
     return NULL;
   }
@@ -654,11 +654,11 @@ unsigned char* MakePatch(ImageChunk* src, ImageChunk* tgt, size_t* size) {
 
   f = fopen(ptemp, "rb");
   if (f == NULL) {
-    fprintf(stderr, "failed to open patch %s: %s\n", ptemp, strerror(errno));
+    printf("failed to open patch %s: %s\n", ptemp, strerror(errno));
     return NULL;
   }
   if (fread(data, 1, st.st_size, f) != st.st_size) {
-    fprintf(stderr, "failed to read patch %s: %s\n", ptemp, strerror(errno));
+    printf("failed to read patch %s: %s\n", ptemp, strerror(errno));
     return NULL;
   }
   fclose(f);
@@ -712,7 +712,7 @@ int AreChunksEqual(ImageChunk* a, ImageChunk* b) {
                 memcmp(a->deflate_data, b->deflate_data, a->deflate_len) == 0;
 
         default:
-            fprintf(stderr, "unknown chunk type %d\n", a->type);
+            printf("unknown chunk type %d\n", a->type);
             return 0;
     }
 }
@@ -787,7 +787,7 @@ ImageChunk* FindChunkByName(const char* name,
 int main(int argc, char** argv) {
   if (argc != 4 && argc != 5) {
     usage:
-    fprintf(stderr, "usage: %s [-z] <src-img> <tgt-img> <patch-file>\n",
+    printf("usage: %s [-z] <src-img> <tgt-img> <patch-file>\n",
             argv[0]);
     return 2;
   }
@@ -809,20 +809,20 @@ int main(int argc, char** argv) {
 
   if (zip_mode) {
     if (ReadZip(argv[1], &num_src_chunks, &src_chunks, 1) == NULL) {
-      fprintf(stderr, "failed to break apart source zip file\n");
+      printf("failed to break apart source zip file\n");
       return 1;
     }
     if (ReadZip(argv[2], &num_tgt_chunks, &tgt_chunks, 0) == NULL) {
-      fprintf(stderr, "failed to break apart target zip file\n");
+      printf("failed to break apart target zip file\n");
       return 1;
     }
   } else {
     if (ReadImage(argv[1], &num_src_chunks, &src_chunks) == NULL) {
-      fprintf(stderr, "failed to break apart source image\n");
+      printf("failed to break apart source image\n");
       return 1;
     }
     if (ReadImage(argv[2], &num_tgt_chunks, &tgt_chunks) == NULL) {
-      fprintf(stderr, "failed to break apart target image\n");
+      printf("failed to break apart target image\n");
       return 1;
     }
 
@@ -830,12 +830,12 @@ int main(int argc, char** argv) {
     // structure (ie, the same sequence of deflate and normal chunks).
 
     if (num_src_chunks != num_tgt_chunks) {
-      fprintf(stderr, "source and target don't have same number of chunks!\n");
+      printf("source and target don't have same number of chunks!\n");
       return 1;
     }
     for (i = 0; i < num_src_chunks; ++i) {
       if (src_chunks[i].type != tgt_chunks[i].type) {
-        fprintf(stderr, "source and target don't have same chunk "
+        printf("source and target don't have same chunk "
                 "structure! (chunk %d)\n", i);
         return 1;
       }
@@ -899,7 +899,7 @@ int main(int argc, char** argv) {
     MergeAdjacentNormalChunks(src_chunks, &num_src_chunks);
     if (num_src_chunks != num_tgt_chunks) {
       // This shouldn't happen.
-      fprintf(stderr, "merging normal chunks went awry\n");
+      printf("merging normal chunks went awry\n");
       return 1;
     }
   }

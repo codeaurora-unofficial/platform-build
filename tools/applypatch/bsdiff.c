@@ -94,7 +94,7 @@ int ApplyBSDiffPatch(const unsigned char* old_data, ssize_t old_size,
   }
 
   if (sink(new_data, new_size, token) < new_size) {
-    fprintf(stderr, "short write of output: %d (%s)\n", errno, strerror(errno));
+    printf("short write of output: %d (%s)\n", errno, strerror(errno));
     return 1;
   }
   if (ctx) {
@@ -111,7 +111,7 @@ int ApplyBSDiffPatchMem(const unsigned char* old_data, ssize_t old_size,
 
   FILE* f;
   if ((f = fopen(patch_filename, "rb")) == NULL) {
-    fprintf(stderr, "failed to open patch file\n");
+    printf("failed to open patch file\n");
     return 1;
   }
 
@@ -131,12 +131,12 @@ int ApplyBSDiffPatchMem(const unsigned char* old_data, ssize_t old_size,
 
   unsigned char header[32];
   if (fread(header, 1, 32, f) < 32) {
-    fprintf(stderr, "failed to read patch file header\n");
+    printf("failed to read patch file header\n");
     return 1;
   }
 
   if (memcmp(header, "BSDIFF40", 8) != 0) {
-    fprintf(stderr, "corrupt bsdiff patch file header (magic number)\n");
+    printf("corrupt bsdiff patch file header (magic number)\n");
     return 1;
   }
 
@@ -146,7 +146,7 @@ int ApplyBSDiffPatchMem(const unsigned char* old_data, ssize_t old_size,
   *new_size = offtin(header+24);
 
   if (ctrl_len < 0 || data_len < 0 || *new_size < 0) {
-    fprintf(stderr, "corrupt patch file header (data lengths)\n");
+    printf("corrupt patch file header (data lengths)\n");
     return 1;
   }
 
@@ -158,15 +158,15 @@ int ApplyBSDiffPatchMem(const unsigned char* old_data, ssize_t old_size,
   FILE* f;                                                               \
   BZFILE* bzf;                                                           \
   if ((f = fopen(patch_filename, "rb")) == NULL) {                       \
-    fprintf(stderr, "failed to open patch file\n");                      \
+    printf("failed to open patch file\n");                      \
     return 1;                                                            \
   }                                                                      \
   if (fseeko(f, offset+patch_offset, SEEK_SET)) {                        \
-    fprintf(stderr, "failed to seek in patch file\n");                   \
+    printf("failed to seek in patch file\n");                   \
     return 1;                                                            \
   }                                                                      \
   if ((bzf = BZ2_bzReadOpen(&bzerr, f, 0, 0, NULL, 0)) == NULL) {        \
-    fprintf(stderr, "failed to bzReadOpen in patch file (%d)\n", bzerr); \
+    printf("failed to bzReadOpen in patch file (%d)\n", bzerr); \
     return 1;                                                            \
   }
 
@@ -178,7 +178,7 @@ int ApplyBSDiffPatchMem(const unsigned char* old_data, ssize_t old_size,
 
   *new_data = malloc(*new_size);
   if (*new_data == NULL) {
-    fprintf(stderr, "failed to allocate %d bytes of memory for output file\n",
+    printf("failed to allocate %d bytes of memory for output file\n",
             (int)*new_size);
     return 1;
   }
@@ -193,7 +193,7 @@ int ApplyBSDiffPatchMem(const unsigned char* old_data, ssize_t old_size,
     for (i = 0; i < 3; ++i) {
       len_read = BZ2_bzRead(&bzerr, cpfbz2, buf, 8);
       if (len_read < 8 || !(bzerr == BZ_OK || bzerr == BZ_STREAM_END)) {
-        fprintf(stderr, "corrupt patch (read control)\n");
+        printf("corrupt patch (read control)\n");
         return 1;
       }
       ctrl[i] = offtin(buf);
@@ -201,14 +201,14 @@ int ApplyBSDiffPatchMem(const unsigned char* old_data, ssize_t old_size,
 
     // Sanity check
     if (newpos + ctrl[0] > *new_size) {
-      fprintf(stderr, "corrupt patch (new file overrun)\n");
+      printf("corrupt patch (new file overrun)\n");
       return 1;
     }
 
     // Read diff string
     len_read = BZ2_bzRead(&bzerr, dpfbz2, *new_data + newpos, ctrl[0]);
     if (len_read < ctrl[0] || !(bzerr == BZ_OK || bzerr == BZ_STREAM_END)) {
-      fprintf(stderr, "corrupt patch (read diff)\n");
+      printf("corrupt patch (read diff)\n");
       return 1;
     }
 
@@ -225,14 +225,14 @@ int ApplyBSDiffPatchMem(const unsigned char* old_data, ssize_t old_size,
 
     // Sanity check
     if (newpos + ctrl[1] > *new_size) {
-      fprintf(stderr, "corrupt patch (new file overrun)\n");
+      printf("corrupt patch (new file overrun)\n");
       return 1;
     }
 
     // Read extra string
     len_read = BZ2_bzRead(&bzerr, epfbz2, *new_data + newpos, ctrl[1]);
     if (len_read < ctrl[1] || !(bzerr == BZ_OK || bzerr == BZ_STREAM_END)) {
-      fprintf(stderr, "corrupt patch (read extra)\n");
+      printf("corrupt patch (read extra)\n");
       return 1;
     }
 
