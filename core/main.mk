@@ -421,7 +421,10 @@ subdirs := \
 	external/elfcopy \
 	external/elfutils \
 	external/yaffs2 \
-	external/zlib
+	external/zlib \
+	frameworks/base/libs/utils \
+	frameworks/base/libs/binder \
+	frameworks/base/opengl/libs
 
 ifeq ($(TARGET_USERIMAGES_USE_EXT2), true)
 subdirs += \
@@ -434,6 +437,8 @@ subdirs += \
 	external/e2fsprogs \
 	external/genext2fs
 endif
+
+-include vendor/qcom-proprietary/common/build/defines.mk
 
 else	# !BUILD_TINY_ANDROID
 
