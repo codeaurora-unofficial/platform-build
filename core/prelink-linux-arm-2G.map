@@ -1,0 +1,163 @@
+# 0x80000000 - 0xFFFFFFFF Kernel
+# 0x70100000 - 0x7FFFFFFF Thread 0 Stack
+# 0x70000000 - 0x700FFFFF Linker
+# 0x60000000 - 0x6FFFFFFF Prelinked System Libraries
+# 0x50000000 - 0x5FFFFFFF Prelinked App Libraries
+# 0x40000000 - 0x4FFFFFFF Non-prelinked Libraries
+# 0x2AAAAAAA - 0x3FFFFFFF mmap'd stuff
+# 0x10000000 - 0x2AAAAAA9 Thread Stacks
+# 0x00000000 - 0x0FFFFFFF .text / .data / heap
+
+# core system libraries
+libdl.so                0x6FF00000
+libc.so                 0x6FE00000
+libstdc++.so            0x6FD00000
+libm.so                 0x6FC00000
+liblog.so               0x6FBC0000
+libcutils.so            0x6FB00000
+libthread_db.so         0x6FA00000
+libz.so                 0x6F900000
+libevent.so             0x6F800000
+libssl.so               0x6F700000
+libcrypto.so            0x6F500000
+libsysutils.so          0x6F400000
+
+# bluetooth
+liba2dp.so              0x6EE00000
+audio.so                0x6ED00000
+input.so                0x6EC00000
+libbluetoothd.so        0x6EB00000
+libbluedroid.so         0x6EA00000
+libbluetooth.so         0x6E900000
+libdbus.so              0x6E800000
+
+# extended system libraries
+libril.so               0x6E400000
+libreference-ril.so     0x6E000000
+libwpa_client.so        0x6DC00000
+libnetutils.so          0x6DB00000
+
+# core dalvik runtime support
+libandroid_servers.so   0x6D900000
+#libicudata.so           0x6D600000
+libicuuc.so             0x6D500000
+libicui18n.so           0x6D400000
+libandroid_runtime.so   0x6D300000
+libnativehelper.so      0x6D200000
+libdvm-ARM.so           0x6D100000
+libdvm.so               0x6D000000
+
+# graphics
+libpixelflinger.so      0x6CF00000
+# libcorecg is for backward-compatibility with donut
+libcorecg.so            0x6CE00000
+libsurfaceflinger.so    0x6CD00000
+libGLES_android.so      0x6CC80000
+libagl.so               0x6CC00000
+
+libGLESv1_CM.so         0x6CB00000
+libGLESv2.so            0x6CA00000
+libOpenVG_CM.so         0x6C900000
+libOpenVGU_CM.so        0x6C800000
+libEGL.so               0x6C700000
+
+libacc.so               0x6C600000
+
+libexif.so              0x6C500000
+libui.so                0x6C400000
+# libsgl is for backward-compatibility with donut
+libsgl.so               0x6C200000
+libskia.so              0x6C000000
+librs_jni.so            0x6BF00000
+libRS.so                0x6B900000
+
+# audio
+libaudiopolicy.so       0x6B880000
+libaudiopolicygeneric.so 0x6B800000
+libsoundpool.so         0x6B780000
+libaudio.so             0x6B700000
+libspeech.so            0x6B600000
+libsonivox.so           0x6B500000
+libvorbisidec.so        0x6B400000
+libmedia_jni.so         0x6B300000
+libmediaplayerservice.so 0x6B280000
+libmedia.so             0x6B200000
+libFFTEm.so             0x6B100000
+libaudioflinger.so      0x6B000000
+
+# assorted system libraries
+libsqlite.so            0x6AC00000
+libexpat.so             0x6AB00000
+libwebcore.so           0x6A000000
+libbinder.so            0x69D80000
+libutils.so             0x69D00000
+libcameraservice.so     0x69C80000
+libhardware.so          0x69C70000
+libhardware_legacy.so   0x69C00000
+libapp_process.so       0x69B00000
+libsystem_server.so     0x69A00000
+libime.so               0x69800000
+libgps.so               0x69700000
+libcamera.so            0x69680000
+liboemcamera.so           0x69400000
+
+# pv libraries
+libpvasf.so                    0x67C26000
+libpvasfreg.so                 0x67C00000
+libomx_sharedlibrary.so        0x67BA0000
+libopencore_download.so        0x67B40000
+libopencore_downloadreg.so     0x67B00000
+libopencore_net_support.so     0x67A00000
+libopencore_rtsp.so            0x67900000
+libopencore_rtspreg.so         0x67890000
+libopencore_author.so          0x67800000
+libomx_aacdec_sharedlibrary.so 0x67700000
+libomx_amrdec_sharedlibrary.so 0x676A0000
+libomx_amrenc_sharedlibrary.so 0x67680000
+libomx_avcdec_sharedlibrary.so 0x67660000
+libomx_avcenc_sharedlibrary.so 0x67610000
+libomx_m4vdec_sharedlibrary.so 0x675C0000
+libomx_m4venc_sharedlibrary.so 0x67590000
+libomx_mp3dec_sharedlibrary.so 0x67450000
+libopencore_mp4local.so        0x67400000
+libopencore_mp4localreg.so     0x67300000
+libopencore_player.so          0x67000000
+
+# opencore hardware support
+libmm-adspsvc.so              0x66FFD000
+libOmxCore.so                 0x66FF0000
+libOmxMpeg4Dec.so             0x66FC0000
+libOmxH264Dec.so              0x66F90000
+libOmxVidEnc.so               0x66F60000
+libopencorehw.so              0x66F50000
+
+# pv libraries
+libopencore_common.so         0x66000000
+libqcomm_omx.so               0x65A00000
+
+# libraries for specific apps or temporary libraries
+libcam_ipl.so           0x5F000000
+libwbxml.so             0x5E800000
+libwbxml_jni.so         0x5E400000
+libxml2wbxml.so         0x5E000000
+libaes.so               0x5DC00000
+libdrm1.so              0x5D800000
+libdrm1_jni.so          0x5D400000
+libwapcore.so           0x5D000000
+libstreetview.so        0x5CC00000
+libwapbrowsertest.so    0x5C800000
+libminiglobe.so         0x5C400000
+libearth.so             0x5C000000
+libembunit.so           0x5BC00000
+libneon.so              0x5B800000
+libjni_example.so       0x5B400000
+libjni_load_test.so     0x5B000000
+libjni_lib_test.so      0x5AC00000
+librunperf.so           0x5A800000
+libctest.so             0x5A700000
+libUAPI_jni.so          0x5A500000
+librpc.so               0x5A400000
+libtrace_test.so        0x5A300000
+libsrec_jni.so          0x5A200000
+libcerttool_jni.so      0x5A100000
+
