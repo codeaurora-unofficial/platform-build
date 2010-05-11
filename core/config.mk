@@ -17,7 +17,6 @@ SRC_HEADERS := \
 	$(TOPDIR)system/core/include \
 	$(TOPDIR)hardware/libhardware/include \
 	$(TOPDIR)hardware/libhardware_legacy/include \
-	$(TOPDIR)hardware/ril/include \
 	$(TOPDIR)dalvik/libnativehelper/include \
 	$(TOPDIR)frameworks/base/include \
 	$(TOPDIR)frameworks/base/opengl/include \
@@ -30,9 +29,6 @@ SRC_API_DIR := $(TOPDIR)frameworks/base/api
 
 # Some specific paths to tools
 SRC_DROIDDOC_DIR := $(TOPDIR)build/tools/droiddoc
-
-# Various mappings to avoid hard-coding paths all over the place
-include $(BUILD_SYSTEM)/pathmap.mk
 
 # ###############################################################
 # Build system internal files
@@ -178,6 +174,8 @@ endif
 endif
 endif
 
+# Various mappings to avoid hard-coding paths all over the place
+include $(BUILD_SYSTEM)/pathmap.mk
 
 # ---------------------------------------------------------------
 # Generic tools.
@@ -256,6 +254,15 @@ MD5SUM:=md5 -q
 else
 MD5SUM:=md5sum
 endif
+
+ifeq ($(BUILD_FUSION), true)
+SRC_HEADERS += \
+	$(TOPDIR)hardware/ril/ril_fusion/include
+else
+SRC_HEADERS += \
+	$(TOPDIR)hardware/ril/ril_original/include
+endif
+
 
 # ###############################################################
 # Set up final options.

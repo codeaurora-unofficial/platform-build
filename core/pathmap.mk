@@ -44,7 +44,6 @@ pathmap_INCL := \
     libm:bionic/libm/include \
     libnativehelper:dalvik/libnativehelper/include \
     libpagemap:system/extras/libpagemap/include \
-    libril:hardware/ril/include \
     libstdc++:bionic/libstdc++/include \
     libthread_db:bionic/libthread_db/include \
     mkbootimg:system/core/mkbootimg \
@@ -80,12 +79,19 @@ FRAMEWORKS_BASE_SUBDIRS := \
 	    media \
 	    opengl \
 	    sax \
-	    telephony \
 	    wifi \
 	    vpn \
 	    keystore \
 	 )
 
+
+ifeq ($(BUILD_FUSION), true)
+FRAMEWORKS_BASE_SUBDIRS += \
+        $(addsuffix /java, telephony_fusion)
+else
+FRAMEWORKS_BASE_SUBDIRS += \
+        $(addsuffix /java, telephony)
+endif
 #
 # A version of FRAMEWORKS_BASE_SUBDIRS that is expanded to full paths from
 # the root of the tree.  This currently needs to be here so that other libraries
