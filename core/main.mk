@@ -455,7 +455,11 @@ subdirs := \
 	external/elfcopy \
 	external/elfutils \
 	external/yaffs2 \
-	external/zlib
+	system/extras/ext4_utils \
+	external/zlib \
+	frameworks/base/libs/utils \
+	frameworks/base/libs/binder \
+	frameworks/base/opengl/libs
 
 -include vendor/qcom/proprietary/common/build/defines.mk
 
