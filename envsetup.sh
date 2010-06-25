@@ -298,7 +298,7 @@ function chooseproduct()
     # Find the makefiles that must exist for a product.
     # Send stderr to /dev/null in case partner isn't present.
     local -a choices
-    choices=(`/bin/ls build/target/board/*/BoardConfig.mk vendor/*/*/BoardConfig.mk 2> /dev/null`)
+    choices=(`/bin/ls build/target/board/*/BoardConfig.mk device/*/*/BoardConfig.mk vendor/*/*/BoardConfig.mk 2> /dev/null`)
 
     local choice
     local -a prodlist
