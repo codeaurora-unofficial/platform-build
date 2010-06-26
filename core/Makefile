@@ -329,6 +329,11 @@ $(INSTALLED_BOOTIMAGE_TARGET): $(MKEXT2IMG) $(INTERNAL_BOOTIMAGE_FILES)
 
 else # TARGET_BOOTIMAGE_USE_EXT2 != true
 
+# add optional NAND flash page size parameter if present
+ifdef BOARD_NAND_PAGE_SIZE
+  INTERNAL_BOOTIMAGE_ARGS += --pagesize $(BOARD_NAND_PAGE_SIZE)
+endif
+
 $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES)
 	$(call pretty,"Target boot image: $@")
 	$(hide) $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) --output $@
@@ -556,6 +561,11 @@ INTERNAL_RECOVERYIMAGE_ARGS := \
 	$(addprefix --second ,$(INSTALLED_2NDBOOTLOADER_TARGET)) \
 	--kernel $(recovery_kernel) \
 	--ramdisk $(recovery_ramdisk)
+
+# add optional NAND flash page size parameter if present for recovery image
+ifdef BOARD_NAND_PAGE_SIZE
+  INTERNAL_RECOVERYIMAGE_ARGS += --pagesize $(BOARD_NAND_PAGE_SIZE)
+endif
 
 # Assumes this has already been stripped
 ifdef BOARD_KERNEL_CMDLINE
