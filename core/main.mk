@@ -688,6 +688,7 @@ bootimage: $(INSTALLED_BOOTIMAGE_TARGET)
 
 ifeq ($(BUILD_TINY_ANDROID), true)
 INSTALLED_RECOVERYIMAGE_TARGET :=
+INTERNAL_OTA_PACKAGE_TARGET :=
 endif
 
 # Build files and then package it into the rom formats
@@ -697,7 +698,8 @@ droidcore: files \
 	$(INSTALLED_BOOTIMAGE_TARGET) \
 	$(INSTALLED_RECOVERYIMAGE_TARGET) \
 	$(INSTALLED_USERDATAIMAGE_TARGET) \
-	$(INSTALLED_FILES_FILE)
+	$(INSTALLED_FILES_FILE) \
+	$(INTERNAL_OTA_PACKAGE_TARGET)
 
 ifneq ($(TARGET_BUILD_APPS),)
   # If this build is just for apps, only build apps and not the full system by default.
