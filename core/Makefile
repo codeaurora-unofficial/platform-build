@@ -181,7 +181,7 @@ $(INSTALLED_SDK_BUILD_PROP_TARGET): $(INSTALLED_BUILD_PROP_TARGET)
 # package stats
 PACKAGE_STATS_FILE := $(PRODUCT_OUT)/package-stats.txt
 PACKAGES_TO_STAT := \
-    $(sort $(filter $(TARGET_OUT)/% $(TARGET_OUT_DATA)/%, \
+    $(sort $(filter $(TARGET_OUT)/% $(TARGET_OUT_DATA)/% $(TARGET_OUT_PERSIST)/%, \
 	$(filter %.jar %.apk, $(ALL_DEFAULT_INSTALLED_MODULES))))
 $(PACKAGE_STATS_FILE): $(PACKAGES_TO_STAT)
 	@echo Package stats: $@
@@ -535,6 +535,17 @@ else
 INTERNAL_MKUSERFS := $(MKYAFFS2)
 endif
 
+# #################################################################
+# Targets for persist images
+# #################################################################
+
+ifeq ($(TARGET_PERSISTIMAGES_USE_EXT2),true)
+include external/genext2fs/Config.mk
+INTERNAL_MKPERSISTFS := $(MKEXT2IMG)
+else
+INTERNAL_MKPERSISTFS := $(MKYAFFS2)
+endif
+
 # -----------------------------------------------------------------
 # Recovery image
 
@@ -638,7 +649,6 @@ endif
 ifneq ($(BOARD_NAND_SPARE_SIZE),)
 mkyaffs2_extra_flags += -s $(BOARD_NAND_SPARE_SIZE)
 endif
-
 
 # -----------------------------------------------------------------
 # system yaffs image
@@ -816,6 +826,65 @@ userdatatarball-nodeps: $(FS_GET_STATS)
 
 
 # -----------------------------------------------------------------
+# persist partition image
+INTERNAL_PERSISTIMAGE_FILES := \
+	$(filter $(TARGET_OUT_PERSIST)/%,$(ALL_DEFAULT_INSTALLED_MODULES))
+
+ifeq ($(TARGET_PERSISTIMAGES_USE_EXT2),true)
+## Generate an ext2 image
+define build-ext2-persistimage-target
+    $(call pretty,"Target persist fs image: $(INSTALLED_PERSISTIMAGE_TARGET)")
+    @mkdir -p $(TARGET_OUT_PERSIST)
+    $(call build-persistimage-ext2-target,$(TARGET_OUT_PERSIST),$(INSTALLED_PERSISTIMAGE_TARGET).ext3,persist,true,500,4096)
+    $(hide) chmod a+r $(INSTALLED_PERSISTIMAGE_TARGET)
+endef
+else
+define build-ext2-persistimage-target
+endef
+endif # TARGET_PERSISTIMAGES_USE_EXT2
+
+## Generate a yaffs2 image
+define build-persistimage-target
+    $(call pretty,"Target persist fs image: $(INSTALLED_PERSISTIMAGE_TARGET)")
+    @mkdir -p $(TARGET_OUT_PERSIST)
+    $(hide) $(MKYAFFS2) -f $(mkyaffs2_extra_flags) $(TARGET_OUT_PERSIST) $(INSTALLED_PERSISTIMAGE_TARGET)
+    $(hide) chmod a+r $(INSTALLED_PERSISTIMAGE_TARGET)
+endef
+
+BUILT_PERSISTIMAGE_TARGET := $(PRODUCT_OUT)/persist.img
+
+# We just build this directly to the install location.
+INSTALLED_PERSISTIMAGE_TARGET := $(BUILT_PERSISTIMAGE_TARGET)
+$(INSTALLED_PERSISTIMAGE_TARGET): $(INTERNAL_MKPERSISTFS) \
+                                   $(INTERNAL_PERSISTIMAGE_FILES)
+	$(call build-persistimage-target) \
+	$(call build-ext2-persistimage-target)
+
+.PHONY: persistimage-nodeps
+persistimage-nodeps: $(INTERNAL_MKPERSISTFS)
+	$(build-persistimage-target)
+
+#######
+## persist partition tarball
+define build-persisttarball-target
+    $(call pretty,"Target persist fs tarball: " \
+                  "$(INSTALLED_PERSISTTARBALL_TARGET)")
+    $(MKTARBALL) $(FS_GET_STATS) \
+		$(PRODUCT_OUT) data $(PRIVATE_PERSIST_TAR) \
+		$(INSTALLED_PERSISTTARBALL_TARGET)
+endef
+
+persist_tar := $(PRODUCT_OUT)/persist.tar
+INSTALLED_PERSISTTARBALL_TARGET := $(persist_tar).bz2
+$(INSTALLED_PERSISTTARBALL_TARGET): PRIVATE_PERSIST_TAR := $(persist_tar)
+$(INSTALLED_PERSISTTARBALL_TARGET): $(FS_GET_STATS) $(INTERNAL_PERSISTIMAGE_FILES)
+	$(build-persisttarball-target)
+
+.PHONY: persisttarball-nodeps
+persisttarball-nodeps: $(FS_GET_STATS)
+	$(build-persisttarball-target)
+
+# -----------------------------------------------------------------
 # bring in the installer image generation defines if necessary
 ifeq ($(TARGET_USE_DISKINSTALLER),true)
 include bootable/diskinstaller/config.mk
@@ -890,6 +959,7 @@ $(BUILT_TARGET_FILES_PACKAGE): \
 		$(INSTALLED_RECOVERYIMAGE_TARGET) \
 		$(INSTALLED_SYSTEMIMAGE) \
 		$(INSTALLED_USERDATAIMAGE_TARGET) \
+		$(INSTALLED_PERSISTIMAGE_TARGET) \
 		$(INSTALLED_ANDROID_INFO_TXT_TARGET) \
 		$(built_ota_tools) \
 		$(APKCERTS_FILE) \
@@ -941,6 +1011,9 @@ endif
 	@# Contents of the data image
 	$(hide) $(call package_files-copy-root, \
 		$(TARGET_OUT_DATA),$(zip_root)/DATA)
+	@# Contents of the persist image
+	$(hide) $(call package_files-copy-root, \
+		$(TARGET_OUT_PERSIST),$(zip_root)/PERSIST)
 	@# Extra contents of the OTA package
 	$(hide) mkdir -p $(zip_root)/OTA/bin
 	$(hide) $(ACP) $(INSTALLED_ANDROID_INFO_TXT_TARGET) $(zip_root)/OTA/
@@ -1015,7 +1088,7 @@ $(INSTALLED_FILES_FILE): $(INSTALLED_SYSTEMIMAGE)
 	@echo Installed file list: $@
 	@mkdir -p $(dir $@)
 	@rm -f $@
-	$(hide) build/tools/fileslist.py $(TARGET_OUT) $(TARGET_OUT_DATA) > $@
+	$(hide) build/tools/fileslist.py $(TARGET_OUT) $(TARGET_OUT_DATA) $(TARGET_OUT_PERSIST) > $@
 
 .PHONY: installed-file-list
 installed-file-list: $(INSTALLED_FILES_FILE)
@@ -1043,6 +1116,7 @@ $(BUILT_TESTS_ZIP_PACKAGE): zip_root := $(intermediates)/$(name)
 $(BUILT_TESTS_ZIP_PACKAGE): \
 		$(BUILT_SYSTEMIMAGE) \
 		$(INSTALLED_USERDATAIMAGE_TARGET) \
+		$(INSTALLED_PERSISTIMAGE_TARGET) \
 		| $(ACP)
 	@echo "Package test files: $@"
 	$(hide) rm -rf $@ $(zip_root)
@@ -1059,6 +1133,9 @@ $(BUILT_TESTS_ZIP_PACKAGE): \
 	@# Contents of the data image
 	$(hide) $(call package_files-copy-root, \
 		$(TARGET_OUT_DATA),$(zip_root)/DATA)
+	@# Contents of the persist image
+	$(hide) $(call package_files-copy-root, \
+		$(TARGET_OUT_PERSIST),$(zip_root)/PERSIST)
 	$(hide) (cd $(zip_root) && zip -qry ../$(notdir $@) .)
 
 tests-zip-package: $(BUILT_TESTS_ZIP_PACKAGE)
@@ -1148,7 +1225,8 @@ INTERNAL_EMULATOR_PACKAGE_FILES += \
         prebuilt/android-arm/kernel/kernel-qemu \
         $(INSTALLED_RAMDISK_TARGET) \
 		$(INSTALLED_SYSTEMIMAGE) \
-		$(INSTALLED_USERDATAIMAGE_TARGET)
+		$(INSTALLED_USERDATAIMAGE_TARGET) \
+		$(INSTALLED_PERSISTIMAGE_TARGET)
 
 name := $(TARGET_PRODUCT)-emulator-$(FILE_NAME_TAG)
 
@@ -1223,6 +1301,7 @@ deps := \
 	$(SYMBOLS_ZIP) \
 	$(INSTALLED_SYSTEMIMAGE) \
 	$(INSTALLED_USERDATAIMAGE_TARGET) \
+	$(INSTALLED_PERSISTIMAGE_TARGET) \
 	$(INSTALLED_RAMDISK_TARGET) \
 	$(INSTALLED_SDK_BUILD_PROP_TARGET) \
 	$(INSTALLED_BUILD_PROP_TARGET) \
