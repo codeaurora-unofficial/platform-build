@@ -228,6 +228,8 @@ PRODUCT_LOCALES := $(strip \
 # Everyone gets nodpi assets which are density-independent.
 PRODUCT_LOCALES += nodpi
 
+PRODUCT_LOCALES += hdpi
+
 # Assemble the list of options.
 PRODUCT_AAPT_CONFIG := $(PRODUCT_LOCALES)
 
