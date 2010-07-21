@@ -87,6 +87,7 @@ LOCAL_CERTIFICATE:=
 LOCAL_SDK_VERSION:=
 LOCAL_NO_EMMA_INSTRUMENT:=
 LOCAL_NO_EMMA_COMPILE:=
+LOCAL_MANIFEST_FILE:=
 
 # Trim MAKEFILE_LIST so that $(call my-dir) doesn't need to
 # iterate over thousands of entries every time.
