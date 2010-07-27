@@ -559,6 +559,9 @@ recovery_kernel := $(INSTALLED_KERNEL_TARGET) # same as a non-recovery system
 recovery_ramdisk := $(PRODUCT_OUT)/ramdisk-recovery.img
 recovery_build_prop := $(INSTALLED_BUILD_PROP_TARGET)
 recovery_binary := $(call intermediates-dir-for,EXECUTABLES,recovery)/recovery
+mke2fs_binary := $(call intermediates-dir-for,EXECUTABLES,mke2fs_static)/mke2fs_static
+e2fsck_binary := $(call intermediates-dir-for,EXECUTABLES,e2fsck_static)/e2fsck_static
+tune2fs_binary := $(call intermediates-dir-for,EXECUTABLES,tune2fs_static)/tune2fs_static
 recovery_resources_common := $(call include-path-for, recovery)/res
 recovery_resources_private := $(strip $(wildcard $(TARGET_DEVICE_DIR)/recovery/res))
 recovery_resource_deps := $(shell find $(recovery_resources_common) \
@@ -607,6 +610,9 @@ $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTFS) $(MKBOOTIMG) $(MINIGZIP) \
 		$(INSTALLED_RAMDISK_TARGET) \
 		$(INSTALLED_BOOTIMAGE_TARGET) \
 		$(recovery_binary) \
+		$(mke2fs_binary) \
+		$(e2fsck_binary) \
+		$(tune2fs_binary) \
 		$(recovery_initrc) $(recovery_kernel) \
 		$(INSTALLED_2NDBOOTLOADER_TARGET) \
 		$(recovery_build_prop) $(recovery_resource_deps) \
@@ -622,6 +628,9 @@ $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTFS) $(MKBOOTIMG) $(MINIGZIP) \
 	echo Modifying ramdisk contents...
 	cp -f $(recovery_initrc) $(TARGET_RECOVERY_ROOT_OUT)/
 	cp -f $(recovery_binary) $(TARGET_RECOVERY_ROOT_OUT)/sbin/
+	cp -f $(mke2fs_binary) $(TARGET_RECOVERY_ROOT_OUT)/sbin/
+	cp -f $(e2fsck_binary) $(TARGET_RECOVERY_ROOT_OUT)/sbin/
+	cp -f $(tune2fs_binary) $(TARGET_RECOVERY_ROOT_OUT)/sbin/
 	cp -rf $(recovery_resources_common) $(TARGET_RECOVERY_ROOT_OUT)/
 	$(foreach item,$(recovery_resources_private), \
 	  cp -rf $(item) $(TARGET_RECOVERY_ROOT_OUT)/)
@@ -1061,13 +1070,22 @@ name := $(name)-ota-$(FILE_NAME_TAG)
 
 INTERNAL_OTA_PACKAGE_TARGET := $(PRODUCT_OUT)/$(name).zip
 
+ifeq ($(TARGET_USERIMAGES_USE_EXT2),true)
+INTERNAL_OTA_PACKAGE_TARGET_MMC := $(PRODUCT_OUT)/$(name)_mmc.zip
+else
+INTERNAL_OTA_PACKAGE_TARGET_MMC :=
+endif
+
 $(INTERNAL_OTA_PACKAGE_TARGET): KEY_CERT_PAIR := $(DEFAULT_KEY_CERT_PAIR)
+$(INTERNAL_OTA_PACKAGE_TARGET_MMC): KEY_CERT_PAIR := $(DEFAULT_KEY_CERT_PAIR)
 
 ifeq ($(TARGET_OTA_SCRIPT_MODE),)
 # default to "auto"
 $(INTERNAL_OTA_PACKAGE_TARGET): scriptmode := auto
+$(INTERNAL_OTA_PACKAGE_TARGET_MMC): scriptmode := auto
 else
 $(INTERNAL_OTA_PACKAGE_TARGET): scriptmode := $(TARGET_OTA_SCRIPT_MODE)
+$(INTERNAL_OTA_PACKAGE_TARGET_MMC): scriptmode := $(TARGET_OTA_SCRIPT_MODE)
 endif
 
 $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(OTATOOLS)
@@ -1080,6 +1098,19 @@ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(OTATOOLS)
 
 .PHONY: otapackage
 otapackage: $(INTERNAL_OTA_PACKAGE_TARGET)
+
+$(INTERNAL_OTA_PACKAGE_TARGET_MMC): $(BUILT_TARGET_FILES_PACKAGE) $(OTATOOLS)
+	@echo "Package OTA: $@"
+	$(hide) ./build/tools/releasetools/ota_from_target_files \
+	   -m $(scriptmode) \
+	   -p $(HOST_OUT) \
+	   -t MMC\
+           -k	$(KEY_CERT_PAIR) \
+           $(BUILT_TARGET_FILES_PACKAGE) $@
+
+.PHONY: otapackage_mmc
+otapackage_mmc: $(INTERNAL_OTA_PACKAGE_TARGET_MMC)
+
 
 endif    # TARGET_DEVICE != generic
 endif    # TARGET_PRODUCT != sdk

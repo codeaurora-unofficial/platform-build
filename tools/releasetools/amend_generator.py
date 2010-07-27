@@ -1,4 +1,5 @@
 # Copyright (C) 2009 The Android Open Source Project
+# Copyright (c) 2010, Code Aurora Forum. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -133,7 +134,8 @@ class AmendGenerator(object):
     # no way to do this from amend; substitute a script comment instead
     self.Comment(message)
 
-  def FormatPartition(self, partition):
+  def FormatPartition(self, kind, partition):
+    # no use of kind in amend script
     """Format the given MTD partition."""
     self.script.append("format %s" % (self._PartitionRoot(partition),))
 

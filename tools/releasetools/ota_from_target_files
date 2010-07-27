@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
 # Copyright (C) 2008 The Android Open Source Project
+# Copyright (c) 2010, Code Aurora Forum. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,6 +49,9 @@ Usage:  ota_from_target_files [flags] input_target_files output_ota_package
       Specify 'amend' or 'edify' scripts, or 'auto' to pick
       automatically (this is the default).
 
+  -t  (--type) <type>
+      Specify mmc or mtd type device. mtd by default
+
 """
 
 import sys
@@ -83,6 +87,7 @@ OPTIONS.omit_prereq = False
 OPTIONS.extra_script = None
 OPTIONS.script_mode = 'auto'
 OPTIONS.worker_threads = 3
+OPTIONS.type = 'MTD'
 
 def MostPopularKey(d, default):
   """Given a dict, return the key corresponding to the largest
@@ -367,7 +372,8 @@ def WriteFullOTAPackage(input_zip, output_zip):
       output_zip=output_zip,
       script=script,
       input_tmp=OPTIONS.input_tmp,
-      metadata=metadata)
+      metadata=metadata,
+      type=OPTIONS.type)
 
   if not OPTIONS.omit_prereq:
     ts = GetBuildProp("ro.build.date.utc", input_zip)
@@ -379,10 +385,10 @@ def WriteFullOTAPackage(input_zip, output_zip):
   script.ShowProgress(0.5, 0)
 
   if OPTIONS.wipe_user_data:
-    script.FormatPartition("userdata")
+    script.FormatPartition(OPTIONS.type, "userdata")
 
-  script.FormatPartition("system")
-  script.Mount("MTD", "system", "/system")
+  script.FormatPartition(OPTIONS.type, "system")
+  script.Mount(OPTIONS.type, "system", "/system")
   script.UnpackPackageDir("recovery", "/system")
   script.UnpackPackageDir("system", "/system")
 
@@ -863,12 +869,14 @@ def main(argv):
       OPTIONS.script_mode = a
     elif o in ("--worker_threads"):
       OPTIONS.worker_threads = int(a)
+    elif o in ("-t", "--type"):
+      OPTIONS.type = a
     else:
       return False
     return True
 
   args = common.ParseOptions(argv, __doc__,
-                             extra_opts="b:k:i:d:wne:m:",
+                             extra_opts="b:k:i:d:wne:m:t:",
                              extra_long_opts=["board_config=",
                                               "package_key=",
                                               "incremental_from=",
@@ -876,7 +884,8 @@ def main(argv):
                                               "no_prereq",
                                               "extra_script=",
                                               "script_mode=",
-                                              "worker_threads="],
+                                              "worker_threads=",
+                                              "type="],
                              extra_option_handler=option_handler)
 
   if len(args) != 2:
