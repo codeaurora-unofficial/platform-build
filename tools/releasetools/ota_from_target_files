@@ -323,7 +323,10 @@ def MakeRecoveryPatch(output_zip, recovery_img, boot_img):
   # Images with different content will have a different first page, so
   # we check to see if this recovery has already been installed by
   # testing just the first 2k.
-  HEADER_SIZE = 2048
+  fn = os.path.join(OPTIONS.input_tmp, "RECOVERY/pagesize")
+  if os.access(fn, os.F_OK):
+    HEADER_SIZE = int(open(fn).read().rstrip("\n"))
+
   header_sha1 = sha.sha(recovery_img.data[:HEADER_SIZE]).hexdigest()
   sh = """#!/system/bin/sh
 if ! applypatch -c MTD:recovery:%(header_size)d:%(header_sha1)s; then
