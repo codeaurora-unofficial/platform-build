@@ -292,26 +292,29 @@ function choosetype()
 }
 
 #
-# This function isn't really right:  It chooses a TARGET_PRODUCT
-# based on the list of boards.  Usually, that gets you something
-# that kinda works with a generic product, but really, you should
-# pick a product by name.
+# This function chooses a TARGET_PRODUCT by picking a product by name.
+# It finds the list of products by finding all the AndroidProducts.mk
+# files and looking for the product specific filenames in them.
 #
+
 function chooseproduct()
 {
-    # Find the makefiles that must exist for a product.
-    # Send stderr to /dev/null in case partner isn't present.
-    local -a choices
-    choices=(`/bin/ls build/target/board/*/BoardConfig.mk device/*/*/BoardConfig.mk vendor/*/*/BoardConfig.mk 2> /dev/null`)
+# Find the list of all products by looking for all AndroidProducts.mk files under the
+# device/, vendor/ and build/target/product/ directories and look for the format
+# LOCAL_DIR/<ProductSpecificFile.mk> and extract the name ProductSpecificFile from it.
+# This will give the list of all products that can be built using choosecombo
 
-    local choice
     local -a prodlist
-    for choice in ${choices[@]}
-    do
-        # The product name is the name of the directory containing
-        # the makefile we found, above.
-        prodlist=(${prodlist[@]} `dirname ${choice} | xargs basename`)
-    done
+
+# Find all AndroidProducts.mk files under the dirs device/, build/target/  and vendor/
+# Extract lines containing .mk from them
+# Extract lines containing LOCAL_DIR
+# Extract the name of the product specific file
+
+    prodlist=(`/usr/bin/find device/ build/target/ vendor/ -name AndroidProducts.mk 2>/dev/null|
+    xargs grep -h \.mk|
+    grep LOCAL_DIR|
+    cut -d'/' -f2|cut -d' ' -f1|sort|uniq|cut -d'.' -f1`)
 
     local index=1
     local p
