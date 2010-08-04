@@ -969,7 +969,7 @@ define transform-o-to-static-lib
 @rm -f $@
 $(extract-and-include-target-whole-static-libs)
 @echo "target StaticLib: $(PRIVATE_MODULE) ($@)"
-$(hide) echo $^ | xargs $(TARGET_AR) $(TARGET_GLOBAL_ARFLAGS) $(PRIVATE_ARFLAGS) $@
+$(hide) echo $(filter %.o, $^) | xargs $(TARGET_AR) $(TARGET_GLOBAL_ARFLAGS) $(PRIVATE_ARFLAGS) $@
 endef
 
 ###########################################################
