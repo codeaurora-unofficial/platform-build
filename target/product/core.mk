@@ -45,3 +45,9 @@ PRODUCT_PACKAGES := \
     PackageInstaller \
     DefaultContainerService \
     Bugreport
+
+PRODUCT_PROPERTY_OVERRIDES += \
+    media.stagefright.enable-player=true \
+    media.stagefright.enable-meta=false  \
+    media.stagefright.enable-scan=false   \
+    media.stagefright.enable-http=true
