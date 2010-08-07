@@ -1014,6 +1014,8 @@ endif
 ifdef BOARD_NAND_PAGE_SIZE
 	$(hide) echo "$(BOARD_NAND_PAGE_SIZE)" > $(zip_root)/BOOT/pagesize
 	$(hide) echo "$(BOARD_NAND_PAGE_SIZE)" > $(zip_root)/RECOVERY/pagesize
+else
+	$(hide) echo "2048" > $(zip_root)/RECOVERY/pagesize
 endif
 	$(hide) $(foreach t,$(INSTALLED_RADIOIMAGE_TARGET),\
 	            mkdir -p $(zip_root)/RADIO; \
