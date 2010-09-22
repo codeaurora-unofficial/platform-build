@@ -844,7 +844,7 @@ ifeq ($(TARGET_PERSISTIMAGES_USE_EXT2),true)
 define build-ext2-persistimage-target
     $(call pretty,"Target persist fs image: $(INSTALLED_PERSISTIMAGE_TARGET)")
     @mkdir -p $(TARGET_OUT_PERSIST)
-    $(call build-persistimage-ext2-target,$(TARGET_OUT_PERSIST),$(INSTALLED_PERSISTIMAGE_TARGET).ext3,persist,true,500,4096)
+    $(call build-userimage-ext2-target,$(TARGET_OUT_PERSIST),$(INSTALLED_PERSISTIMAGE_TARGET).ext3,persist,true,2048,4096)
     $(hide) chmod a+r $(INSTALLED_PERSISTIMAGE_TARGET)
 endef
 else
@@ -866,7 +866,7 @@ BUILT_PERSISTIMAGE_TARGET := $(PRODUCT_OUT)/persist.img
 INSTALLED_PERSISTIMAGE_TARGET := $(BUILT_PERSISTIMAGE_TARGET)
 $(INSTALLED_PERSISTIMAGE_TARGET): $(INTERNAL_MKPERSISTFS) \
                                    $(INTERNAL_PERSISTIMAGE_FILES)
-	$(call build-persistimage-target) \
+	$(call build-persistimage-target) 
 	$(call build-ext2-persistimage-target)
 
 .PHONY: persistimage-nodeps
