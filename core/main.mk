@@ -3,6 +3,10 @@
 ifdef ANDROID_BUILD_SHELL
 SHELL := $(ANDROID_BUILD_SHELL)
 else
+ifeq ($(shell echo -n $$BASH_VERSION),)
+  $(warning You are not using bash - builds will fail)
+  $(error Stop)
+endif
 # Use bash, not whatever shell somebody has installed as /bin/sh
 # This is repeated in config.mk, since envsetup.sh runs that file
 # directly.
