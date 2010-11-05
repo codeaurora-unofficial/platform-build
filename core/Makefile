@@ -528,11 +528,12 @@ otacerts: $(TARGET_OUT_ETC)/security/otacerts.zip
 # Targets for user images
 # #################################################################
 
+INTERNAL_MKUSERFS := $(MKYAFFS2)
+INTERNAL_MKPERSISTFS := $(MKYAFFS2)
+
 ifeq ($(TARGET_USERIMAGES_USE_EXT2),true)
 include external/genext2fs/Config.mk
-INTERNAL_MKUSERFS := $(MKEXT2IMG)
-else
-INTERNAL_MKUSERFS := $(MKYAFFS2)
+INTERNAL_MKUSERFS += $(MKEXT2IMG)
 endif
 
 # #################################################################
@@ -541,9 +542,7 @@ endif
 
 ifeq ($(TARGET_PERSISTIMAGES_USE_EXT2),true)
 include external/genext2fs/Config.mk
-INTERNAL_MKPERSISTFS := $(MKEXT2IMG)
-else
-INTERNAL_MKPERSISTFS := $(MKYAFFS2)
+INTERNAL_MKPERSISTFS += $(MKEXT2IMG)
 endif
 
 # -----------------------------------------------------------------
