@@ -678,7 +678,7 @@ ifeq ($(TARGET_USERIMAGES_USE_EXT2),true)
 ## generate an ext2 image
 # $(1): output file
 define build-ext2-systemimage-target
-    $(call build-userimage-ext2-target,$(TARGET_OUT),$(TARGET_OUT).img.ext3,system,true,,4096)
+    $(call build-userimage-ext2-target,$(TARGET_OUT),$(TARGET_OUT).img.ext4,system,true,,4096)
 endef
 else
 define build-ext2-systemimage-target
@@ -781,7 +781,7 @@ ifeq ($(TARGET_USERIMAGES_USE_EXT2),true)
 define build-ext2-userdataimage-target
     $(call pretty,"Target userdata fs image: $(INSTALLED_USERDATAIMAGE_TARGET)")
     @mkdir -p $(TARGET_OUT_DATA)
-    $(call build-userimage-ext2-target,$(TARGET_OUT_DATA),$(INSTALLED_USERDATAIMAGE_TARGET).ext3,userdata,true,20000,4096,2000,14Gi)
+    $(call build-userimage-ext2-target,$(TARGET_OUT_DATA),$(INSTALLED_USERDATAIMAGE_TARGET).ext4,userdata,true,20000,4096,2000,14Gi)
     $(hide) chmod a+r $(INSTALLED_USERDATAIMAGE_TARGET)
     $(hide) $(call assert-max-image-size,$(INSTALLED_USERDATAIMAGE_TARGET),$(BOARD_USERDATAIMAGE_PARTITION_SIZE),yaffs)
 endef
@@ -843,7 +843,7 @@ ifeq ($(TARGET_PERSISTIMAGES_USE_EXT2),true)
 define build-ext2-persistimage-target
     $(call pretty,"Target persist fs image: $(INSTALLED_PERSISTIMAGE_TARGET)")
     @mkdir -p $(TARGET_OUT_PERSIST)
-    $(call build-userimage-ext2-target,$(TARGET_OUT_PERSIST),$(INSTALLED_PERSISTIMAGE_TARGET).ext3,persist,true,2048,4096)
+    $(call build-userimage-ext2-target,$(TARGET_OUT_PERSIST),$(INSTALLED_PERSISTIMAGE_TARGET).ext4,persist,true,2048,4096)
     $(hide) chmod a+r $(INSTALLED_PERSISTIMAGE_TARGET)
 endef
 else
