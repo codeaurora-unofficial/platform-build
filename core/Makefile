@@ -566,8 +566,11 @@ endif
 endif
 endif
 
+# Always generate YAFFS2 image in addition to EXT2/3/4
+INTERNAL_USERIMAGES_DEPS := $(MKYAFFS2)
+
 ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
-INTERNAL_USERIMAGES_DEPS := $(MKEXT2USERIMG) $(MAKE_EXT4FS)
+INTERNAL_USERIMAGES_DEPS += $(MKEXT2USERIMG) $(MAKE_EXT4FS)
 INTERNAL_USERIMAGES_BINARY_PATHS := $(sort $(dir $(INTERNAL_USERIMAGES_DEPS)))
 
 # $(1): src directory
@@ -578,10 +581,8 @@ INTERNAL_USERIMAGES_BINARY_PATHS := $(sort $(dir $(INTERNAL_USERIMAGES_DEPS)))
 define build-userimage-ext-target
   @mkdir -p $(dir $(2))
     $(hide) PATH=$(foreach p,$(INTERNAL_USERIMAGES_BINARY_PATHS),$(p):)$(PATH) \
-	  $(MKEXT2USERIMG) $(1) $(2) $(4) $(3) $(5)
+	  $(MKEXT2USERIMG) $(1) $(2).$(4) $(4) $(3) $(5)
 endef
-else
-INTERNAL_USERIMAGES_DEPS := $(MKYAFFS2)
 endif
 
 # -----------------------------------------------------------------
@@ -711,11 +712,15 @@ INTERNAL_SYSTEMIMAGE_FILES := $(filter $(TARGET_OUT)/%, \
 	$(ALL_DEFAULT_INSTALLED_MODULES))
 
 ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
-## generate an ext2 image
+## generate a yaffs2 image and an ext2/3/4 image
 # $(1): output file
 define build-systemimage-target
-    @echo "Target system fs image: $(1)"
-    $(call build-userimage-ext-target,$(TARGET_OUT),$(1),system,$(INTERNAL_USERIMAGES_EXT_VARIANT),$(BOARD_SYSTEMIMAGE_PARTITION_SIZE))
+    @echo "Target system fs image: $(1) - yaffs2"
+    @mkdir -p $(dir $(1))
+    $(hide) $(MKYAFFS2) -f $(mkyaffs2_extra_flags) $(TARGET_OUT) $(1)
+    @echo "Target system fs image: $(1) - $(INTERNAL_USERIMAGES_EXT_VARIANT)"
+    @mkdir -p $(dir $(INSTALLED_SYSTEMIMAGE))
+    $(call build-userimage-ext-target,$(TARGET_OUT),$(INSTALLED_SYSTEMIMAGE),system,$(INTERNAL_USERIMAGES_EXT_VARIANT),$(BOARD_SYSTEMIMAGE_PARTITION_SIZE))
 endef
 
 else # INTERNAL_USERIMAGES_USE_EXT != true
@@ -799,8 +804,10 @@ INTERNAL_USERDATAIMAGE_FILES := \
 ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
 ## Generate an ext image
 define build-userdataimage-target
-    $(call pretty,"Target userdata fs image: $(INSTALLED_USERDATAIMAGE_TARGET)")
+    $(call pretty,"Target userdata fs image: $(INSTALLED_USERDATAIMAGE_TARGET) - yaffs2")
     @mkdir -p $(TARGET_OUT_DATA)
+    $(hide) $(MKYAFFS2) -f $(mkyaffs2_extra_flags) $(TARGET_OUT_DATA) $(INSTALLED_USERDATAIMAGE_TARGET)
+    $(call pretty,"Target userdata fs image: $(INSTALLED_USERDATAIMAGE_TARGET) - $(INTERNAL_USERIMAGES_EXT_VARIANT)")
     $(call build-userimage-ext-target,$(TARGET_OUT_DATA),$(INSTALLED_USERDATAIMAGE_TARGET),data,$(INTERNAL_USERIMAGES_EXT_VARIANT),$(BOARD_USERDATAIMAGE_PARTITION_SIZE))
     $(hide) $(call assert-max-image-size,$(INSTALLED_USERDATAIMAGE_TARGET),$(BOARD_USERDATAIMAGE_PARTITION_SIZE),yaffs)
 endef
