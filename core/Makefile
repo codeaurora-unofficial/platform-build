@@ -686,10 +686,14 @@ endif
 .PHONY: recoveryimage
 recoveryimage: $(INSTALLED_RECOVERYIMAGE_TARGET)
 
-ifneq ($(BOARD_NAND_PAGE_SIZE),)
-mkyaffs2_extra_flags := -c $(BOARD_NAND_PAGE_SIZE)
+ifneq ($(BOARD_KERNEL_PAGESIZE),)
+mkyaffs2_extra_flags := -c $(BOARD_KERNEL_PAGESIZE)
 else
 mkyaffs2_extra_flags :=
+endif
+
+ifneq ($(BOARD_KERNEL_SPARESIZE),)
+mkyaffs2_extra_flags += -s $(BOARD_KERNEL_SPARESIZE)
 endif
 
 
