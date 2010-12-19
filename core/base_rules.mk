@@ -71,6 +71,7 @@ endif
 
 ifneq ($(filter $(LOCAL_MODULE_TAGS),user),)
   ifeq ($(filter $(GRANDFATHERED_USER_MODULES),$(LOCAL_MODULE)),)
+    ifeq ($(ENABLE_TAGS_ERROR),1)
     $(warning *** Module name: $(LOCAL_MODULE))
     $(warning *** Makefile location: $(LOCAL_PATH))
     $(warning * )
@@ -96,6 +97,9 @@ ifneq ($(filter $(LOCAL_MODULE_TAGS),user),)
     $(warning * build/target/product/core.mk)
     $(warning * )
     $(error user tag detected on new module - user tags are only supported on legacy modules)
+    else
+    $(warning *** Module name: $(LOCAL_MODULE) contains invalid LOCAL_MODULE_TAGS)
+    endif
   endif
 endif
 
