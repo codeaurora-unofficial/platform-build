@@ -283,7 +283,7 @@ ADDITIONAL_BUILD_PROPERTIES += ro.config.nocheckin=yes
 else # !sdk
 endif
 
-BUILD_WITHOUT_PV := true
+BUILD_WITHOUT_PV := false 
 
 ## precise GC ##
 
