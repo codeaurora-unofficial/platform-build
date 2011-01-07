@@ -57,7 +57,7 @@ def Run(args, **kwargs):
   return subprocess.Popen(args, **kwargs)
 
 
-def LoadInfoDict(zip):
+def LoadInfoDict(zip, type):
   """Read and parse the META/misc_info.txt key/value pairs from the
   input target files and return a dict."""
 
@@ -120,19 +120,22 @@ def LoadInfoDict(zip):
   makeint("recovery_size")
   makeint("boot_size")
 
-  d["fstab"] = LoadRecoveryFSTab(zip)
+  d["fstab"] = LoadRecoveryFSTab(zip, type)
   if not d["fstab"]:
     if "fs_type" not in d: d["fs_type"] = "yaffs2"
     if "partition_type" not in d: d["partition_type"] = "MTD"
 
   return d
 
-def LoadRecoveryFSTab(zip):
+def LoadRecoveryFSTab(zip, type):
   class Partition(object):
     pass
 
   try:
-    data = zip.read("RECOVERY/RAMDISK/etc/recovery.fstab")
+    if type == 'MTD':
+        data = zip.read("RECOVERY/RAMDISK/etc/recovery.fstab")
+    elif type == 'MMC':
+        data = zip.read("RECOVERY/RAMDISK/etc/recovery_mmc.fstab")
   except KeyError:
     # older target-files that doesn't have a recovery.fstab; fall back
     # to the fs_type and partition_type keys.

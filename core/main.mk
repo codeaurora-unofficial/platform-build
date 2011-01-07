@@ -619,6 +619,7 @@ ifdef is_sdk_build
                       $(TARGET_OUT)/% \
                       $(TARGET_OUT_DATA)/%, \
                       $(TARGET_OUT_PERSIST)/%, \
+                      $(TARGET_OUT_CACHE)/%, \
                               $(sort $(call get-tagged-modules,gnu)))
   $(info Removing from sdk:)$(foreach d,$(target_gnu_MODULES),$(info : $(d)))
   modules_to_install := \
@@ -699,8 +700,16 @@ persisttarball: $(INSTALLED_PERSISTTARBALL_TARGET)
 .PHONY: bootimage
 bootimage: $(INSTALLED_BOOTIMAGE_TARGET)
 
+.PHONY: aboot
+aboot: $(INSTALLED_BOOTLOADER_TARGET)
+
+.PHONY: recoveryimage
+recoveryimage: $(INSTALLED_RECOVERYIMAGE_TARGET)
+
 ifeq ($(BUILD_TINY_ANDROID), true)
 INSTALLED_RECOVERYIMAGE_TARGET :=
+INTERNAL_OTA_PACKAGE_TARGET :=
+INTERNAL_OTA_PACKAGE_TARGET_MMC :=
 endif
 
 # Build files and then package it into the rom formats
@@ -711,7 +720,10 @@ droidcore: files \
 	$(INSTALLED_RECOVERYIMAGE_TARGET) \
 	$(INSTALLED_USERDATAIMAGE_TARGET) \
 	$(INSTALLED_PERSISTIMAGE_TARGET) \
-	$(INSTALLED_FILES_FILE)
+	$(INSTALLED_CACHEIMAGE_TARGET) \
+	$(INSTALLED_FILES_FILE) \
+	$(INTERNAL_OTA_PACKAGE_TARGET) \
+	$(INTERNAL_OTA_PACKAGE_TARGET_MMC)
 
 ifeq ($(EMMA_INSTRUMENT),true)
   $(call dist-for-goals, droid, $(EMMA_META_ZIP))

@@ -603,6 +603,7 @@ recovery_resources_private := $(strip $(wildcard $(TARGET_DEVICE_DIR)/recovery/r
 recovery_resource_deps := $(shell find $(recovery_resources_common) \
   $(recovery_resources_private) -type f)
 recovery_fstab := $(strip $(wildcard $(TARGET_DEVICE_DIR)/recovery.fstab))
+recovery_mmc_fstab := $(strip $(wildcard $(TARGET_DEVICE_DIR)/recovery_mmc.fstab))
 
 ifeq ($(recovery_resources_private),)
   $(info No private recovery resources for TARGET_DEVICE $(TARGET_DEVICE))
@@ -676,6 +677,8 @@ $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTFS) $(MKBOOTIMG) $(MINIGZIP) \
 	  cp -rf $(item) $(TARGET_RECOVERY_ROOT_OUT)/)
 	$(foreach item,$(recovery_fstab), \
 	  cp -f $(item) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery.fstab)
+	$(foreach item,$(recovery_mmc_fstab), \
+	  cp -f $(item) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery_mmc.fstab)
 	cp $(RECOVERY_INSTALL_OTA_KEYS) $(TARGET_RECOVERY_ROOT_OUT)/res/keys
 	cat $(INSTALLED_DEFAULT_PROP_TARGET) $(recovery_build_prop) \
 	        > $(TARGET_RECOVERY_ROOT_OUT)/default.prop
@@ -904,6 +907,25 @@ $(INSTALLED_PERSISTIMAGE_TARGET): $(INTERNAL_USERIMAGES_DEPS) \
                                    $(INTERNAL_PERSISTIMAGE_FILES)
 	$(build-persistimage-target)
 
+ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
+## Generate an ext image
+define build-cacheimage-target
+    @mkdir -p $(TARGET_OUT_CACHE)
+    $(call build-userimage-ext-target,$(TARGET_OUT_CACHE),$(INSTALLED_CACHEIMAGE_TARGET),cache,$(INTERNAL_USERIMAGES_EXT_VARIANT),$(BOARD_CACHEIMAGE_PARTITION_SIZE))
+endef
+else
+define build-cacheimage-target
+endef
+endif # INTERNAL_USERIMAGES_USE_EXT
+
+BUILT_CACHEIMAGE_TARGET := $(PRODUCT_OUT)/cache.img
+
+# We just build this directly to the install location.
+INSTALLED_CACHEIMAGE_TARGET := $(BUILT_CACHEIMAGE_TARGET)
+$(INSTALLED_CACHEIMAGE_TARGET): $(INTERNAL_USERIMAGES_DEPS)
+	$(build-cacheimage-target)
+
+
 .PHONY: persistimage-nodeps
 persistimage-nodeps: $(INTERNAL_USERIMAGES_DEPS)
 	$(build-persistimage-target)
@@ -1005,7 +1027,10 @@ $(BUILT_TARGET_FILES_PACKAGE): \
 		$(INSTALLED_SYSTEMIMAGE) \
 		$(INSTALLED_USERDATAIMAGE_TARGET) \
 		$(INSTALLED_PERSISTIMAGE_TARGET) \
+		$(INSTALLED_CACHEIMAGE_TARGET) \
 		$(INSTALLED_ANDROID_INFO_TXT_TARGET) \
+		$(INTERNAL_OTA_PACKAGE_TARGET) \
+		$(INTERNAL_OTA_PACKAGE_TARGET_MMC) \
 		$(built_ota_tools) \
 		$(APKCERTS_FILE) \
 		$(HOST_OUT_EXECUTABLES)/fs_config \
@@ -1129,8 +1154,24 @@ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(OTATOOLS)
            -k $(KEY_CERT_PAIR) \
            $(BUILT_TARGET_FILES_PACKAGE) $@
 
+ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
+INTERNAL_OTA_PACKAGE_TARGET_MMC := $(PRODUCT_OUT)/$(name)_mmc.zip
+else
+INTERNAL_OTA_PACKAGE_TARGET_MMC :=
+endif
+
+$(INTERNAL_OTA_PACKAGE_TARGET_MMC): KEY_CERT_PAIR := $(DEFAULT_KEY_CERT_PAIR)
+
+$(INTERNAL_OTA_PACKAGE_TARGET_MMC): $(BUILT_TARGET_FILES_PACKAGE) $(OTATOOLS)
+	@echo "Package OTA: $@"
+	$(hide) ./build/tools/releasetools/ota_from_target_files -v \
+	   -p $(HOST_OUT) \
+       -t MMC\
+           -k $(KEY_CERT_PAIR) \
+           $(BUILT_TARGET_FILES_PACKAGE) $@
+
 .PHONY: otapackage
-otapackage: $(INTERNAL_OTA_PACKAGE_TARGET)
+otapackage: $(INTERNAL_OTA_PACKAGE_TARGET) $(INTERNAL_OTA_PACKAGE_TARGET_MMC)
 
 # -----------------------------------------------------------------
 # The update package

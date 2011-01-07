@@ -44,6 +44,9 @@ Usage:  ota_from_target_files [flags] input_target_files output_ota_package
   -e  (--extra_script)  <file>
       Insert the contents of file at the end of the update script.
 
+  -t  (--type) <type>
+      Specify mmc or mtd type device. mtd by default
+
 """
 
 import sys
@@ -75,6 +78,7 @@ OPTIONS.wipe_user_data = False
 OPTIONS.omit_prereq = False
 OPTIONS.extra_script = None
 OPTIONS.worker_threads = 3
+OPTIONS.type = 'MTD'
 
 def MostPopularKey(d, default):
   """Given a dict, return the key corresponding to the largest
@@ -359,7 +363,8 @@ def WriteFullOTAPackage(input_zip, output_zip):
       script=script,
       input_tmp=OPTIONS.input_tmp,
       metadata=metadata,
-      info_dict=OPTIONS.info_dict)
+      info_dict=OPTIONS.info_dict,
+      type=OPTIONS.type)
 
   if not OPTIONS.omit_prereq:
     ts = GetBuildProp("ro.build.date.utc", input_zip)
@@ -710,19 +715,22 @@ def main(argv):
       OPTIONS.extra_script = a
     elif o in ("--worker_threads"):
       OPTIONS.worker_threads = int(a)
+    elif o in ("-t", "--type"):
+      OPTIONS.type = a
     else:
       return False
     return True
 
   args = common.ParseOptions(argv, __doc__,
-                             extra_opts="b:k:i:d:wne:",
+                             extra_opts="b:k:i:d:wne:t:",
                              extra_long_opts=["board_config=",
                                               "package_key=",
                                               "incremental_from=",
                                               "wipe_user_data",
                                               "no_prereq",
                                               "extra_script=",
-                                              "worker_threads="],
+                                              "worker_threads=",
+                                              "type="],
                              extra_option_handler=option_handler)
 
   if len(args) != 2:
@@ -737,7 +745,7 @@ def main(argv):
 
   OPTIONS.target_tmp = OPTIONS.input_tmp
   input_zip = zipfile.ZipFile(args[0], "r")
-  OPTIONS.info_dict = common.LoadInfoDict(input_zip)
+  OPTIONS.info_dict = common.LoadInfoDict(input_zip, OPTIONS.type)
   if OPTIONS.verbose:
     print "--- target info ---"
     common.DumpInfoDict(OPTIONS.info_dict)
@@ -763,7 +771,7 @@ def main(argv):
     OPTIONS.source_tmp = common.UnzipTemp(OPTIONS.incremental_source)
     source_zip = zipfile.ZipFile(OPTIONS.incremental_source, "r")
     OPTIONS.target_info_dict = OPTIONS.info_dict
-    OPTIONS.source_info_dict = common.LoadInfoDict(source_zip)
+    OPTIONS.source_info_dict = common.LoadInfoDict(source_zip, OPTIONS.type)
     if OPTIONS.verbose:
       print "--- source info ---"
       common.DumpInfoDict(OPTIONS.source_info_dict)
