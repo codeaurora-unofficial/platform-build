@@ -1011,7 +1011,7 @@ endef
 # it to be overriden en-masse see combo/linux-arm.make for an example.
 ifneq ($(HOST_CUSTOM_LD_COMMAND),true)
 define transform-host-o-to-shared-lib-inner
-$(HOST_CXX) \
+$(PRIVATE_CXX) \
 	-Wl,-rpath-link=$(TARGET_OUT_INTERMEDIATE_LIBRARIES) \
 	-Wl,-rpath,\$$ORIGIN/../lib \
 	-shared -Wl,-soname,$(notdir $@) \
@@ -1061,7 +1061,7 @@ endef
 # it to be overriden en-masse see combo/linux-arm.make for an example.
 ifneq ($(TARGET_CUSTOM_LD_COMMAND),true)
 define transform-o-to-shared-lib-inner
-$(TARGET_CXX) \
+$(PRIVATE_CXX) \
 	$(TARGET_GLOBAL_LDFLAGS) \
 	-Wl,-rpath-link=$(TARGET_OUT_INTERMEDIATE_LIBRARIES) \
 	-Wl,-rpath,\$$ORIGIN/../lib \
@@ -1120,7 +1120,7 @@ endef
 
 ifneq ($(TARGET_CUSTOM_LD_COMMAND),true)
 define transform-o-to-executable-inner
-$(TARGET_CXX) \
+$(PRIVATE_CXX) \
 	$(TARGET_GLOBAL_LDFLAGS) \
 	-Wl,-rpath-link=$(TARGET_OUT_INTERMEDIATE_LIBRARIES) \
 	$(TARGET_GLOBAL_LD_DIRS) \
@@ -1171,7 +1171,7 @@ endef
 
 ifneq ($(HOST_CUSTOM_LD_COMMAND),true)
 define transform-host-o-to-executable-inner
-$(HOST_CXX) \
+$(PRIVATE_CXX) \
 	-Wl,-rpath-link=$(TARGET_OUT_INTERMEDIATE_LIBRARIES) \
 	-Wl,-rpath,\$$ORIGIN/../lib \
 	$(HOST_GLOBAL_LD_DIRS) \
