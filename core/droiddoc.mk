@@ -159,7 +159,7 @@ $(full_target): $(full_src_files) $(droiddoc_templates) $(droiddoc) $(html_dir_f
 	$(hide) mkdir -p $(dir $(full_target))
 	$(call prepare-doc-source-list,$(PRIVATE_SRC_LIST_FILE),$(PRIVATE_JAVA_FILES), \
 			$(PRIVATE_SOURCE_INTERMEDIATES_DIR) $(PRIVATE_ADDITIONAL_JAVA_DIR))
-	$(hide) ( \
+	( \
 		LD_LIBRARY_PATH=$(HOST_OUT_SHARED_LIBRARIES) \
 		javadoc \
                 \@$(PRIVATE_SRC_LIST_FILE) \
@@ -200,7 +200,7 @@ $(full_target): $(full_src_files) $(full_java_lib_deps)
 	@mkdir -p $(dir $(full_target))
 	$(call prepare-doc-source-list,$(PRIVATE_SRC_LIST_FILE),$(PRIVATE_JAVA_FILES), \
 			$(PRIVATE_SOURCE_INTERMEDIATES_DIR) $(PRIVATE_ADDITIONAL_JAVA_DIR))
-	$(hide) ( \
+	( \
 		javadoc \
                 $(PRIVATE_DROIDDOC_OPTIONS) \
                 \@$(PRIVATE_SRC_LIST_FILE) \
