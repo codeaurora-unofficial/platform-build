@@ -258,16 +258,21 @@ public class Stubs {
                                   if (tInfoType.asClassInfo() != null){
                                       ClassInfo tcl = tInfoType.asClassInfo();
                                       if (tcl.isHidden()) {
-                                          Errors.error(Errors.UNAVAILABLE_SYMBOL, mInfo.position(),
-                                                  "Parameter of hidden type "
+
+                                          System.err.println("Parameter of hidden type "
                                                   + tInfoType.fullName() + " in "
                                                   + mInfo.containingClass().qualifiedName()
                                                   + '.' + mInfo.name() + "()");
+
+
                                       } else {
+
+
                                           cantStripThis(tcl, notStrippable,
                                                   "10:" +
                                                   mInfo.realContainingClass().qualifiedName() + ":" +
                                                   mInfo.name());
+
                                       }
                                   }
                               }

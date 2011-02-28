@@ -397,7 +397,7 @@ public class LinkReference {
         }
         else if (result.classInfo != null && !result.classInfo.checkLevel()) {
             if (printOnErrors && (base == null || base.checkLevel())) {
-                Errors.error(Errors.HIDDEN_LINK, pos,
+                System.out.println(
                         "Link to hidden class: " + text.trim() + " label=" + result.label);
                 result.href = null;
             }
