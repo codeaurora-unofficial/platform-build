@@ -74,7 +74,19 @@ PRODUCT_PACKAGES := \
     UserDictionaryProvider \
     PackageInstaller \
     DefaultContainerService \
-    Bugreport
+    Bugreport \
+    libdivxdrmdecrypt \
+    libOmxVdec \
+    mm-vdec-omx-test \
+    liblasic \
+    ast-mm-vdec-omx-test \
+    mm-vdec-omx-property-mgr \
+    libOmxVdec \
+    mm-vdec-omx-test \
+    mm-video-driver-test \
+    libOmxVenc \
+    mm-venc-omx-test720p \
+    mm-video-encdrv-test 
 
 # host-only dependencies
 ifeq ($(WITH_HOST_DALVIK),true)
