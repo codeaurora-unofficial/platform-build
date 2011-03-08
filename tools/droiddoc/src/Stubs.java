@@ -82,8 +82,8 @@ public class Stubs {
                         TypeInfo t = p.type();
                         if (!t.isPrimitive()) {
                             if (t.asClassInfo().isHidden()) {
-                                Errors.error(Errors.UNAVAILABLE_SYMBOL,
-                                        m.position(), "Parameter of hidden type "
+                                System.out.println(
+                                        "Parameter of hidden type "
                                         + t.fullName() + " in "
                                         + cl.qualifiedName() + "." + m.name() + "()");
                             }
