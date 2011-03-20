@@ -39,7 +39,7 @@ public class Stubs {
             try {
                 xmlWriter = new PrintStream(xml);
             } catch (FileNotFoundException e) {
-                Errors.error(Errors.IO_ERROR, new SourcePositionInfo(xmlFile, 0, 0),
+                System.out.println(
                         "Cannot open file for write.");
             }
         }
@@ -58,14 +58,14 @@ public class Stubs {
                 MethodInfo[] methods = cl.selfMethods();
                 for (MethodInfo m: methods) {
                     if (m.isHidden()) {
-                        Errors.error(Errors.UNAVAILABLE_SYMBOL,
-                                m.position(), "Reference to hidden method "
+                        System.out.println(
+                                "Reference to hidden method "
                                 + m.name());
                     } else if (m.isDeprecated()) {
                         // don't bother reporting deprecated methods
                         // unless they are public
-                        Errors.error(Errors.DEPRECATED,
-                                m.position(), "Method "
+                        System.out.println(
+                                "Method "
                                 + cl.qualifiedName() + "." + m.name()
                                 + " is deprecated");
                     }
@@ -95,8 +95,8 @@ public class Stubs {
                 methods = cl.annotationElements();
                 for (MethodInfo m: methods) {
                     if (m.isHidden()) {
-                        Errors.error(Errors.UNAVAILABLE_SYMBOL,
-                                m.position(), "Reference to hidden annotation "
+                        System.out.println(
+                                "Reference to hidden annotation "
                                 + m.name());
                     }
 
@@ -112,8 +112,8 @@ public class Stubs {
                         TypeInfo t = p.type();
                         if (!t.isPrimitive()) {
                             if (t.asClassInfo().isHidden()) {
-                                Errors.error(Errors.UNAVAILABLE_SYMBOL,
-                                        p.position(), "Reference to unavailable annotation class "
+                                System.out.println(
+                                        "Reference to unavailable annotation class "
                                         + t.fullName());
                             }
                         }
@@ -121,8 +121,8 @@ public class Stubs {
                 }
             } else if (cl.isDeprecated()) {
                 // not hidden, but deprecated
-                Errors.error(Errors.DEPRECATED,
-                        cl.position(), "Class " + cl.qualifiedName()
+                System.out.println(
+                        "Class " + cl.qualifiedName()
                         + " is deprecated");
             }
         }
@@ -223,8 +223,8 @@ public class Stubs {
                       cl.annotationElements(), cl.allSelfFields(), cl.enumConstants(),
                       cl.containingPackage(), cl.containingClass(),
                       null, null, cl.annotations());
-              Errors.error(Errors.HIDDEN_SUPERCLASS,
-                      cl.position(), "Public class " + cl.qualifiedName()
+              System.out.println(
+                      "Public class " + cl.qualifiedName()
                       + " stripped of unavailable superclass "
                       + supr.qualifiedName());
           } else {
