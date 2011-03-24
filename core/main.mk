@@ -622,6 +622,7 @@ ifdef is_sdk_build
                       $(TARGET_OUT_DATA)/%, \
                       $(TARGET_OUT_PERSIST)/%, \
                       $(TARGET_OUT_CACHE)/%, \
+                      $(TARGET_OUT_TOMBSTONES)/%, \
                               $(sort $(call get-tagged-modules,gnu)))
   $(info Removing from sdk:)$(foreach d,$(target_gnu_MODULES),$(info : $(d)))
   modules_to_install := \
