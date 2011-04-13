@@ -461,9 +461,8 @@ subdirs := \
 	external/zlib \
 	frameworks/base/libs/utils \
 	frameworks/base/libs/binder \
-	frameworks/base/opengl/libs
-
--include vendor/qcom/proprietary/common/build/defines.mk
+	frameworks/base/opengl/libs \
+	$(VENDOR_TINY_ANDROID_PACKAGES)
 
 else	# !BUILD_TINY_ANDROID
 
