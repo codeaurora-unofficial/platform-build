@@ -773,6 +773,16 @@ function systemstack()
     adb shell echo '""' '>>' /data/anr/traces.txt && adb shell chmod 776 /data/anr/traces.txt && adb shell kill -3 $(pid system_server)
 }
 
+function print_gdbclient_usage()
+{
+   echo "Usage: gdbclient
+         --exe    <EXE (default app_process)>
+         --port   <:PORT (default :5039)>
+         --gdb    <GDB (default arm-eabi-gdb)>
+         --attach <PROG-NAME to attach (default not attaching)>
+         --help   <THIS HELP>"
+}
+
 function gdbclient()
 {
    local OUT_ROOT=$(get_abs_build_var PRODUCT_OUT)
@@ -780,26 +790,38 @@ function gdbclient()
    local OUT_SO_SYMBOLS=$(get_abs_build_var TARGET_OUT_SHARED_LIBRARIES_UNSTRIPPED)
    local OUT_EXE_SYMBOLS=$(get_abs_build_var TARGET_OUT_EXECUTABLES_UNSTRIPPED)
    local PREBUILTS=$(get_abs_build_var ANDROID_PREBUILTS)
-   if [ "$OUT_ROOT" -a "$PREBUILTS" ]; then
-       local EXE="$1"
-       if [ "$EXE" ] ; then
-           EXE=$1
-       else
-           EXE="app_process"
-       fi
 
-       local PORT="$2"
-       if [ "$PORT" ] ; then
-           PORT=$2
-       else
-           PORT=":5039"
-       fi
+   MY_OPT=`getopt -o e:p:g:a:h --long exe:,port:,gdb:,attach:,help -n 'gdbclient' -- "$@"`
+
+   eval set -- "$MY_OPT"
+
+   if [ "$OUT_ROOT" -a "$PREBUILTS" ]; then
+
+       local EXE="app_process"
+       local PORT=":5039"
+       local GDB="arm-eabi-gdb"
+       local PROG
+       while true; do
+           case $1 in
+               -e | --exe)    EXE=$2 ; shift 2  ;;
+               -p | --port)   PORT=$2 ; shift 2  ;;
+               -g | --gdb)    GDB=$2 ; shift 2  ;;
+               -a | --attach) PROG=$2 ; shift 2  ;;
+               -h | --help) print_gdbclient_usage ; return ;;
+               --) shift ; break ;;
+                *) echo "Unrecognized option $1" ; return ;;
+           esac
+       done
+
+       echo "Using $EXE as process on target"
+       echo "Using port $PORT. Forwarding now..."
+       adb forward "tcp$PORT" "tcp$PORT"
+       echo "Using $GDB on host"
 
        local PID
-       local PROG="$3"
-       if [ "$PROG" ] ; then
-           PID=`pid $3`
-           adb forward "tcp$PORT" "tcp$PORT"
+       if [ ! -z "$PROG" ] ; then
+           PID=`pid $PROG`
+           echo "Attaching gdbserver port $PORT and pid $PID..."
            adb shell gdbserver $PORT --attach $PID &
            sleep 2
        else
@@ -812,11 +834,14 @@ function gdbclient()
        fi
 
        echo >|"$OUT_ROOT/gdbclient.cmds" "set solib-absolute-prefix $OUT_SYMBOLS"
-       echo >>"$OUT_ROOT/gdbclient.cmds" "set solib-search-path $OUT_SO_SYMBOLS"
+       echo >>"$OUT_ROOT/gdbclient.cmds" "set solib-search-path $OUT_SO_SYMBOLS:$OUT_SO_SYMBOLS/hw"
        echo >>"$OUT_ROOT/gdbclient.cmds" "target remote $PORT"
        echo >>"$OUT_ROOT/gdbclient.cmds" ""
 
-       arm-eabi-gdb -x "$OUT_ROOT/gdbclient.cmds" "$OUT_EXE_SYMBOLS/$EXE"
+       echo "Written cmd to $OUT_ROOT/gdbclient.cmds:"
+       cat $OUT_ROOT/gdbclient.cmds
+
+       $GDB -x "$OUT_ROOT/gdbclient.cmds" "$OUT_EXE_SYMBOLS/$EXE"
   else
        echo "Unable to determine build system output dir."
    fi
