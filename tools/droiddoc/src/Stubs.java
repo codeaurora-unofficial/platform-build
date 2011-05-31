@@ -82,8 +82,8 @@ public class Stubs {
                         TypeInfo t = p.type();
                         if (!t.isPrimitive()) {
                             if (t.asClassInfo().isHidden()) {
-                                System.out.println(
-                                        "Parameter of hidden type "
+                                Errors.error(Errors.UNAVAILABLE_SYMBOL,
+                                        m.position(), "Parameter of hidden type "
                                         + t.fullName() + " in "
                                         + cl.qualifiedName() + "." + m.name() + "()");
                             }
@@ -258,21 +258,16 @@ public class Stubs {
                                   if (tInfoType.asClassInfo() != null){
                                       ClassInfo tcl = tInfoType.asClassInfo();
                                       if (tcl.isHidden()) {
-
-                                          System.err.println("Parameter of hidden type "
+                                          Errors.error(Errors.UNAVAILABLE_SYMBOL, mInfo.position(),
+                                                  "Parameter of hidden type "
                                                   + tInfoType.fullName() + " in "
                                                   + mInfo.containingClass().qualifiedName()
                                                   + '.' + mInfo.name() + "()");
-
-
                                       } else {
-
-
                                           cantStripThis(tcl, notStrippable,
                                                   "10:" +
                                                   mInfo.realContainingClass().qualifiedName() + ":" +
                                                   mInfo.name());
-
                                       }
                                   }
                               }

@@ -117,7 +117,7 @@ public class LinkReference {
             }
         }
         if (index == len && pairs != 0) {
-            System.out.println(
+            Errors.error(Errors.UNRESOLVED_LINK, pos,
                         "unable to parse link/see tag: " + text.trim());
             return result;
         }
@@ -329,7 +329,7 @@ public class LinkReference {
             // literal quoted reference (e.g., a book title)
             Matcher matcher = QUOTE_PATTERN.matcher(text);
             if (! matcher.matches()) {
-                System.out.println(
+                Errors.error(Errors.UNRESOLVED_LINK, pos,
                         "unbalanced quoted link/see tag: " + text.trim());
                 result.makeError();
                 return result;
@@ -342,7 +342,7 @@ public class LinkReference {
             // explicit "<a href" form
             Matcher matcher = HREF_PATTERN.matcher(text);
             if (! matcher.matches()) {
-                System.out.println(
+                Errors.error(Errors.UNRESOLVED_LINK, pos,
                         "invalid <a> link/see tag: " + text.trim());
                 result.makeError();
                 return result;
@@ -381,7 +381,7 @@ public class LinkReference {
 
         if (result.href == null && !skipHref) {
             if (printOnErrors && (base == null || base.checkLevel())) {
-                System.out.println(
+                Errors.error(Errors.UNRESOLVED_LINK, pos,
                         "Unresolved link/see tag \"" + text.trim()
                         + "\" in " + ((base != null) ? base.qualifiedName() : "[null]"));
             }
@@ -389,7 +389,7 @@ public class LinkReference {
         }
         else if (result.memberInfo != null && !result.memberInfo.checkLevel()) {
             if (printOnErrors && (base == null || base.checkLevel())) {
-                System.out.println(
+                Errors.error(Errors.HIDDEN_LINK, pos,
                         "Link to hidden member: " + text.trim());
                 result.href = null;
             }
@@ -397,7 +397,7 @@ public class LinkReference {
         }
         else if (result.classInfo != null && !result.classInfo.checkLevel()) {
             if (printOnErrors && (base == null || base.checkLevel())) {
-                System.out.println(
+                Errors.error(Errors.HIDDEN_LINK, pos,
                         "Link to hidden class: " + text.trim() + " label=" + result.label);
                 result.href = null;
             }
@@ -405,7 +405,7 @@ public class LinkReference {
         }
         else if (result.packageInfo != null && !result.packageInfo.checkLevel()) {
             if (printOnErrors && (base == null || base.checkLevel())) {
-                System.out.println(
+                Errors.error(Errors.HIDDEN_LINK, pos,
                         "Link to hidden package: " + text.trim());
                 result.href = null;
             }
