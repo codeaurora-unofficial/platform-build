@@ -152,7 +152,15 @@ endif
 # TODO: not clear if this is used any more
 $(full_target): PRIVATE_LOCAL_PATH := $(LOCAL_PATH)
 
-html_dir_files := $(shell find $(LOCAL_PATH)/$(LOCAL_DROIDDOC_HTML_DIR) -type f)
+# Handle the fact that the SDK and full builds don't add and add $(LOCAL_PATH)
+# respectively
+ifeq ($(filter $(LOCAL_PATH)%,$(LOCAL_DROIDDOC_HTML_DIR)),)
+PATH_TO_LOCAL_DROIDDOC_HTML_DIR=$(LOCAL_PATH)/$(LOCAL_DROIDDOC_HTML_DIR)
+else
+PATH_TO_LOCAL_DROIDDOC_HTML_DIR=$(LOCAL_DROIDDOC_HTML_DIR)
+endif
+# Avoid annoying find errors from appearing in the log
+html_dir_files := $(shell test -d "$(PATH_TO_LOCAL_DROIDDOC_HTML_DIR)" && find $(PATH_TO_LOCAL_DROIDDOC_HTML_DIR) -type f)
 
 $(full_target): $(full_src_files) $(droiddoc_templates) $(droiddoc) $(html_dir_files) $(full_java_lib_deps) $(LOCAL_ADDITIONAL_DEPENDENCIES)
 	@echo Docs droiddoc: $(PRIVATE_OUT_DIR)
