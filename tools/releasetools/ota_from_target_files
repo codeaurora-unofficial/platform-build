@@ -344,6 +344,13 @@ fi
   common.ZipWriteStr(output_zip, "recovery/etc/install-recovery.sh", sh)
   return Item.Get("system/etc/install-recovery.sh", dir=False)
 
+def GetRadioFiles(z):
+  out = {}
+  for info in z.infolist():
+    if info.filename.startswith("RADIO/") and (info.filename.endswith("ENC") or info.filename.endswith("enc")):
+      fn = "RADIO/" + info.filename[6:]
+      out[fn] = fn
+  return out
 
 def WriteFullOTAPackage(input_zip, output_zip):
   # TODO: how to determine this?  We don't know what version it will
@@ -357,6 +364,7 @@ def WriteFullOTAPackage(input_zip, output_zip):
               }
 
   device_specific = common.DeviceSpecificParams(
+      files = {},
       input_zip=input_zip,
       input_version=OPTIONS.info_dict["recovery_api_version"],
       output_zip=output_zip,
@@ -403,6 +411,8 @@ def WriteFullOTAPackage(input_zip, output_zip):
   script.WriteRawImage("/boot", "boot.img")
 
   script.ShowProgress(0.1, 0)
+  files = GetRadioFiles(input_zip)
+  device_specific.files = files
   device_specific.FullOTA_InstallEnd()
 
   if OPTIONS.extra_script is not None:
