@@ -706,6 +706,12 @@ else
 mkyaffs2_extra_flags :=
 endif
 
+# Define yaffs2 flags for 8bit BCH ECC NAND
+ifeq ($(BOARD_HAS_8BIT_BCHECC_SUPPORT),true)
+mkyaffs2_extra_bchecc_flags := $(mkyaffs2_extra_flags)
+mkyaffs2_extra_bchecc_flags += -s $(BOARD_KERNEL_BCHECC_SPARESIZE)
+endif
+
 ifneq ($(BOARD_KERNEL_SPARESIZE),)
 mkyaffs2_extra_flags += -s $(BOARD_KERNEL_SPARESIZE)
 endif
@@ -724,6 +730,15 @@ INTERNAL_SYSTEMIMAGE_FILES := $(filter $(TARGET_OUT)/%, \
 	$(ALL_GENERATED_SOURCES) \
 	$(ALL_DEFAULT_INSTALLED_MODULES))
 
+# Build system image for 8bit BCH ECC NAND with different spare size
+ifeq (true,$(BOARD_HAS_8BIT_BCHECC_SUPPORT))
+define build-systemimage-bchecc-target
+    @echo "Target system fs image for 8 bit BCH ECC: $(INSTALLED_BCHECC_SYSTEMIMAGE) - yaffs2"
+    $(hide) $(MKYAFFS2) -f $(mkyaffs2_extra_bchecc_flags) $(TARGET_OUT) $(INSTALLED_BCHECC_SYSTEMIMAGE)
+    $(hide) chmod a+r $(INSTALLED_BCHECC_SYSTEMIMAGE)
+endef
+endif
+
 ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
 ## generate a yaffs2 image and an ext2/3/4 image
 # $(1): output file
@@ -736,6 +751,7 @@ define build-systemimage-target
     @mkdir -p $(dir $(INSTALLED_SYSTEMIMAGE))
     $(call build-userimage-ext-target,$(TARGET_OUT),$(INSTALLED_SYSTEMIMAGE),system,$(INTERNAL_USERIMAGES_EXT_VARIANT),$(BOARD_SYSTEMIMAGE_PARTITION_SIZE))
     $(hide) chmod a+r $(INSTALLED_SYSTEMIMAGE).$(INTERNAL_USERIMAGES_EXT_VARIANT)
+    $(hide) $(call build-systemimage-bchecc-target)
 endef
 
 else # INTERNAL_USERIMAGES_USE_EXT != true
@@ -754,6 +770,7 @@ $(BUILT_SYSTEMIMAGE): $(INTERNAL_SYSTEMIMAGE_FILES) $(INTERNAL_USERIMAGES_DEPS)
 	$(call build-systemimage-target,$@)
 
 INSTALLED_SYSTEMIMAGE := $(PRODUCT_OUT)/system.img
+INSTALLED_BCHECC_SYSTEMIMAGE := $(PRODUCT_OUT)/system.bchecc.img
 SYSTEMIMAGE_SOURCE_DIR := $(TARGET_OUT)
 
 # The system partition needs room for the recovery image as well.  We
@@ -817,6 +834,15 @@ stnod: systemtarball-nodeps
 INTERNAL_USERDATAIMAGE_FILES := \
 	$(filter $(TARGET_OUT_DATA)/%,$(ALL_DEFAULT_INSTALLED_MODULES))
 
+# Build system image for 8bit BCH ECC NAND with different spare size
+ifeq ($(BOARD_HAS_8BIT_BCHECC_SUPPORT),true)
+define build-userdataimage-bchecc-target
+    $(hide) $(MKYAFFS2) -f $(mkyaffs2_extra_bchecc_flags) $(TARGET_OUT_DATA) $(BUILT_USERDATAIMAGE_BCHECC_TARGET)
+    $(hide) chmod a+r $(BUILT_USERDATAIMAGE_BCHECC_TARGET)
+    $(hide) $(call assert-max-image-size,$(BUILT_USERDATAIMAGE_BCHECC_TARGET),$(BOARD_USERDATAIMAGE_PARTITION_SIZE),yaffs)
+endef
+endif
+
 ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
 ## Generate an ext image
 define build-userdataimage-target
@@ -828,6 +854,7 @@ define build-userdataimage-target
     $(call build-userimage-ext-target,$(TARGET_OUT_DATA),$(INSTALLED_USERDATAIMAGE_TARGET),data,$(INTERNAL_USERIMAGES_EXT_VARIANT),$(BOARD_USERDATAIMAGE_PARTITION_SIZE))
     $(hide) chmod a+r $(INSTALLED_USERDATAIMAGE_TARGET).$(INTERNAL_USERIMAGES_EXT_VARIANT)
     $(hide) $(call assert-max-image-size,$(INSTALLED_USERDATAIMAGE_TARGET),$(BOARD_USERDATAIMAGE_PARTITION_SIZE),yaffs)
+    $(hide) $(call build-userdataimage-bchecc-target)
 endef
 
 else # INTERNAL_USERIMAGES_USE_EXT != true
@@ -843,6 +870,7 @@ endef
 endif # INTERNAL_USERIMAGES_USE_EXT
 
 BUILT_USERDATAIMAGE_TARGET := $(PRODUCT_OUT)/userdata.img
+BUILT_USERDATAIMAGE_BCHECC_TARGET := $(PRODUCT_OUT)/userdata.bchecc.img
 
 # We just build this directly to the install location.
 INSTALLED_USERDATAIMAGE_TARGET := $(BUILT_USERDATAIMAGE_TARGET)
@@ -880,6 +908,15 @@ userdatatarball-nodeps: $(FS_GET_STATS)
 INTERNAL_PERSISTIMAGE_FILES := \
 	$(filter $(TARGET_OUT_PERSIST)/%,$(ALL_DEFAULT_INSTALLED_MODULES))
 
+# Build persist image for 8bit BCH ECC NAND with different spare size
+ifeq (true,$(BOARD_HAS_8BIT_BCHECC_SUPPORT))
+define build-persistimage-bchecc-target
+    $(hide) $(MKYAFFS2) -f $(mkyaffs2_extra_bchecc_flags) $(TARGET_OUT_PERSIST) $(BUILT_PERSISTIMAGE_BCHECC_TARGET)
+    $(hide) chmod a+r $(BUILT_PERSISTIMAGE_BCHECC_TARGET)
+    $(hide) $(call assert-max-image-size,$(BUILT_PERSISTIMAGE_BCHECC_TARGET),$(BOARD_PERSISTIMAGE_PARTITION_SIZE),yaffs)
+endef
+endif
+
 ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
 ## Generate an ext image
 define build-persistimage-target
@@ -891,6 +928,7 @@ define build-persistimage-target
     $(call build-userimage-ext-target,$(TARGET_OUT_PERSIST),$(INSTALLED_PERSISTIMAGE_TARGET),persist,$(INTERNAL_USERIMAGES_EXT_VARIANT),$(BOARD_PERSISTIMAGE_PARTITION_SIZE))
     $(hide) chmod a+r $(INSTALLED_PERSISTIMAGE_TARGET).$(INTERNAL_USERIMAGES_EXT_VARIANT)
     $(hide) $(call assert-max-image-size,$(INSTALLED_PERSISTIMAGE_TARGET),$(BOARD_PERSISTIMAGE_PARTITION_SIZE),yaffs)
+    $(hide) $(call build-persistimage-bchecc-target)
 endef
 
 else # INTERNAL_USERIMAGES_USE_EXT != true
@@ -906,6 +944,7 @@ endef
 endif # INTERNAL_USERIMAGES_USE_EXT
 
 BUILT_PERSISTIMAGE_TARGET := $(PRODUCT_OUT)/persist.img
+BUILT_PERSISTIMAGE_BCHECC_TARGET := $(PRODUCT_OUT)/persist.bchecc.img
 
 # We just build this directly to the install location.
 INSTALLED_PERSISTIMAGE_TARGET := $(BUILT_PERSISTIMAGE_TARGET)
