@@ -103,25 +103,46 @@ $(call match-prefix,$(1),$(TARGET_BOARD_PLATFORM))
 endef
 
 #----
-# Additional utility for flavor specific featurisation
+# The following utilities are meant for Android Code Name
+# specific featurisation
 #
 # refer http://source.android.com/source/build-numbers.html
-# for sdk versions
+# for code names and associated sdk versions
 CUPCAKE_SDK_VERSIONS := 3
 DONUT_SDK_VERSIONS   := 4
 ECLAIR_SDK_VERSIONS  := 5 6 7
 FROYO_SDK_VERSIONS   := 8
 GINGERBREAD_SDK_VERSIONS := 9 10
-HONEYCOMB_SDK_VERSIONS := 11 12
+HONEYCOMB_SDK_VERSIONS := 11 12 13
 
-# $(call is-flavor,flavor)
-# flavor is one of cupcake,donut,eclair,froyo,gingerbread,icecream
-# please refer the $(flavor)_SDK_VERSIONS declared at the top
-define is-flavor
+# $(call is-android-codename,codename)
+# codename is one of cupcake,donut,eclair,froyo,gingerbread,icecream
+# please refer the $(codename)_SDK_VERSIONS declared above
+define is-android-codename
 $(strip \
   $(if \
     $(call match-word-in-list,$(PLATFORM_SDK_VERSION),$($(1)_SDK_VERSIONS)), \
     true, \
   ) \
 )
+endef
+
+# $(call is-android-codename-in-list,cnlist)
+# cnlist is combination/list of android codenames
+define is-android-codename-in-list
+$(eval acn := $(empty)) \
+$(foreach \
+  i,$(1),\
+  $(eval acn += \
+    $(if \
+      $(call \
+        match-word-in-list,\
+        $(PLATFORM_SDK_VERSION),\
+        $($(i)_SDK_VERSIONS)\
+      ),\
+      true,\
+    )\
+  )\
+) \
+$(if $(strip $(acn)),true,)
 endef
