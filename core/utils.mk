@@ -130,19 +130,21 @@ endef
 # $(call is-android-codename-in-list,cnlist)
 # cnlist is combination/list of android codenames
 define is-android-codename-in-list
-$(eval acn := $(empty)) \
-$(foreach \
-  i,$(1),\
-  $(eval acn += \
-    $(if \
-      $(call \
-        match-word-in-list,\
-        $(PLATFORM_SDK_VERSION),\
-        $($(i)_SDK_VERSIONS)\
-      ),\
-      true,\
-    )\
-  )\
-) \
-$(if $(strip $(acn)),true,)
+$(strip \
+  $(eval acn := $(empty)) \
+    $(foreach \
+      i,$(1),\
+      $(eval acn += \
+        $(if \
+          $(call \
+            match-word-in-list,\
+            $(PLATFORM_SDK_VERSION),\
+            $($(i)_SDK_VERSIONS)\
+          ),\
+          true,\
+        )\
+      )\
+    ) \
+  $(if $(strip $(acn)),true,) \
+)
 endef
