@@ -300,35 +300,6 @@ public class Comment
         return mBriefTags;
     }
 
-    // This method is used to replace indexOf usage below which seems to cause
-    // some problems with the Java environment.  See the comment in isHidden
-    // to understand the background.
-    private static boolean isFoundIn(String needle, String haystack)
-    {
-	char[] n = needle.toCharArray();
-	char[] h = haystack.toCharArray();
-	int last = haystack.length() - needle.length();
-	int nlen = needle.length();
-	int i;
-	int j;
-	boolean match = false;
-
-	for (i = 0; !match && i < last; i++) {
-	    j = 0;
-	    if (h[i] == n[j]) {
-		match = true;
-		for (; j < nlen; j++) {
-		    if (h[i+j] != n[j]) {
-			match = false;
-			break;
-		    }
-		}
-	    }
-	}
-	return match;
-    }
-
-
     public boolean isHidden()
     {
         if (mHidden >= 0) {
@@ -338,26 +309,18 @@ public class Comment
                 mHidden = 0;
                 return false;
             }
-	    // The original code from droiddoc had this perfectly reasonable use
-	    // of indexOf.
-            // boolean b = mText.indexOf("@hide") >= 0 || mText.indexOf("@pending") >= 0;
-            // mHidden = b ? 1 : 0;
-	    // if (b) {
-	    // Unfortunately under some conditions, this code mysteriously returns
-	    // true for an mText that does not contain @hide or @pending.
-	    // This seems to apply with the Intent class and cause
-	    // document generation to fail.  This failure was not reliable and could
-	    // only be reproduced on (between) 50-150 builds.  The change to use
-	    // the new method isFoundIn is stable over a much higher number of builds
-	    // although the true root cause is not yet discovered.
-	    if (isFoundIn("@hide", mText) || isFoundIn("@pending", mText)) {
-		mHidden = 1;
-		return true;
-	    } else {
-		mHidden = 0;
-		return false;
-	    }
-            //return b;
+            // Make a copy of the string mText.  It seems as though some
+            // versions of java get confused about where the end of the string
+            // is and this is causing random failures in the check below - the
+            // indexOf calls are returning offsets beyond the official end of
+            // the text.
+            // For this reason toSearch is a copy the string so that we don't
+            // accidentally run off the end of the string.  Note this appears
+            // to be a Java bug, not a bug in this code per se.
+            String toSearch = new String(mText);
+            boolean b = toSearch.indexOf("@hide") >= 0 || toSearch.indexOf("@pending") >= 0;
+            mHidden = b ? 1 : 0;
+            return b;
         }
     }
 
