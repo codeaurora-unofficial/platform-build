@@ -210,6 +210,13 @@ def BuildBootableImage(sourcedir):
   ramdisk_img = tempfile.NamedTemporaryFile()
   img = tempfile.NamedTemporaryFile()
 
+  fn = os.path.join(sourcedir, "complete_img")
+  if os.access(fn, os.F_OK):
+    img = open(fn)
+    data = img.read()
+    img.close()
+    return data
+
   p1 = Run(["mkbootfs", os.path.join(sourcedir, "RAMDISK")],
            stdout=subprocess.PIPE)
   p2 = Run(["minigzip"],
