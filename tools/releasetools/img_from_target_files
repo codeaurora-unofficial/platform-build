@@ -23,6 +23,9 @@ Usage:  img_from_target_files [flags] input_target_files output_image_zip
   -b  (--board_config)  <file>
       Deprecated.
 
+  -t  (--type) <type>
+      Specify mmc or mtd type device. mtd by default
+
 """
 
 import sys
@@ -46,6 +49,7 @@ if not hasattr(os, "SEEK_SET"):
 import common
 
 OPTIONS = common.OPTIONS
+OPTIONS.type = 'MTD'
 
 def AddUserdata(output_zip):
   """Create an empty userdata image and store it in output_zip."""
@@ -146,12 +150,14 @@ def main(argv):
   def option_handler(o, a):
     if o in ("-b", "--board_config"):
       pass       # deprecated
+    elif o in ("-t", "--type"):
+      OPTIONS.type = a
     else:
       return False
     return True
 
   args = common.ParseOptions(argv, __doc__,
-                             extra_opts="b:",
+                             extra_opts="b:t:",
                              extra_long_opts=["board_config="],
                              extra_option_handler=option_handler)
 
@@ -162,7 +168,7 @@ def main(argv):
   OPTIONS.input_tmp = common.UnzipTemp(args[0])
 
   input_zip = zipfile.ZipFile(args[0], "r")
-  OPTIONS.info_dict = common.LoadInfoDict(input_zip)
+  OPTIONS.info_dict = common.LoadInfoDict(input_zip, OPTIONS.type)
 
   output_zip = zipfile.ZipFile(args[1], "w", compression=zipfile.ZIP_DEFLATED)
 
