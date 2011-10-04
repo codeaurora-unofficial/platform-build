@@ -1097,7 +1097,7 @@ ifdef INSTALLED_KERNEL_TARGET
 	$(hide) $(ACP) $(INSTALLED_KERNEL_TARGET) $(zip_root)/RECOVERY/kernel
 endif
 ifeq ($(TARGET_BOOTIMG_SIGNED),true)
-	$(hide) $(ACP) $(INSTALLED_RECOVERYIMAGE_TARGET) $(zip_root)/RECOVERY/complete_img
+	$(hide) $(ACP) $(PRODUCT_PRIVATE_KEY) $(zip_root)/RECOVERY/sign-key
 endif
 ifdef INSTALLED_2NDBOOTLOADER_TARGET
 	$(hide) $(ACP) \
@@ -1120,7 +1120,7 @@ ifdef INSTALLED_KERNEL_TARGET
 	$(hide) $(ACP) $(INSTALLED_KERNEL_TARGET) $(zip_root)/BOOT/kernel
 endif
 ifeq ($(TARGET_BOOTIMG_SIGNED),true)
-	$(hide) $(ACP) $(INSTALLED_BOOTIMAGE_TARGET) $(zip_root)/BOOT/complete_img
+	$(hide) $(ACP) $(PRODUCT_PRIVATE_KEY) $(zip_root)/BOOT/sign-key
 endif
 ifdef INSTALLED_2NDBOOTLOADER_TARGET
 	$(hide) $(ACP) \
