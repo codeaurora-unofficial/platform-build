@@ -209,13 +209,6 @@ def BuildBootableImage(sourcedir):
   ramdisk_img = tempfile.NamedTemporaryFile()
   img = tempfile.NamedTemporaryFile()
 
-  fn = os.path.join(sourcedir, "complete_img")
-  if os.access(fn, os.F_OK):
-    img = open(fn)
-    data = img.read()
-    img.close()
-    return data
-
   p1 = Run(["mkbootfs", os.path.join(sourcedir, "RAMDISK")],
            stdout=subprocess.PIPE)
   p2 = Run(["minigzip"],
@@ -242,6 +235,9 @@ def BuildBootableImage(sourcedir):
   if os.access(fn, os.F_OK):
     cmd.append("--pagesize")
     cmd.append(open(fn).read().rstrip("\n"))
+    pagesize = open(fn).read().rstrip("\n")
+  else:
+    pagesize = 2048
 
   cmd.extend(["--ramdisk", ramdisk_img.name,
               "--output", img.name])
@@ -250,6 +246,41 @@ def BuildBootableImage(sourcedir):
   p.communicate()
   assert p.returncode == 0, "mkbootimg of %s image failed" % (
       os.path.basename(sourcedir),)
+
+
+  fn = os.path.join(sourcedir, "sign-key")
+  if os.access(fn, os.F_OK):
+    # Signature key found
+    # Get SHA256 of raw image
+    sha256 = tempfile.NamedTemporaryFile()
+    p = Run(["openssl", "dgst", "-sha256", "-binary", img.name],
+            stdout=sha256)
+    p.communicate()
+    # Create signature
+    signature = tempfile.NamedTemporaryFile()
+    p = Run(["openssl", "rsautl", "-sign", "-in", sha256.name, "-inkey",
+            os.path.join(sourcedir, "sign-key"), "-out", signature.name],
+            stdout=subprocess.PIPE)
+    p.communicate()
+    # Create padding of pagesize
+    signature_pad = tempfile.NamedTemporaryFile()
+    p = Run(["dd", "if=/dev/zero", "of="+signature_pad.name, "bs="+pagesize, "count=1"],
+            stdout=subprocess.PIPE)
+    p.communicate()
+    # Add Signature.
+    p = Run(["dd", "if="+signature.name, "of="+signature_pad.name, "conv=notrunc"],
+            stdout=subprocess.PIPE)
+    p.communicate()
+    signedimg = tempfile.NamedTemporaryFile()
+    p = Run(["cat", img.name, signature_pad.name],
+            stdout=signedimg)
+    p.communicate()
+    img.close()
+    img = signedimg
+    # Close all files
+    sha256.close()
+    signature.close()
+    signature_pad.close()
 
   img.seek(os.SEEK_SET, 0)
   data = img.read()
