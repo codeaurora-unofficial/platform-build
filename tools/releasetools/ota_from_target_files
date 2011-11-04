@@ -47,6 +47,9 @@ Usage:  ota_from_target_files [flags] input_target_files output_ota_package
   -t  (--type) <type>
       Specify mmc or mtd type device. mtd by default
 
+  -f  (--fota) <fota>
+      Specify if fota upgrade is used or not. not used by default
+
 """
 
 import sys
@@ -79,6 +82,7 @@ OPTIONS.omit_prereq = False
 OPTIONS.extra_script = None
 OPTIONS.worker_threads = 3
 OPTIONS.type = 'MTD'
+OPTIONS.fota = 0
 
 def MostPopularKey(d, default):
   """Given a dict, return the key corresponding to the largest
@@ -345,7 +349,7 @@ fi
   return Item.Get("system/etc/install-recovery.sh", dir=False)
 
 
-def WriteFullOTAPackage(input_zip, output_zip):
+def WriteFullOTAPackage(input_zip, output_zip, fota):
   # TODO: how to determine this?  We don't know what version it will
   # be installed on top of.  For now, we expect the API just won't
   # change very often.
@@ -364,7 +368,8 @@ def WriteFullOTAPackage(input_zip, output_zip):
       input_tmp=OPTIONS.input_tmp,
       metadata=metadata,
       info_dict=OPTIONS.info_dict,
-      type=OPTIONS.type)
+      type=OPTIONS.type,
+      fota=OPTIONS.fota)
 
   if not OPTIONS.omit_prereq:
     ts = GetBuildProp("ro.build.date.utc", input_zip)
@@ -409,7 +414,7 @@ def WriteFullOTAPackage(input_zip, output_zip):
     script.AppendExtra(OPTIONS.extra_script)
 
   script.UnmountAll()
-  script.AddToZip(input_zip, output_zip)
+  script.AddToZip(input_zip, output_zip, fota)
   WriteMetadata(metadata, output_zip)
 
 
@@ -445,7 +450,7 @@ def GetBuildProp(property, z):
   return m.group(1).strip()
 
 
-def WriteIncrementalOTAPackage(target_zip, source_zip, output_zip):
+def WriteIncrementalOTAPackage(target_zip, source_zip, output_zip, fota):
   source_version = OPTIONS.source_info_dict["recovery_api_version"]
   target_version = OPTIONS.target_info_dict["recovery_api_version"]
 
@@ -694,7 +699,7 @@ def WriteIncrementalOTAPackage(target_zip, source_zip, output_zip):
   if OPTIONS.extra_script is not None:
     scirpt.AppendExtra(OPTIONS.extra_script)
 
-  script.AddToZip(target_zip, output_zip)
+  script.AddToZip(target_zip, output_zip, fota)
   WriteMetadata(metadata, output_zip)
 
 
@@ -717,12 +722,14 @@ def main(argv):
       OPTIONS.worker_threads = int(a)
     elif o in ("-t", "--type"):
       OPTIONS.type = a
+    elif o in ("-f", "--fota"):
+      OPTIONS.fota = a
     else:
       return False
     return True
 
   args = common.ParseOptions(argv, __doc__,
-                             extra_opts="b:k:i:d:wne:t:",
+                             extra_opts="b:k:i:d:wne:t:f:",
                              extra_long_opts=["board_config=",
                                               "package_key=",
                                               "incremental_from=",
@@ -730,7 +737,8 @@ def main(argv):
                                               "no_prereq",
                                               "extra_script=",
                                               "worker_threads=",
-                                              "type="],
+                                              "type=",
+                                              "fota="],
                              extra_option_handler=option_handler)
 
   if len(args) != 2:
@@ -765,7 +773,7 @@ def main(argv):
                                  compression=zipfile.ZIP_DEFLATED)
 
   if OPTIONS.incremental_source is None:
-    WriteFullOTAPackage(input_zip, output_zip)
+    WriteFullOTAPackage(input_zip, output_zip, OPTIONS.fota)
   else:
     print "unzipping source target-files..."
     OPTIONS.source_tmp = common.UnzipTemp(OPTIONS.incremental_source)
@@ -775,7 +783,7 @@ def main(argv):
     if OPTIONS.verbose:
       print "--- source info ---"
       common.DumpInfoDict(OPTIONS.source_info_dict)
-    WriteIncrementalOTAPackage(input_zip, source_zip, output_zip)
+    WriteIncrementalOTAPackage(input_zip, source_zip, output_zip, OPTIONS.fota)
 
   output_zip.close()
   if OPTIONS.package_key:
