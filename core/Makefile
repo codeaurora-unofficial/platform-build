@@ -1159,6 +1159,11 @@ built_ota_tools := \
 	$(call intermediates-dir-for,EXECUTABLES,check_prereq)/check_prereq \
 	$(call intermediates-dir-for,EXECUTABLES,sqlite3)/sqlite3 \
 	$(call intermediates-dir-for,EXECUTABLES,updater)/updater
+
+ifneq ($(TARGET_FOTA_UPDATE_LIB),)
+built_ota_tools += $(call intermediates-dir-for,EXECUTABLES,ipth_dua)/ipth_dua
+endif
+
 $(BUILT_TARGET_FILES_PACKAGE): PRIVATE_OTA_TOOLS := $(built_ota_tools)
 
 $(BUILT_TARGET_FILES_PACKAGE): PRIVATE_RECOVERY_API_VERSION := $(RECOVERY_API_VERSION)
@@ -1297,6 +1302,12 @@ ifeq ($(TARGET_BUILD_TYPE),debug)
   name := $(name)_debug
 endif
 name := $(name)-ota-$(FILE_NAME_TAG)
+
+ifeq ($(TARGET_HAS_FOTA),true)
+  fota := 1
+else
+  fota := 0
+endif
 
 INTERNAL_OTA_PACKAGE_TARGET := $(PRODUCT_OUT)/$(name).zip
 
