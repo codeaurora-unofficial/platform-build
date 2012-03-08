@@ -434,9 +434,13 @@ define get-kernel-size
                  printf("%#x",size)}' $(KERNEL_OUT)/System.map)
 endef
 
+ifneq ($(TARGET_USES_UNCOMPRESSED_KERNEL),true)
+MKBOOTIMG_COMPRESSED := -z
+endif
+
 $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES)
 	$(call pretty,"Target boot image: $@")
-	$(hide) $(call build-boot-image,$@,$(INTERNAL_BOOTIMAGE_ARGS) --ramdisk_offset $(call get-kernel-size))
+	$(hide) $(call build-boot-image,$@,$(INTERNAL_BOOTIMAGE_ARGS) --ramdisk_offset $(call get-kernel-size) $(MKBOOTIMG_COMPRESSED))
 	$(hide) $(call install-2knand-boot-image)
 	$(hide) $(call assert-max-image-size,$@,$(BOARD_BOOTIMAGE_PARTITION_SIZE),raw)
 
