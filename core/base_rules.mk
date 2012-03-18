@@ -73,6 +73,10 @@ ifneq ($(filter-out user debug eng tests optional samples shell_ash shell_mksh,$
 $(warning unusual tags $(LOCAL_MODULE_TAGS) on $(LOCAL_MODULE) at $(LOCAL_PATH))
 endif
 
+ifneq ($(filter $(OPTIONAL_USER_MODULES),$(LOCAL_MODULE)),)
+LOCAL_MODULE_TAGS := optional
+endif
+
 ifneq ($(filter $(LOCAL_MODULE_TAGS),user),)
   ifeq ($(filter $(GRANDFATHERED_USER_MODULES),$(LOCAL_MODULE)),)
     $(warning *** Module name: $(LOCAL_MODULE))
@@ -205,6 +209,11 @@ endif
 
 # Assemble the list of targets to create PRIVATE_ variables for.
 LOCAL_INTERMEDIATE_TARGETS += $(LOCAL_BUILT_MODULE)
+
+ifneq ($(filter $(OPTIONAL_USER_MODULES),$(LOCAL_MODULE)),)
+LOCAL_IMTERMEDIATE_TARGETS :=
+LOCAL_BUILT_MODULE :=
+endif
 
 
 ###########################################################

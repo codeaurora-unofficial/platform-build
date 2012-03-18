@@ -7,6 +7,8 @@
 ## LOCAL_MODULE_SUFFIX will be set for you.
 ###########################################################
 
+ifeq ($(filter $(OPTIONAL_USER_MODULES),$(LOCAL_MODULE)),)
+
 ifeq ($(strip $(LOCAL_MODULE_CLASS)),)
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
 endif
@@ -52,3 +54,5 @@ $(linked_module): $(all_objects) $(all_libraries) \
                   $(LOCAL_ADDITIONAL_DEPENDENCIES) \
                   $(my_target_crtbegin_so_o) $(my_target_crtend_so_o)
 	$(transform-o-to-shared-lib)
+
+endif

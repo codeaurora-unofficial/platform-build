@@ -56,7 +56,6 @@ PRODUCT_PACKAGES := \
 	jsr305lib \
 	jython \
 	jsilver \
-	librs_jni \
 	ConnectivityTest \
 	GpsLocationTest \
 	CalendarProvider \

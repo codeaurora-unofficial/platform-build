@@ -25,6 +25,21 @@ GRANDFATHERED_USER_MODULES :=
 
 -include vendor/google/user_tags.mk
 
+OPTIONAL_USER_MODULES := \
+	system_server \
+	app_process \
+	surfaceflinger \
+	libsystem_server \
+	librs_jni \
+	libRS \
+	libandroid_servers \
+	libsurfaceflinger \
+	libtestplugin \
+	temp_layoutlib \
+	libvideoeditor_jni \
+	libmedia_jni \
+	libmock_ril \
+
 GRANDFATHERED_USER_MODULES += \
 	20-dns.conf \
 	95-configured \
@@ -48,7 +63,6 @@ GRANDFATHERED_USER_MODULES += \
 	apicheck \
 	apkcheck \
 	applypatch \
-	app_process \
 	archquery \
 	asm-3.1 \
 	atree \
@@ -175,7 +189,6 @@ GRANDFATHERED_USER_MODULES += \
 	libabi \
 	libandroid \
 	libandroid_runtime \
-	libandroid_servers \
 	libarity \
 	libastl \
 	libastl_host \
@@ -351,10 +364,8 @@ GRANDFATHERED_USER_MODULES += \
 	libstlport \
 	libstlport_static \
 	libstorage \
-	libsurfaceflinger \
 	libsurfaceflinger_client \
 	libsvoxpico \
-	libsystem_server \
 	libsysutils \
 	libthread_db \
 	libtinyxml \
@@ -476,11 +487,9 @@ GRANDFATHERED_USER_MODULES += \
 	sqlite3 \
 	stack_dump \
 	stringtemplate \
-	surfaceflinger \
 	svc \
 	swing-worker-1.1 \
 	swt \
-	system_server \
 	tblgen \
 	tc \
 	temp_layoutlib \

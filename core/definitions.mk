@@ -531,8 +531,8 @@ endef
 
 # $(1): library name list
 # $(2): Non-empty if IS_HOST_MODULE
+# $(foreach lib,$(1),$(call _java-lib-full-dep,$(lib),$(2)))
 define java-lib-deps
-$(foreach lib,$(1),$(call _java-lib-full-dep,$(lib),$(2)))
 endef
 
 ###########################################################
