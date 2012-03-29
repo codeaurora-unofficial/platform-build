@@ -39,6 +39,7 @@ OPTIONAL_USER_MODULES := \
 	libvideoeditor_jni \
 	libmedia_jni \
 	libmock_ril \
+	libI420colorconvert \
 
 GRANDFATHERED_USER_MODULES += \
 	20-dns.conf \
