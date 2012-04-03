@@ -40,6 +40,11 @@ OPTIONAL_USER_MODULES := \
 	libmedia_jni \
 	libmock_ril \
 	libI420colorconvert \
+	apkcheck \
+	elftree \
+	jdwpspy \
+	a3dconvert \
+	libsampleplugin \
 
 GRANDFATHERED_USER_MODULES += \
 	20-dns.conf \

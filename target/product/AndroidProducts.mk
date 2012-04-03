@@ -30,7 +30,8 @@ ifneq ($(TARGET_BUILD_APPS),)
 PRODUCT_MAKEFILES := \
     $(LOCAL_DIR)/core.mk \
     $(LOCAL_DIR)/generic.mk \
-    $(LOCAL_DIR)/full.mk
+    $(LOCAL_DIR)/full.mk \
+    $(LOCAL_DIR)/b2g.mk
 else
 PRODUCT_MAKEFILES := \
     $(LOCAL_DIR)/core.mk \
@@ -42,5 +43,6 @@ PRODUCT_MAKEFILES := \
     $(LOCAL_DIR)/vbox_x86.mk \
     $(LOCAL_DIR)/sdk.mk \
     $(LOCAL_DIR)/sdk_x86.mk \
-    $(LOCAL_DIR)/large_emu_hw.mk
+    $(LOCAL_DIR)/large_emu_hw.mk \
+    $(LOCAL_DIR)/b2g.mk
 endif

@@ -1387,7 +1387,7 @@ sdk_atree_files := \
 # files like the kernel image. We use TARGET_CPU_ABI because we don't
 # have a better way to distinguish between CPU models.
 ifneq (,$(strip $(wildcard $(atree_dir)/sdk-android-$(TARGET_CPU_ABI).atree)))
-  sdk_atree_files += $(atree_dir)/sdk-android-$(TARGET_CPU_ABI).atree
+#  sdk_atree_files += $(atree_dir)/sdk-android-$(TARGET_CPU_ABI).atree
 endif
 
 deps := \
@@ -1410,7 +1410,7 @@ INTERNAL_SDK_TARGET := $(sdk_dir)/$(sdk_name).zip
 $(INTERNAL_SDK_TARGET): PRIVATE_NAME := $(sdk_name)
 $(INTERNAL_SDK_TARGET): PRIVATE_DIR := $(sdk_dir)/$(sdk_name)
 $(INTERNAL_SDK_TARGET): PRIVATE_DEP_FILE := $(sdk_dep_file)
-$(INTERNAL_SDK_TARGET): PRIVATE_INPUT_FILES := $(sdk_atree_files)
+#$(INTERNAL_SDK_TARGET): PRIVATE_INPUT_FILES := $(sdk_atree_files)
 
 # Set SDK_GNU_ERROR to non-empty to fail when a GNU target is built.
 #
