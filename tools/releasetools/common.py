@@ -150,7 +150,7 @@ def LoadRecoveryFSTab(zip, type):
 
   try:
     if type == 'MTD':
-        data = zip.read("RECOVERY/RAMDISK/etc/recovery.fstab")
+        data = zip.read("RECOVERY/recovery.fstab") 
     elif type == 'MMC':
         data = zip.read("RECOVERY/RAMDISK/etc/recovery_mmc.fstab")
   except KeyError:
@@ -856,7 +856,7 @@ def ComputeDifferences(diffs):
 PARTITION_TYPES = { "yaffs2": "MTD", "mtd": "MTD",
                     "ext4": "EMMC", "emmc": "EMMC" }
 
-def GetTypeAndDevice(mount_point, info):
+def GetTypeAndDevice(mount_point, info): 
   fstab = info["fstab"]
   if fstab:
     return PARTITION_TYPES[fstab[mount_point].fs_type], fstab[mount_point].device
