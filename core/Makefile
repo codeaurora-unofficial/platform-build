@@ -1370,6 +1370,10 @@ endif
 ifdef BOARD_KERNEL_CMDLINE
 	$(hide) echo "$(BOARD_KERNEL_CMDLINE)" > $(zip_root)/BOOT/cmdline
 endif
+	$(hide) echo "$(call get-kernel-size)" > $(zip_root)/BOOT/kernel_size
+ifneq ($(TARGET_USES_UNCOMPRESSED_KERNEL),true)
+	$(hide) echo 1 > $(zip_root)/BOOT/compressed_kernel
+endif
 ifdef BOARD_KERNEL_BASE
 	$(hide) echo "$(BOARD_KERNEL_BASE)" > $(zip_root)/BOOT/base
 endif

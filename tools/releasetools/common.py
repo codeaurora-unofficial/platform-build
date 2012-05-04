@@ -240,6 +240,13 @@ def BuildBootableImage(sourcedir):
     pagesize = open(fn).read().rstrip("\n")
   else:
     pagesize = 2048
+  fn = os.path.join(sourcedir,"kernel_size")
+  if os.access(fn, os.F_OK):
+      cmd.append("--ramdisk_offset")
+      cmd.append(open(fn).read().rstrip("\n"))
+  fn = os.path.join(sourcedir,"compressed_kernel")
+  if os.access(fn, os.F_OK):
+      cmd.append("-z")
 
   cmd.extend(["--ramdisk", ramdisk_img.name,
               "--output", img.name])
