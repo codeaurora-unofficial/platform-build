@@ -243,21 +243,28 @@ class Item:
       # item (and all its children) have already been set to.  We only
       # need to issue set_perm/set_perm_recursive commands if we're
       # supposed to be something different.
+      # During recovery, usrdata partition is mounted at /data. For setting
+      # permissions for files in usrdata we need to make sure the path starts
+      # with /data
+      if item.name.startswith('userdata'):
+          path_on_device = item.name[4:]
+      else:
+          path_on_device = item.name
       if item.dir:
         if current != item.best_subtree:
-          script.SetPermissionsRecursive("/"+item.name, *item.best_subtree)
+          script.SetPermissionsRecursive("/"+path_on_device, *item.best_subtree)
           current = item.best_subtree
 
         if item.uid != current[0] or item.gid != current[1] or \
            item.mode != current[2]:
-          script.SetPermissions("/"+item.name, item.uid, item.gid, item.mode)
+          script.SetPermissions("/"+path_on_device, item.uid, item.gid, item.mode)
 
         for i in item.children:
           recurse(i, current)
       else:
         if item.uid != current[0] or item.gid != current[1] or \
                item.mode != current[3]:
-          script.SetPermissions("/"+item.name, item.uid, item.gid, item.mode)
+          script.SetPermissions("/"+path_on_device, item.uid, item.gid, item.mode)
 
     recurse(self, (-1, -1, -1, -1))
 
@@ -304,6 +311,7 @@ def CopySystemFiles(input_zip, output_zip=None,
           Item.Get(fn[:-1], dir=True)
         else:
           Item.Get(fn, dir=False)
+
   symlinks.sort()
   return (symlinks, retouch_files)
 
@@ -350,6 +358,7 @@ def CopyUserdataFiles(input_zip, output_zip=None,
           Item.Get(fn[:-1], dir=True)
         else:
           Item.Get(fn, dir=False)
+
   symlinks.sort()
   return (symlinks, retouch_files)
 
@@ -461,23 +470,10 @@ def WriteFullOTAPackage(input_zip, output_zip, fota):
                                      OPTIONS.input_tmp, "BOOT")
   recovery_img = common.GetBootableImage("recovery.img", "recovery.img",
                                          OPTIONS.input_tmp, "RECOVERY")
+
   Item.GetMetadata(input_zip)
   Item.Get("system").SetPermissions(script)
-  script.SetPermissionsRecursive("/system/bin", 0, 0, 0755, 0755)
-  script.SetPermissionsRecursive("/system/lib", 0, 0, 0755, 0755)
-  script.SetPermissionsRecursive("/system/sbin", 0, 0, 0755, 0755)
-  script.SetPermissionsRecursive("/system/etc/init.d" , 0, 0, 0755, 0755)
-  script.SetPermissionsRecursive("/system/etc/udev/scripts" , 0, 0, 0755, 0755)
-  script.SetPermissionsRecursive("/system/bin", 0, 0, 0755, 0755)
-  script.SetPermissions("/system/etc/device_table", 0, 0, 0755)
-  script.SetPermissions("/system/etc/default/devpts", 0, 0, 0755)
-  script.SetPermissionsRecursive("/data/bin", 0, 0, 0755, 0755)
-  script.SetPermissionsRecursive("/data/lib", 0, 0, 0755, 0755)
-  script.SetPermissionsRecursive("/data/sbin", 0, 0, 0755, 0755)
-  script.SetPermissionsRecursive("/system/etc/udev/scripts" , 0, 0, 0755, 0755)
-  script.SetPermissionsRecursive("/data/bin", 0, 0, 0755, 0755)
-  script.SetPermissions("/data/etc/device_table", 0, 0, 0755)
-  script.SetPermissions("/data/etc/default/devpts", 0, 0, 0755)
+  Item.Get("userdata").SetPermissions(script)
   
   common.CheckSize(boot_img.data, "boot.img", OPTIONS.info_dict)
   common.ZipWriteStr(output_zip, "boot.img", boot_img.data)
