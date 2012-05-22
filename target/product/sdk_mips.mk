@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 The Android Open Source Project
+# Copyright (C) 2012 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,18 +14,15 @@
 # limitations under the License.
 #
 
-# This is a build configuration for the product aspects that
-# are specific to the emulator.
+# This is a build configuration for a full-featured build of the
+# Open-Source part of the tree. It's geared toward a US-centric
+# build quite specifically for the emulator, and might not be
+# entirely appropriate to inherit from for on-device configurations.
 
-PRODUCT_PROPERTY_OVERRIDES := \
-    ro.ril.hsxpa=1 \
-    ro.ril.gprsclass=10 \
-    ro.adb.qemud=1
+$(call inherit-product, $(SRC_TARGET_DIR)/product/sdk.mk)
 
-PRODUCT_COPY_FILES := \
-    development/data/etc/apns-conf.xml:system/etc/apns-conf.xml \
-    development/data/etc/vold.conf:system/etc/vold.conf \
-    development/tools/emulator/system/camera/media_profiles.xml:system/etc/media_profiles.xml \
-
-PRODUCT_PACKAGES := \
-    audio.primary.goldfish
+# Overrides
+PRODUCT_BRAND := generic_mips
+PRODUCT_NAME := sdk_mips
+PRODUCT_DEVICE := generic_mips
+PRODUCT_MODEL := Android SDK for Mips

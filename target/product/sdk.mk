@@ -61,68 +61,9 @@ PRODUCT_PACKAGES := \
 	CalendarProvider \
 	Calendar
 
-
-# Host tools that are parts of the SDK.
-# See development/build/sdk.atree
-PRODUCT_PACKAGES += \
-	adb \
-	dmtracedump \
-	etc1tool \
-	hprof-conv \
-	mksdcard \
-	emulator \
-	bios.bin \
-	vgabios-cirrus.bin \
-	ddms \
-	hierarchyviewer \
-	draw9patch \
-	traceview \
-	android \
-	dexdump \
-	lint \
-	monkeyrunner
-
-# Native host Java libraries that are parts of the SDK.
-# See development/build/sdk.atree
-PRODUCT_PACKAGES += \
-	androidprefs \
-	annotations \
-	sdkstats \
-	archquery \
-	ddms \
-	ddmlib \
-	ddmuilib \
-	draw9patch \
-	hierarchyviewer \
-	traceview \
-	anttasks \
-	sdklib \
-	sdkuilib \
-	sdkmanager \
-	swtmenubar \
-	swing-worker-1.1 \
-	groovy-all-1.7.0 \
-	commons-compress-1.0 \
-	emmalib \
-	jcommon-1.0.12 \
-	jfreechart-1.0.9 \
-	jfreechart-1.0.9-swt \
-	org.eclipse.core.commands_3.4.0.I20080509-2000 \
-	org.eclipse.equinox.common_3.4.0.v20080421-2006 \
-	org.eclipse.jface_3.4.2.M20090107-0800 \
-	osgi \
-	layoutlib \
-	lint \
-	monkeyrunner \
-	guavalib \
-	jsr305lib \
-	jython \
-	ddmlib-tests \
-	ninepatch-tests \
-	common-tests \
-	sdklib-tests \
-	sdkuilib-tests \
-	layoutlib-tests
+# Define the host tools and libs that are parts of the SDK.
+include sdk/build/product_sdk.mk
+include development/build/product_sdk.mk
 
 # audio libraries.
 PRODUCT_PACKAGES += \
@@ -135,7 +76,10 @@ PRODUCT_COPY_FILES := \
 	system/core/rootdir/etc/vold.fstab:system/etc/vold.fstab \
 	frameworks/base/data/sounds/effects/camera_click.ogg:system/media/audio/ui/camera_click.ogg \
 	frameworks/base/data/sounds/effects/VideoRecord.ogg:system/media/audio/ui/VideoRecord.ogg \
-	frameworks/base/data/etc/android.hardware.camera.autofocus.xml:system/etc/permissions/android.hardware.camera.autofocus.xml
+	frameworks/base/data/etc/handheld_core_hardware.xml:system/etc/permissions/handheld_core_hardware.xml \
+	frameworks/base/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:system/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml \
+	frameworks/base/data/etc/android.hardware.camera.autofocus.xml:system/etc/permissions/android.hardware.camera.autofocus.xml \
+        frameworks/base/media/libeffects/data/audio_effects.conf:system/etc/audio_effects.conf
 
 $(call inherit-product-if-exists, frameworks/base/data/fonts/fonts.mk)
 $(call inherit-product-if-exists, frameworks/base/data/keyboards/keyboards.mk)

@@ -14,18 +14,19 @@
 # limitations under the License.
 #
 
-# This is a build configuration for the product aspects that
-# are specific to the emulator.
-
-PRODUCT_PROPERTY_OVERRIDES := \
-    ro.ril.hsxpa=1 \
-    ro.ril.gprsclass=10 \
-    ro.adb.qemud=1
-
-PRODUCT_COPY_FILES := \
-    development/data/etc/apns-conf.xml:system/etc/apns-conf.xml \
-    development/data/etc/vold.conf:system/etc/vold.conf \
-    development/tools/emulator/system/camera/media_profiles.xml:system/etc/media_profiles.xml \
+# This is a build configuration for a full-featured build of the
+# Open-Source part of the tree. It's geared toward a US-centric
+# mips build quite specifically for the emulator, and might not be
+# entirely appropriate to inherit from for on-device configurations.
 
 PRODUCT_PACKAGES := \
-    audio.primary.goldfish
+    Camera
+
+$(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
+$(call inherit-product, $(SRC_TARGET_DIR)/board/generic_mips/device.mk)
+
+# Overrides
+PRODUCT_NAME := full_mips
+PRODUCT_DEVICE := generic_mips
+PRODUCT_BRAND := Android
+PRODUCT_MODEL := Full MIPS Android on Emulator

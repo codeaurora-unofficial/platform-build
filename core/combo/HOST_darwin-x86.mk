@@ -42,8 +42,18 @@ endif # build_mac_version is 10.6
 HOST_GLOBAL_CFLAGS += -fPIC
 HOST_NO_UNDEFINED_LDFLAGS := -Wl,-undefined,error
 
-HOST_CC := $(CC)
-HOST_CXX := $(CXX)
+GCC_REALPATH = $(realpath $(shell which gcc))
+ifneq ($(findstring llvm-gcc,$(GCC_REALPATH)),)
+    # Using LLVM GCC results in a non functional emulator due to it
+    # not honouring global register variables
+    $(warning ****************************************)
+    $(warning * gcc is linked to llvm-gcc which will *)
+    $(warning * not create a useable emulator.       *)
+    $(warning ****************************************)
+endif
+
+HOST_CC := gcc
+HOST_CXX := g++
 HOST_AR := $(AR)
 HOST_STRIP := $(STRIP)
 HOST_STRIP_COMMAND = $(HOST_STRIP) --strip-debug $< -o $@
@@ -53,7 +63,7 @@ HOST_JNILIB_SUFFIX := .jnilib
 
 HOST_GLOBAL_CFLAGS += \
 	-include $(call select-android-config-h,darwin-x86)
-ifneq ($(filter 10.7.%, $(build_mac_version)),)
+ifneq ($(filter 10.7 10.7.% 10.8 10.8.%, $(build_mac_version)),)
        HOST_RUN_RANLIB_AFTER_COPYING := false
 else
        HOST_RUN_RANLIB_AFTER_COPYING := true

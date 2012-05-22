@@ -38,11 +38,14 @@ PRODUCT_MAKEFILES := \
     $(LOCAL_DIR)/generic.mk \
     $(LOCAL_DIR)/generic_armv5.mk \
     $(LOCAL_DIR)/generic_x86.mk \
+    $(LOCAL_DIR)/generic_mips.mk \
     $(LOCAL_DIR)/full.mk \
     $(LOCAL_DIR)/full_x86.mk \
+    $(LOCAL_DIR)/full_mips.mk \
     $(LOCAL_DIR)/vbox_x86.mk \
     $(LOCAL_DIR)/sdk.mk \
     $(LOCAL_DIR)/sdk_x86.mk \
+    $(LOCAL_DIR)/sdk_mips.mk \
     $(LOCAL_DIR)/large_emu_hw.mk \
     $(LOCAL_DIR)/b2g.mk
 endif
