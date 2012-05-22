@@ -92,11 +92,11 @@ ifneq (a,$(shell mkdir -p $(OUT_DIR) ; \
                 echo a > $(OUT_DIR)/casecheck.txt; \
                     echo B > $(OUT_DIR)/CaseCheck.txt; \
                 cat $(OUT_DIR)/casecheck.txt))
-$(warning ************************************************************)
-$(warning You are building on a case-insensitive filesystem.)
-$(warning Please move your source tree to a case-sensitive filesystem.)
-$(warning ************************************************************)
-$(error Case-insensitive filesystems not supported)
+#$(warning ************************************************************)
+#$(warning You are building on a case-insensitive filesystem.)
+#$(warning Please move your source tree to a case-sensitive filesystem.)
+#$(warning ************************************************************)
+# $(error Case-insensitive filesystems not supported)
 endif
 endif
 endif
