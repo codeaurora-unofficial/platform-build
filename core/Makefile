@@ -411,7 +411,7 @@ INSTALLED_2K_BOOTIMAGE_TARGET := $(2KPAGENAND_OUT)/boot.2knand.img
 
 ifeq ($(BOARD_SUPPORTS_2KNAND_PAGE),true)
 define install-2knand-boot-image
-    $(hide) $(MKBOOTIMG) $(INTERNAL_2K_BOOTIMAGE_ARGS) --output $(INSTALLED_2K_BOOTIMAGE_TARGET)
+    $(hide) $(call build-boot-image,$(INSTALLED_2K_BOOTIMAGE_TARGET),$(INTERNAL_2K_BOOTIMAGE_ARGS) --ramdisk_offset $(call get-kernel-size) $(MKBOOTIMG_COMPRESSED))
     $(hide) $(call assert-max-image-size,$(INSTALLED_2K_BOOTIMAGE_TARGET),$(BOARD_BOOTIMAGE_PARTITION_SIZE),raw)
 endef
 endif
@@ -751,7 +751,7 @@ $(RECOVERY_INSTALL_OTA_KEYS): $(OTA_PUBLIC_KEYS) $(DUMPKEY_JAR) $(extra_keys)
 
 ifeq ($(BOARD_SUPPORTS_2KNAND_PAGE),true)
 define install-2knand-recovery-image
-    $(MKBOOTIMG) $(INTERNAL_2K_RECOVERYIMAGE_ARGS) --output $(INSTALLED_2K_RECOVERYIMAGE_TARGET)
+    $(hide) $(call build-boot-image,$(INSTALLED_2K_RECOVERYIMAGE_TARGET),$(INTERNAL_2K_RECOVERYIMAGE_ARGS))
     $(hide) $(call assert-max-image-size,$(INSTALLED_2K_RECOVERYIMAGE_TARGET),$(BOARD_RECOVERYIMAGE_PARTITION_SIZE),raw)
 endef
 endif
