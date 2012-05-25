@@ -788,7 +788,7 @@ $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTFS) $(MKBOOTIMG) $(MINIGZIP) \
 	cat $(INSTALLED_DEFAULT_PROP_TARGET) $(recovery_build_prop) \
 	        > $(TARGET_RECOVERY_ROOT_OUT)/default.prop
 	$(MKBOOTFS) $(TARGET_RECOVERY_ROOT_OUT) | $(MINIGZIP) > $(recovery_ramdisk)
-	$(hide) $(call build-boot-image,$@,$(INTERNAL_RECOVERYIMAGE_ARGS))
+	$(hide) $(call build-boot-image,$@,$(INTERNAL_RECOVERYIMAGE_ARGS) --ramdisk_offset $(call get-kernel-size) $(MKBOOTIMG_COMPRESSED))
 	$(hide) $(call install-2knand-recovery-image)
 	@echo ----- Made recovery image -------- $@
 	$(hide) $(call assert-max-image-size,$@,$(BOARD_RECOVERYIMAGE_PARTITION_SIZE),raw)
