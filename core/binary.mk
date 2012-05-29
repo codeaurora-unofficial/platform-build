@@ -175,6 +175,11 @@ ifeq ($(strip $(LOCAL_CXX)),)
 endif
 $(LOCAL_INTERMEDIATE_TARGETS): PRIVATE_CXX := $(LOCAL_CXX)
 
+ifeq ($(strip $(LOCAL_OBJCC)),)
+  LOCAL_OBJCC := $($(my_prefix)OBJCC)
+endif
+$(LOCAL_INTERMEDIATE_TARGETS): PRIVATE_OBJCC := $(LOCAL_OBJCC)
+
 # TODO: support a mix of standard extensions so that this isn't necessary
 LOCAL_CPP_EXTENSION := $(strip $(LOCAL_CPP_EXTENSION))
 ifeq ($(LOCAL_CPP_EXTENSION),)

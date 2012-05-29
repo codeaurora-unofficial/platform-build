@@ -42,7 +42,13 @@ endif # build_mac_version is 10.6
 HOST_GLOBAL_CFLAGS += -fPIC
 HOST_NO_UNDEFINED_LDFLAGS := -Wl,-undefined,error
 
-GCC_REALPATH = $(realpath $(shell which gcc))
+HOST_OBJCC := cc
+HOST_CC := gcc-4.6
+ifeq (,$(wildcard /usr/local/bin/gcc-4.6))
+HOST_CC := gcc
+endif
+
+GCC_REALPATH = $(realpath $(shell which $(HOST_CC)))
 ifneq ($(findstring llvm-gcc,$(GCC_REALPATH)),)
     # Using LLVM GCC results in a non functional emulator due to it
     # not honouring global register variables
@@ -52,7 +58,6 @@ ifneq ($(findstring llvm-gcc,$(GCC_REALPATH)),)
     $(warning ****************************************)
 endif
 
-HOST_CC := gcc
 HOST_CXX := g++
 HOST_AR := $(AR)
 HOST_STRIP := $(STRIP)

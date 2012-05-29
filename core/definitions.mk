@@ -1031,9 +1031,29 @@ endef
 ## Commands for running gcc to compile a host Objective-C file
 ###########################################################
 
+# $(1): extra flags
+define really-transform-host-m-to-o-no-deps
+@mkdir -p $(dir $@)
+$(hide) $(PRIVATE_OBJCC) \
+	$(addprefix -I , $(PRIVATE_C_INCLUDES)) \
+	$(addprefix -isystem ,\
+	    $(if $(PRIVATE_NO_DEFAULT_COMPILER_FLAGS),, \
+	        $(filter-out $(PRIVATE_C_INCLUDES), \
+	            $(HOST_PROJECT_INCLUDES) \
+	            $(HOST_C_INCLUDES)))) \
+	-c \
+	$(if $(PRIVATE_NO_DEFAULT_COMPILER_FLAGS),, \
+	    $(HOST_GLOBAL_CFLAGS) \
+	 ) \
+	$(PRIVATE_CFLAGS) \
+	$(1) \
+	$(PRIVATE_DEBUG_CFLAGS) \
+	-MD -MF $(patsubst %.o,%.d,$@) -o $@ $<
+endef
+
 define transform-host-m-to-o-no-deps
 @echo "host ObjC: $(PRIVATE_MODULE) <= $<"
-$(call transform-host-c-or-s-to-o-no-deps)
+$(call really-transform-host-m-to-o-no-deps)
 endef
 
 define transform-host-m-to-o
