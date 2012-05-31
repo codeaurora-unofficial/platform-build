@@ -751,7 +751,7 @@ $(RECOVERY_INSTALL_OTA_KEYS): $(OTA_PUBLIC_KEYS) $(DUMPKEY_JAR) $(extra_keys)
 
 ifeq ($(BOARD_SUPPORTS_2KNAND_PAGE),true)
 define install-2knand-recovery-image
-    $(hide) $(call build-boot-image,$(INSTALLED_2K_RECOVERYIMAGE_TARGET),$(INTERNAL_2K_RECOVERYIMAGE_ARGS))
+    $(hide) $(call build-boot-image,$(INSTALLED_2K_RECOVERYIMAGE_TARGET),$(INTERNAL_2K_RECOVERYIMAGE_ARGS) --ramdisk_offset $(call get-kernel-size) $(MKBOOTIMG_COMPRESSED))
     $(hide) $(call assert-max-image-size,$(INSTALLED_2K_RECOVERYIMAGE_TARGET),$(BOARD_RECOVERYIMAGE_PARTITION_SIZE),raw)
 endef
 endif
