@@ -45,6 +45,7 @@ OPTIONAL_USER_MODULES := \
 	jdwpspy \
 	a3dconvert \
 	libsampleplugin \
+	libstagefright_chromium_http \
 
 GRANDFATHERED_USER_MODULES += \
 	20-dns.conf \
