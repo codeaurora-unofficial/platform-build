@@ -171,8 +171,16 @@ current_build_config :=
 #     $ make installclean
 #     $ make -j8 sdk
 #
+
+
 installclean_files := \
+	$(HOST_OUT)/obj/EXECUTABLES/clang* \
+	$(HOST_OUT)/obj/EXECUTABLES/llvm* \
+	$(HOST_OUT)/obj/EXECUTABLES/mksnapshot_intermediates \
+	$(HOST_OUT)/obj/EXECUTABLES/tblgen_intermediates \
 	$(HOST_OUT)/obj/NOTICE_FILES \
+	$(HOST_OUT)/obj/STATIC_LIBRARIES/libLLVM* \
+	$(HOST_OUT)/obj/STATIC_LIBRARIES/libclang* \
 	$(HOST_OUT)/sdk \
 	$(PRODUCT_OUT)/*.img \
 	$(PRODUCT_OUT)/*.txt \
@@ -187,7 +195,9 @@ installclean_files := \
 	$(PRODUCT_OUT)/system \
 	$(PRODUCT_OUT)/dex_bootjars \
 	$(PRODUCT_OUT)/obj/JAVA_LIBRARIES \
-	$(PRODUCT_OUT)/obj/FAKE
+	$(PRODUCT_OUT)/obj/FAKE \
+	$(PRODUCT_OUT)/generic/obj/STATIC_LIBRARIES/libLLVM*
+
 
 # The files/dirs to delete during a dataclean, which removes any files
 # in the staging and emulator data partitions.
