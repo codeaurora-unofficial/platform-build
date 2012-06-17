@@ -429,7 +429,7 @@ else # TARGET_BOOTIMAGE_USE_EXT2 != true
 # Gets the kernel size by subtracting _end from _stext in the System.map file
 # and rounding it off to the upper 4K boundary.
 define get-kernel-size
-  $(shell awk --non-decimal-data '/ _end/ {end="0x" $$1} /_stext/ {beg="0x" $$1}
+  $(shell awk --non-decimal-data '/ _end/ {end="0x" $$1} / _text/ {beg="0x" $$1}
                  END {size1=end-beg+4096; size=and(size1,compl(4095));
                  printf("%#x",size)}' $(KERNEL_OUT)/System.map)
 endef
