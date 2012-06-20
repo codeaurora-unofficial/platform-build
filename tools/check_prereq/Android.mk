@@ -18,7 +18,7 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := check_prereq.c
 LOCAL_MODULE := check_prereq
 LOCAL_FORCE_STATIC_EXECUTABLE := true
-LOCAL_MODULE_TAGS := eng
+LOCAL_MODULE_TAGS := debug
 LOCAL_C_INCLUDES +=
 LOCAL_STATIC_LIBRARIES += libcutils libc
 
