@@ -325,7 +325,7 @@ endif
 ifneq ($(BUILD_TINY_ANDROID),true)
 # Install an apns-conf.xml file if one's not already being installed.
 ifeq (,$(filter %:system/etc/apns-conf.xml, $(PRODUCT_COPY_FILES)))
-  PRODUCT_COPY_FILES += \
+#  PRODUCT_COPY_FILES += \
         development/data/etc/apns-conf_sdk.xml:system/etc/apns-conf.xml
   ifeq ($(filter eng tests,$(TARGET_BUILD_VARIANT)),)
     $(warning implicitly installing apns-conf_sdk.xml)
