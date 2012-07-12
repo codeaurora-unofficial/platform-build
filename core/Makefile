@@ -624,6 +624,10 @@ BOARD_KERNEL_PAGESIZE := $(strip $(BOARD_KERNEL_PAGESIZE))
 ifdef BOARD_KERNEL_PAGESIZE
   INTERNAL_RECOVERYIMAGE_ARGS += --pagesize $(BOARD_KERNEL_PAGESIZE)
 endif
+BOARD_RAMDISK_OFFSET := $(strip $(BOARD_RAMDISK_OFFSET))
+ifdef BOARD_RAMDISK_OFFSET
+  INTERNAL_RECOVERYIMAGE_ARGS += --ramdisk_offset $(BOARD_RAMDISK_OFFSET)
+endif
 
 # Keys authorized to sign OTA packages this build will accept.  The
 # build always uses dev-keys for this; release packaging tools will
