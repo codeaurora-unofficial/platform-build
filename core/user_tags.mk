@@ -123,6 +123,7 @@ GRANDFATHERED_USER_MODULES += \
 	exc_dump \
 	fastboot \
 	framework \
+	framework_ext \
 	FrameworkCoreHostTests \
 	frameworks-core-util-lib \
 	fsck_msdos \
