@@ -23,7 +23,7 @@ ifeq (,$(filter true, $(BUILD_TINY_ANDROID) $(TARGET_BUILD_PDK)))
 .PHONY: checkapi
 
 # Run the checkapi rules by default.
-droidcore: checkapi
+droidcore:
 
 last_released_sdk_version := $(lastword $(call numerically_sort, \
             $(filter-out current, \

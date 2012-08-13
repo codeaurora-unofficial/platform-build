@@ -86,6 +86,7 @@ $(call inherit-product-if-exists, external/lohit-fonts/fonts.mk)
 $(call inherit-product-if-exists, external/naver-fonts/fonts.mk)
 $(call inherit-product-if-exists, frameworks/base/data/keyboards/keyboards.mk)
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core.mk)
+$(call inherit-product, gonk-misc/b2g.mk)
 
 # Overrides
 PRODUCT_BRAND := generic
