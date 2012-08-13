@@ -67,6 +67,10 @@ endif
 #$(warning default tags: $(lastword $(filter-out config/% out/%,$(MAKEFILE_LIST))))
 endif
 
+ifneq ($(filter $(DISABLED_USER_MODULES),$(LOCAL_MODULE)),)
+LOCAL_MODULE_TAGS := optional
+endif
+
 # Only the tags mentioned in this test are expected to be set by module
 # makefiles. Anything else is either a typo or a source of unexpected
 # behaviors.
@@ -309,6 +313,9 @@ $(proto_java_sources_file_stamp) : $(proto_sources_fullpath) $(PROTOC)
 LOCAL_INTERMEDIATE_TARGETS += $(proto_java_sources_file_stamp)
 endif # proto_sources
 
+ifneq ($(filter $(DISABLED_USER_MODULES),$(LOCAL_MODULE)),)
+LOCAL_BUILT_MODULE :=
+endif
 
 ###########################################################
 ## Java: Compile .java files to .class
