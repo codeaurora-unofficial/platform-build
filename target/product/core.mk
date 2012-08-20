@@ -97,7 +97,7 @@ PRODUCT_PACKAGES := \
     libwilhelm \
     libz \
     busybox \
-    screencap \
+    screencap-gonk \
     sensorservice
 
 # host-only dependencies
