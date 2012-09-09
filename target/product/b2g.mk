@@ -7,6 +7,14 @@ CONFIG_ESD := no
 HTTP := android
 
 PRODUCT_PACKAGES := \
+	b2g.sh \
+	fakeperm \
+	gaia \
+	gecko \
+	httpd.conf \
+	init.rc \
+	init.b2g.rc \
+	rilproxy \
 	OpenSans-BoldItalic.ttf \
 	OpenSans-Bold.ttf \
 	OpenSans-ExtraBoldItalic.ttf \
@@ -17,3 +25,8 @@ PRODUCT_PACKAGES := \
 	OpenSans-Regular.ttf \
 	OpenSans-SemiboldItalic.ttf \
 	OpenSans-Semibold.ttf
+
+ifneq (,$(realpath .repo/manifest.xml))
+PRODUCT_PACKAGES += \
+	sources.xml
+endif
