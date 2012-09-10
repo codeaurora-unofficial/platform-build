@@ -11,10 +11,10 @@ PRODUCT_PACKAGES := \
 	fakeperm \
 	gaia \
 	gecko \
-	httpd.conf \
 	init.rc \
 	init.b2g.rc \
 	rilproxy \
+	sources.xml \
 	OpenSans-BoldItalic.ttf \
 	OpenSans-Bold.ttf \
 	OpenSans-ExtraBoldItalic.ttf \
@@ -25,8 +25,3 @@ PRODUCT_PACKAGES := \
 	OpenSans-Regular.ttf \
 	OpenSans-SemiboldItalic.ttf \
 	OpenSans-Semibold.ttf
-
-ifneq (,$(realpath .repo/manifest.xml))
-PRODUCT_PACKAGES += \
-	sources.xml
-endif
