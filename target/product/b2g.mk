@@ -24,7 +24,11 @@ PRODUCT_PACKAGES := \
 	OpenSans-Light.ttf \
 	OpenSans-Regular.ttf \
 	OpenSans-SemiboldItalic.ttf \
-	OpenSans-Semibold.ttf
+	OpenSans-Semibold.ttf \
+	MozTT-Light.ttf \
+	MozTT-Medium.ttf \
+	MozTT-Regular.ttf \
+	$(NULL)
 
 ifeq ($(ENABLE_LIBRECOVERY),true)
 PRODUCT_PACKAGES += \
