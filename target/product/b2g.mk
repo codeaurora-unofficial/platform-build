@@ -26,8 +26,9 @@ PRODUCT_PACKAGES := \
 	OpenSans-SemiboldItalic.ttf \
 	OpenSans-Semibold.ttf \
 	MozTT-Light.ttf \
-	MozTT-Medium.ttf \
 	MozTT-Regular.ttf \
+	MozTT-Medium.ttf \
+	MozTT-Bold.ttf \
 	$(NULL)
 
 ifeq ($(ENABLE_LIBRECOVERY),true)
