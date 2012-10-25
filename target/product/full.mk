@@ -24,7 +24,6 @@ PRODUCT_PACKAGES := \
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
 $(call inherit-product, $(SRC_TARGET_DIR)/board/generic/device.mk)
-$(call inherit-product, $(SRC_TARGET_DIR)/product/b2g.mk)
 
 # Overrides
 PRODUCT_NAME := full
