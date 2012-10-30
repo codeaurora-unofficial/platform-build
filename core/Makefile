@@ -1208,6 +1208,7 @@ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS) $(SEL
 	@echo "Package OTA: $@"
 	$(hide) ./build/tools/releasetools/ota_from_target_files -v \
 	   -p $(HOST_OUT) \
+           -d MMC \
            -k $(KEY_CERT_PAIR) \
            -f $(fota) \
            $(BUILT_TARGET_FILES_PACKAGE) $@
