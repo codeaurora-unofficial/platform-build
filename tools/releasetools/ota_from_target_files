@@ -357,6 +357,36 @@ fi
         'recovery_device': recovery_device,
         }
   common.ZipWriteStr(output_zip, "recovery/etc/install-recovery.sh", sh)
+
+  kernel_version = ''
+  kernel_release = 'out/target/product/msm8960/obj/KERNEL_OBJ/include/config/kernel.release'
+  if os.path.exists(kernel_release):
+    kernel_version = open(kernel_release).read()
+
+  kernel_compile = 'out/target/product/msm8960/obj/KERNEL_OBJ/include/generated/compile.h'
+  if os.path.exists(kernel_compile):
+      matchs = []
+      ver = open(kernel_compile).read()
+
+      match = re.search('#define LINUX_COMPILE_BY "(.*?)"', ver)
+      matchs += [['LINUX_COMPILE_BY', match.group(1)]]
+
+      match = re.search('#define LINUX_COMPILE_HOST "(.*?)"', ver)
+      matchs += [['LINUX_COMPILE_HOST', match.group(1)]]
+
+      match = re.search('#define LINUX_COMPILER "(.*?)"', ver)
+      matchs += [['LINUX_COMPILER', match.group(1)]]
+
+      match = re.search('#define UTS_VERSION "(.*?)"', ver)
+      matchs += [['UTS_VERSION', match.group(1)]]
+
+
+      ver = ''
+      for name, value in matchs:
+           ver += '%s=%s\n' % (name, value)
+      kernel_version += ver
+      common.ZipWriteStr(output_zip, "kernel_version", kernel_version)
+
   return Item.Get("system/etc/install-recovery.sh", dir=False)
 
 
