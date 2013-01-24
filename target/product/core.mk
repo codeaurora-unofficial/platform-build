@@ -129,6 +129,7 @@ PRODUCT_PACKAGES += \
     lint \
     uiautomator \
     telephony-common \
+    telephony-msim \
     mms-common \
     zoneinfo.dat \
     zoneinfo.idx \
