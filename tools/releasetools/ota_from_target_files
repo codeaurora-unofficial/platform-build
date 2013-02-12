@@ -478,25 +478,14 @@ def WriteFullOTAPackage(input_zip, output_zip, fota):
   common.CheckSize(boot_img.data, "boot.img", OPTIONS.info_dict)
   common.ZipWriteStr(output_zip, "boot.img", boot_img.data)
   
-  #Write dsp diff images to zip file
-  dsp_image_path = os.path.join(OPTIONS.input_tmp,"dsp1.diff")
-  if os.path.exists(dsp_image_path):
-    print "dsp1 image found. Writing to zip"
-    dsp1 = common.File.FromLocalFile("dsp1.diff", dsp_image_path) 
-    common.ZipWriteStr(output_zip, "dsp1.diff", dsp1.data)
-
-  dsp_image_path = os.path.join(OPTIONS.input_tmp,"dsp2.diff")
-  if os.path.exists(dsp_image_path):
-    print "dsp2 image found. Writing to zip"
-    dsp2 = common.File.FromLocalFile("dsp2.diff", dsp_image_path) 
-    common.ZipWriteStr(output_zip, "dsp2.diff", dsp2.data)  
- 
-  dsp_image_path = os.path.join(OPTIONS.input_tmp,"dsp3.diff")
-  if os.path.exists(dsp_image_path):
-    print "dsp3 image found. Writing to zip"
-    dsp3 = common.File.FromLocalFile("dsp3.diff", dsp_image_path) 
-    common.ZipWriteStr(output_zip, "dsp3.diff", dsp3.data)   
-
+  #Write dsp diff/mbn images to zip file
+  dsp_image_names = ["dsp1.diff", "dsp2.diff", "dsp3.diff", "dsp1.mbn", "dsp2.mbn", "dsp3.mbn"]
+  for dsp_image_name in dsp_image_names:
+    dsp_image_path = os.path.join(OPTIONS.input_tmp, dsp_image_name)
+    if os.path.exists(dsp_image_path):
+      print dsp_image_name + " image found. Writing to zip"
+      dsp_file = common.File.FromLocalFile(dsp_image_name, dsp_image_path)
+      common.ZipWriteStr(output_zip, dsp_image_name, dsp_file.data)
 
   #if os.path.exists
   script.ShowProgress(0.2, 0)
