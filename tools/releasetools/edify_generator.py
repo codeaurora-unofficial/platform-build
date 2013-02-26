@@ -82,8 +82,6 @@ class EdifyGenerator(object):
   def AssertOlderBuild(self, timestamp):
     """Assert that the build on the device is older (or the same as)
     the given timestamp."""
-    self.script.append(('assert(!less_than_int(%s, '
-                        'getprop("ro.build.date.utc")));') % (timestamp,))
 
   def AssertDevice(self, device):
     """Assert that the device identifier is the given string."""
