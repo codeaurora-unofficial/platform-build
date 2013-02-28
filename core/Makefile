@@ -250,17 +250,19 @@ intermediates := \
 APKCERTS_FILE := $(intermediates)/$(name).txt
 # We don't need to really build all the modules.
 # TODO: rebuild APKCERTS_FILE if any app change its cert.
+# NOTE: In case $(PACKAGES) is empty touch empty file at $@.
 $(APKCERTS_FILE):
 	@echo APK certs list: $@
 	@mkdir -p $(dir $@)
 	@rm -f $@
+	$(eval APKCERTS_TMP_FILE := $(shell mktemp))
 	$(hide) $(foreach p,$(PACKAGES),\
           $(if $(PACKAGES.$(p).EXTERNAL_KEY),\
 	    echo 'name="$(p).apk" certificate="EXTERNAL" \
-	         private_key=""' >> $@;,\
+	         private_key=""' >> $(APKCERTS_TMP_FILE);,\
 	    echo 'name="$(p).apk" certificate="$(PACKAGES.$(p).CERTIFICATE)" \
-	         private_key="$(PACKAGES.$(p).PRIVATE_KEY)"' >> $@;))
-	# In case $(PACKAGES) is empty.
+	         private_key="$(PACKAGES.$(p).PRIVATE_KEY)"' >> $(APKCERTS_TMP_FILE);))
+	@mv $(APKCERTS_TMP_FILE) $@
 	$(hide) touch $@
 
 .PHONY: apkcerts-list
