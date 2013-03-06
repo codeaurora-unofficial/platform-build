@@ -78,7 +78,7 @@ def CloseInheritedPipes():
       pass
 
 
-def LoadInfoDict(zip):
+def LoadInfoDict(zip, type):
   """Read and parse the META/misc_info.txt key/value pairs from the
   input target files and return a dict."""
 
@@ -142,7 +142,7 @@ def LoadInfoDict(zip):
   makeint("recovery_size")
   makeint("boot_size")
 
-  d["fstab"] = LoadRecoveryFSTab(zip)
+  d["fstab"] = LoadRecoveryFSTab(zip, type)
   d["build.prop"] = LoadBuildProp(zip)
   return d
 
@@ -161,12 +161,15 @@ def LoadBuildProp(zip):
     d[name] = value
   return d
 
-def LoadRecoveryFSTab(zip):
+def LoadRecoveryFSTab(zip, type):
   class Partition(object):
     pass
 
   try:
-    data = zip.read("RECOVERY/RAMDISK/etc/recovery.fstab")
+    if type == 'MTD':
+        data = zip.read("RECOVERY/RAMDISK/etc/recovery_nand.fstab")
+    elif type == 'MMC':
+        data = zip.read("RECOVERY/RAMDISK/etc/recovery.fstab")
   except KeyError:
     print "Warning: could not find RECOVERY/RAMDISK/etc/recovery.fstab in %s." % zip
     data = ""
@@ -251,6 +254,16 @@ def BuildBootableImage(sourcedir, fs_config_file, info_dict=None):
   fn = os.path.join(sourcedir, "base")
   if os.access(fn, os.F_OK):
     cmd.append("--base")
+    cmd.append(open(fn).read().rstrip("\n"))
+
+  fn = os.path.join(sourcedir, "ramdisk_offset")
+  if os.access(fn, os.F_OK):
+    cmd.append("--ramdisk_offset")
+    cmd.append(open(fn).read().rstrip("\n"))
+
+  fn = os.path.join(sourcedir, "dt_args")
+  if os.access(fn, os.F_OK):
+    cmd.append("--dt")
     cmd.append(open(fn).read().rstrip("\n"))
 
   fn = os.path.join(sourcedir, "pagesize")
