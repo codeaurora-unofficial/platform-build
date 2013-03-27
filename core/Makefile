@@ -108,6 +108,7 @@ ifneq ($(words $(BUILD_FINGERPRINT)),1)
   $(error BUILD_FINGERPRINT cannot contain spaces: "$(BUILD_FINGERPRINT)")
 endif
 
+ifeq "" "$(BUILD_DISPLAY_ID)"
 # Display parameters shown under Settings -> About Phone
 ifeq ($(TARGET_BUILD_VARIANT),user)
   # User builds should show:
@@ -122,6 +123,7 @@ ifeq ($(TARGET_BUILD_VARIANT),user)
 else
   # Non-user builds should show detailed build information
   BUILD_DISPLAY_ID := $(build_desc)
+endif
 endif
 
 # Whether there is default locale set in PRODUCT_PROPERTY_OVERRIDES
