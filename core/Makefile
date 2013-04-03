@@ -1066,7 +1066,8 @@ $(BUILT_TARGET_FILES_PACKAGE): tool_extensions := $(TARGET_DEVICE_DIR)/../common
 else
 $(BUILT_TARGET_FILES_PACKAGE): tool_extensions := $(TARGET_RELEASETOOLS_EXTENSIONS)
 endif
-
+INSTALLED_RADIOIMAGE_TARGET : $(TARGET_EMMC_BOOTLOADER)
+INSTALLED_RADIOIMAGE_TARGET += $(TARGET_EMMC_BOOTLOADER)
 # Depending on the various images guarantees that the underlying
 # directories are up-to-date.
 $(BUILT_TARGET_FILES_PACKAGE): \
