@@ -470,7 +470,8 @@ subdirs := \
 	external/mksh \
 	external/openssl \
 	external/yaffs2 \
-	external/zlib
+	external/zlib \
+	external/e2fsprogs
 else	# !BUILD_TINY_ANDROID
 #
 # Typical build; include any Android.mk files we can find.
