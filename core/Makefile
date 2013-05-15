@@ -255,7 +255,7 @@ $(APKCERTS_FILE):
 	@echo APK certs list: $@
 	@mkdir -p $(dir $@)
 	@rm -f $@
-	$(eval APKCERTS_TMP_FILE := $(shell mktemp))
+	$(eval APKCERTS_TMP_FILE := $(PRODUCT_OUT)/$(name).tmp)
 	$(hide) $(foreach p,$(PACKAGES),\
           $(if $(PACKAGES.$(p).EXTERNAL_KEY),\
 	    echo 'name="$(p).apk" certificate="EXTERNAL" \
