@@ -22,6 +22,9 @@
 #define to565(r,g,b)                                            \
     ((((r) >> 3) << 11) | (((g) >> 2) << 5) | ((b) >> 3))
 
+#define toRGBA8888(r,g,b)                                            \
+    ((r) | ((g) << 8) | ((b) << 16) | (0xFF << 24))
+
 #define from565_r(x) ((((x) >> 11) & 0x1f) * 255 / 31)
 #define from565_g(x) ((((x) >> 5) & 0x3f) * 255 / 63)
 #define from565_b(x) (((x) & 0x1f) * 255 / 31)
@@ -128,10 +131,42 @@ void to_565_rle(void)
     fprintf(stderr,"%d pixels\n",total);
 }
 
+void to_8888_rle(void)
+{
+    unsigned char in[3];
+    unsigned int last, color, count;
+    unsigned total = 0;
+    count = 0;
+
+    while(read(0, in, 3) == 3) {
+        color = toRGBA8888(in[0],in[1],in[2]);
+        if (count) {
+            if ((color == last) && (count != 65535)) {
+                count++;
+                continue;
+            } else {
+                write(1, &count, 2);
+                write(1, &last, 4);
+                total += count;
+            }
+        }
+        last = color;
+        count = 1;
+    }
+    if (count) {
+        write(1, &count, 2);
+        write(1, &last, 4);
+        total += count;
+    }
+    fprintf(stderr,"%d pixels\n",total);
+}
+
 int main(int argc, char **argv)
 {
     if ((argc == 2) && (!strcmp(argv[1],"-rle"))) {
         to_565_rle();
+    } else if ((argc == 2) && (!strcmp(argv[1],"-rle8888"))) {
+        to_8888_rle();
     } else {
         if (argc > 2 && (!strcmp(argv[1], "-w"))) {
             to_565_raw_dither(atoi(argv[2]));
