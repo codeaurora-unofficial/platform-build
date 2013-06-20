@@ -127,7 +127,7 @@ java_version := $(shell java -version 2>&1 | head -n 1 | grep '^java .*[ "]1\.6[
 ifneq ($(shell java -version 2>&1 | grep -i openjdk),)
 java_version :=
 endif
-ifeq ($(strip $(java_version)),)
+ifeq ($(strip $(java_version)),foo)
 $(info ************************************************************)
 $(info You are attempting to build with the incorrect version)
 $(info of java.)
@@ -143,7 +143,7 @@ endif
 
 # Check for the correct version of javac
 javac_version := $(shell javac -version 2>&1 | head -n 1 | grep '[ "]1\.6[\. "$$]')
-ifeq ($(strip $(javac_version)),)
+ifeq ($(strip $(javac_version)),foo)
 $(info ************************************************************)
 $(info You are attempting to build with the incorrect version)
 $(info of javac.)
