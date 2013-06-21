@@ -72,6 +72,10 @@ ifneq ($(filter $(LOCAL_MODULE_TAGS),user),)
   $(error user tag detected on module.)
 endif
 
+ifneq ($(filter $(DISABLED_USER_MODULES),$(LOCAL_MODULE)),)
+LOCAL_MODULE_TAGS := optional
+endif
+
 # Only the tags mentioned in this test are expected to be set by module
 # makefiles. Anything else is either a typo or a source of unexpected
 # behaviors.
@@ -169,6 +173,10 @@ built_module_path :=
 
 ifneq (true,$(LOCAL_UNINSTALLABLE_MODULE))
   LOCAL_INSTALLED_MODULE := $(LOCAL_MODULE_PATH)/$(LOCAL_INSTALLED_MODULE_STEM)
+endif
+
+ifneq ($(filter $(DISABLED_USER_MODULES),$(LOCAL_MODULE)),)
+LOCAL_BUILT_MODULE :=
 endif
 
 # Assemble the list of targets to create PRIVATE_ variables for.
@@ -519,6 +527,9 @@ ifneq ($(strip $(HOST_ACP_UNAVAILABLE)),)
   LOCAL_ACP_UNAVAILABLE := $(strip $(HOST_ACP_UNAVAILABLE))
 endif
 
+ifneq ($(filter $(DISABLED_USER_MODULES),$(LOCAL_MODULE)),)
+LOCAL_UNINSTALLABLE_MODULE := true
+endif
 ifndef LOCAL_UNINSTALLABLE_MODULE
   # Define a copy rule to install the module.
   # acp and libraries that it uses can't use acp for
