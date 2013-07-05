@@ -1976,8 +1976,8 @@ define add-radio-file
   $(eval $(call add-radio-file-internal,$(1),$(notdir $(1))))
 endef
 define add-radio-file-internal
-INSTALLED_RADIOIMAGE_TARGET += $$(PRODUCT_OUT)/$(2)
-$$(PRODUCT_OUT)/$(2) : $$(LOCAL_PATH)/$(1) | $$(ACP)
+INSTALLED_RADIOIMAGE_TARGET += $$(PRODUCT_OUT)/radio/$(2)
+$$(PRODUCT_OUT)/radio/$(2) : $$(LOCAL_PATH)/$(1) | $$(ACP)
 	$$(transform-prebuilt-to-target)
 endef
 

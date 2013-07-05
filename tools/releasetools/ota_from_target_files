@@ -385,6 +385,7 @@ def WriteFullOTAPackage(input_zip, output_zip, fota):
               }
 
   device_specific = common.DeviceSpecificParams(
+      files = {},
       input_zip=input_zip,
       input_version=OPTIONS.info_dict["recovery_api_version"],
       output_zip=output_zip,
