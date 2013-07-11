@@ -1319,6 +1319,12 @@ else
   fota := 0
 endif
 
+ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
+  device_type := MMC
+else
+  device_type := MTD
+endif
+
 INTERNAL_OTA_PACKAGE_TARGET := $(PRODUCT_OUT)/$(name).zip
 
 $(INTERNAL_OTA_PACKAGE_TARGET): KEY_CERT_PAIR := $(DEFAULT_KEY_CERT_PAIR)
@@ -1327,7 +1333,7 @@ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS)
 	@echo "Package OTA: $@"
 	$(hide) ./build/tools/releasetools/ota_from_target_files -v \
 	   -p $(HOST_OUT) \
-           -d MMC \
+           -d $(device_type) \
            -k $(KEY_CERT_PAIR) \
            -f $(fota) \
            $(BUILT_TARGET_FILES_PACKAGE) $@
@@ -1352,9 +1358,16 @@ else
 $(INTERNAL_UPDATE_PACKAGE_TARGET): extensions := $(TARGET_RELEASETOOLS_EXTENSIONS)
 endif
 
+ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
+  device_type := MMC
+else
+  device_type := MTD
+endif
+
 $(INTERNAL_UPDATE_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS)
 	@echo "Package: $@"
 	$(hide) ./build/tools/releasetools/img_from_target_files -v \
+           -d $(device_type) \
 	   -s $(extensions) \
 	   -p $(HOST_OUT) \
 	   $(BUILT_TARGET_FILES_PACKAGE) $@
