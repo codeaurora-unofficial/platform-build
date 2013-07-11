@@ -77,6 +77,7 @@ PRODUCT_PACKAGES += \
     libutils \
     libvisualizer \
     libvorbisidec \
+    libwebcore \
     libwpa_client \
     media \
     media_cmd \
