@@ -53,7 +53,7 @@ Usage:  ota_from_target_files [flags] input_target_files output_ota_package
       Specify whether to turn on ASLR for the package (on by default).
 
   -d  (--device_type) <type>
-      Specify mmc or mtd type device. mtd by default
+      Specify MMC or MTD type device. MTD by default
 
   -f  (--fota) <fota>
       Specify if fota upgrade is used or not. not used by default
