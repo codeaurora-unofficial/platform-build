@@ -65,14 +65,11 @@ PRODUCT_PACKAGES += \
     libdownmix \
     libdvm \
     libdrmframework \
-    libdrmframework_jni \
     libexpat \
-    libfilterfw \
     libicui18n \
     libicuuc \
     libjavacore \
     libnativehelper \
-    libsqlite_jni \
     libssl \
     libwilhelm \
     libz \

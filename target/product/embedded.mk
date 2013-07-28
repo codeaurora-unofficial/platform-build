@@ -49,8 +49,6 @@ PRODUCT_PACKAGES += \
     libpower \
     libstdc++ \
     libstlport \
-    libsurfaceflinger \
-    libsurfaceflinger_ddmconnection \
     libsysutils \
     libthread_db \
     libui \
@@ -60,7 +58,6 @@ PRODUCT_PACKAGES += \
     logwrapper \
     service \
     servicemanager \
-    surfaceflinger \
     toolbox
 
 # SELinux packages
