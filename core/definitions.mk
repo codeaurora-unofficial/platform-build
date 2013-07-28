@@ -2110,6 +2110,10 @@ include $(BUILD_SYSTEM)/distdir.mk
 # Include any vendor specific definitions.mk file
 -include $(TOPDIR)vendor/*/build/core/definitions.mk
 
+# -----------------------------------------------------------------
+# The modules allowed to use a user tag
+include $(BUILD_SYSTEM)/disabled_modules.mk
+
 # broken:
 #	$(foreach file,$^,$(if $(findstring,.a,$(suffix $file)),-l$(file),$(file)))
 
