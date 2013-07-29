@@ -50,7 +50,6 @@ PRODUCT_PACKAGES += \
     qemu-props \
     qemud \
     camera.goldfish \
-    camera.goldfish.jpeg \
     lights.goldfish \
     gps.goldfish \
     sensors.goldfish
