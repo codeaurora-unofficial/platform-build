@@ -62,6 +62,7 @@ PRODUCT_PACKAGES += \
     libstagefright_foundation \
     libstagefright_omx \
     libstagefright_yuv \
+    libsuspend \
     libusbhost \
     libutils \
     libvisualizer \
