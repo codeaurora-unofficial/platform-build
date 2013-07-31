@@ -500,6 +500,9 @@ def CheckSize(data, target, info_dict):
   if target.endswith(".img"): target = target[:-4]
   mount_point = "/" + target
 
+  fs_type = None
+  limit = 1
+
   if info_dict["fstab"]:
     if mount_point == "/userdata": mount_point = "/data"
     p = info_dict["fstab"][mount_point]
@@ -508,7 +511,7 @@ def CheckSize(data, target, info_dict):
     if "/" in device:
       device = device[device.rfind("/")+1:]
     limit = info_dict.get(device + "_size", None)
-  if not fs_type or not limit: return
+    if not fs_type or not limit: return
 
   if fs_type == "yaffs2":
     # image size should be increased by 1/64th to account for the

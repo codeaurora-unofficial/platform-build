@@ -28,7 +28,7 @@ Usage:  img_from_target_files [flags] input_target_files output_image_zip
       the output.
 
   -d  (--device_type) <type>
-      Specify mmc or mtd type device. mtd by default
+      Specify MMC or MTD type device. MTD by default
 
 
 """
@@ -225,7 +225,7 @@ def main(argv):
     return True
 
   args = common.ParseOptions(argv, __doc__,
-                             extra_opts="b:zd",
+                             extra_opts="b:zd:",
                              extra_long_opts=["board_config=",
                                               "bootable_zip",
                                               "device_type="],
