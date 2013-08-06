@@ -1187,10 +1187,15 @@ $(BUILT_TARGET_FILES_PACKAGE): \
 		$(TARGET_RECOVERY_ROOT_OUT),$(zip_root)/RECOVERY/RAMDISK)
 ifdef INSTALLED_KERNEL_TARGET
 	$(hide) $(ACP) $(INSTALLED_KERNEL_TARGET) $(zip_root)/RECOVERY/kernel
+	$(hide) mkdir -p $(zip_root)/BOOTABLE_IMAGES
+	$(hide) $(ACP) $(PRODUCT_OUT)/recovery.img $(zip_root)/BOOTABLE_IMAGES/recovery.img
 endif
 ifdef INSTALLED_2NDBOOTLOADER_TARGET
 	$(hide) $(ACP) \
 		$(INSTALLED_2NDBOOTLOADER_TARGET) $(zip_root)/RECOVERY/second
+endif
+ifdef BOARD_KERNEL_TAGS_OFFSET
+	$(hide) echo "$(BOARD_KERNEL_TAGS_OFFSET)" > $(zip_root)/RECOVERY/tags_offset
 endif
 ifdef BOARD_KERNEL_CMDLINE
 	$(hide) echo "$(BOARD_KERNEL_CMDLINE)" > $(zip_root)/RECOVERY/cmdline
@@ -1207,10 +1212,15 @@ endif
 		$(TARGET_ROOT_OUT),$(zip_root)/BOOT/RAMDISK)
 ifdef INSTALLED_KERNEL_TARGET
 	$(hide) $(ACP) $(INSTALLED_KERNEL_TARGET) $(zip_root)/BOOT/kernel
+	$(hide) $(ACP) $(PRODUCT_OUT)/boot.img $(zip_root)/BOOTABLE_IMAGES/boot.img
 endif
 ifdef INSTALLED_2NDBOOTLOADER_TARGET
 	$(hide) $(ACP) \
 		$(INSTALLED_2NDBOOTLOADER_TARGET) $(zip_root)/BOOT/second
+endif
+
+ifdef BOARD_KERNEL_TAGS_OFFSET
+	$(hide) echo "$(BOARD_KERNEL_TAGS_OFFSET)" > $(zip_root)/BOOT/tags_offset
 endif
 ifdef BOARD_KERNEL_CMDLINE
 	$(hide) echo "$(BOARD_KERNEL_CMDLINE)" > $(zip_root)/BOOT/cmdline
@@ -1220,9 +1230,6 @@ ifdef BOARD_KERNEL_BASE
 endif
 ifdef BOARD_KERNEL_PAGESIZE
 	$(hide) echo "$(BOARD_KERNEL_PAGESIZE)" > $(zip_root)/BOOT/pagesize
-endif
-ifdef BOARD_KERNEL_TAGS_ADDR
-	$(hide) echo "$(BOARD_KERNEL_TAGS_ADDR)" > $(zip_root)/BOOT/tagsaddr
 endif
 ifdef BOARD_RAMDISK_OFFSET
 	$(hide) echo "$(BOARD_RAMDISK_OFFSET)" > $(zip_root)/BOOT/ramdisk_offset
