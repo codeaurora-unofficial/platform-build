@@ -149,7 +149,7 @@ def LoadRecoveryFSTab(zip, type):
     pass
 
   try:
-    if type == 'MTD':
+    if type == 'MTD' or type == '2KNAND':
         data = zip.read("RECOVERY/RAMDISK/etc/recovery.fstab")
     elif type == 'MMC':
         data = zip.read("RECOVERY/RAMDISK/etc/recovery_mmc.fstab")
