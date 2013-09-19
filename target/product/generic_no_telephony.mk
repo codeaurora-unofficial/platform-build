@@ -48,9 +48,6 @@ PRODUCT_PACKAGES := \
     wpa_supplicant.conf
 
 PRODUCT_PACKAGES += \
-    icu.dat
-
-PRODUCT_PACKAGES += \
     librs_jni \
     libvideoeditor_jni \
     libvideoeditorplayer \
