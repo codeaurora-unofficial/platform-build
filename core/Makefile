@@ -1324,6 +1324,7 @@ $(BUILT_TARGET_FILES_PACKAGE): \
 		$(built_ota_tools) \
 		$(INTERNAL_OTA_PACKAGE_TARGET) \
 		$(INTERNAL_MMC_OTA_PACKAGE_TARGET) \
+		$(INTERNAL_2KNAND_OTA_PACKAGE_TARGET) \
 		$(APKCERTS_FILE) \
 		$(HOST_OUT_EXECUTABLES)/fs_config \
 		| $(ACP)
@@ -1332,53 +1333,111 @@ $(BUILT_TARGET_FILES_PACKAGE): \
 	$(hide) mkdir -p $(dir $@) $(zip_root)
 	@# Components of the recovery image
 	$(hide) mkdir -p $(zip_root)/RECOVERY
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) mkdir -p $(zip_root)/RECOVERY/2knand
+endif
 	$(hide) $(call package_files-copy-root, \
 		$(TARGET_RECOVERY_ROOT_OUT),$(zip_root)/RECOVERY/RAMDISK)
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) $(call package_files-copy-root, \
+		$(TARGET_RECOVERY_ROOT_OUT),$(zip_root)/RECOVERY/2knand/RAMDISK)
+endif
 ifdef INSTALLED_KERNEL_TARGET
 	$(hide) $(ACP) $(INSTALLED_KERNEL_TARGET) $(zip_root)/RECOVERY/kernel
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) $(ACP) $(INSTALLED_KERNEL_TARGET) $(zip_root)/RECOVERY/2knand/kernel
+endif
 endif
 ifeq ($(TARGET_BOOTIMG_SIGNED),true)
 	$(hide) $(ACP) $(PRODUCT_PRIVATE_KEY) $(zip_root)/RECOVERY/sign-key
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) $(ACP) $(PRODUCT_PRIVATE_KEY) $(zip_root)/RECOVERY/2knand/sign-key
+endif
 endif
 ifdef INSTALLED_2NDBOOTLOADER_TARGET
 	$(hide) $(ACP) \
 		$(INSTALLED_2NDBOOTLOADER_TARGET) $(zip_root)/RECOVERY/second
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) $(ACP) \
+		$(INSTALLED_2NDBOOTLOADER_TARGET) $(zip_root)/RECOVERY/2knand/second
+endif
 endif
 ifdef BOARD_KERNEL_CMDLINE
 	$(hide) echo "$(BOARD_KERNEL_CMDLINE)" > $(zip_root)/RECOVERY/cmdline
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) echo "$(BOARD_KERNEL_CMDLINE)" > $(zip_root)/RECOVERY/2knand/cmdline
+endif
 endif
 ifdef BOARD_KERNEL_BASE
 	$(hide) echo "$(BOARD_KERNEL_BASE)" > $(zip_root)/RECOVERY/base
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) echo "$(BOARD_KERNEL_BASE)" > $(zip_root)/RECOVERY/2knand/base
+endif
 endif
 ifdef BOARD_KERNEL_PAGESIZE
 	$(hide) echo "$(BOARD_KERNEL_PAGESIZE)" > $(zip_root)/RECOVERY/pagesize
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) echo "$(BOARD_KERNEL_PAGESIZE)" > $(zip_root)/RECOVERY/2knand/pagesize
+endif
 endif
 	@# Components of the boot image
 	$(hide) mkdir -p $(zip_root)/BOOT
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) mkdir -p $(zip_root)/BOOT/2knand
+endif
 	$(hide) $(call package_files-copy-root, \
 		$(TARGET_ROOT_OUT),$(zip_root)/BOOT/RAMDISK)
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) $(call package_files-copy-root, \
+		$(TARGET_ROOT_OUT),$(zip_root)/BOOT/2knand/RAMDISK)
+endif
 ifdef INSTALLED_KERNEL_TARGET
 	$(hide) $(ACP) $(INSTALLED_KERNEL_TARGET) $(zip_root)/BOOT/kernel
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) $(ACP) $(INSTALLED_KERNEL_TARGET) $(zip_root)/BOOT/2knand/kernel
+endif
 endif
 ifeq ($(TARGET_BOOTIMG_SIGNED),true)
 	$(hide) $(ACP) $(PRODUCT_PRIVATE_KEY) $(zip_root)/BOOT/sign-key
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) $(ACP) $(PRODUCT_PRIVATE_KEY) $(zip_root)/BOOT/2knand/sign-key
+endif
 endif
 ifdef INSTALLED_2NDBOOTLOADER_TARGET
 	$(hide) $(ACP) \
 		$(INSTALLED_2NDBOOTLOADER_TARGET) $(zip_root)/BOOT/second
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) $(ACP) \
+		$(INSTALLED_2NDBOOTLOADER_TARGET) $(zip_root)/BOOT/2knand/second
+endif
 endif
 ifdef BOARD_KERNEL_CMDLINE
 	$(hide) echo "$(BOARD_KERNEL_CMDLINE)" > $(zip_root)/BOOT/cmdline
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) echo "$(BOARD_KERNEL_CMDLINE)" > $(zip_root)/BOOT/2knand/cmdline
+endif
 endif
 	$(hide) echo "$(call get-kernel-size)" > $(zip_root)/BOOT/kernel_size
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) echo "$(call get-kernel-size)" > $(zip_root)/BOOT/2knand/kernel_size
+endif
 ifneq ($(TARGET_USES_UNCOMPRESSED_KERNEL),true)
 	$(hide) echo 1 > $(zip_root)/BOOT/compressed_kernel
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) echo 1 > $(zip_root)/BOOT/2knand/compressed_kernel
+endif
 endif
 ifdef BOARD_KERNEL_BASE
 	$(hide) echo "$(BOARD_KERNEL_BASE)" > $(zip_root)/BOOT/base
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) echo "$(BOARD_KERNEL_BASE)" > $(zip_root)/BOOT/2knand/base
+endif
 endif
 ifdef BOARD_KERNEL_PAGESIZE
 	$(hide) echo "$(BOARD_KERNEL_PAGESIZE)" > $(zip_root)/BOOT/pagesize
+ifdef BOARD_KERNEL_2KPAGESIZE
+	$(hide) echo "$(BOARD_KERNEL_2KPAGESIZE)" > $(zip_root)/BOOT/2knand/pagesize
+endif
 endif
 	$(hide) $(foreach t,$(INSTALLED_RADIOIMAGE_TARGET),\
 	            mkdir -p $(zip_root)/RADIO; \
@@ -1472,6 +1531,19 @@ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(OTATOOLS)
            -f $(fota) \
            $(BUILT_TARGET_FILES_PACKAGE) $@
 
+INTERNAL_2KNAND_OTA_PACKAGE_TARGET := $(PRODUCT_OUT)/$(name)_2knand.zip
+
+$(INTERNAL_2KNAND_OTA_PACKAGE_TARGET): KEY_CERT_PAIR := $(DEFAULT_KEY_CERT_PAIR)
+
+$(INTERNAL_2KNAND_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(OTATOOLS)
+	@echo "Package OTA: $@"
+	$(hide) ./build/tools/releasetools/ota_from_target_files -v \
+	   -p $(HOST_OUT) \
+           -d 2KNAND \
+           -k $(KEY_CERT_PAIR) \
+           -f $(fota) \
+           $(BUILT_TARGET_FILES_PACKAGE) $@
+
 ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
 INTERNAL_MMC_OTA_PACKAGE_TARGET := $(PRODUCT_OUT)/$(name)_mmc.zip
 else
@@ -1490,7 +1562,7 @@ $(INTERNAL_MMC_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(OTATOOLS)
            $(BUILT_TARGET_FILES_PACKAGE) $@
 
 .PHONY: otapackage
-otapackage: $(INTERNAL_OTA_PACKAGE_TARGET) $(INTERNAL_MMC_OTA_PACKAGE_TARGET)
+otapackage: $(INTERNAL_OTA_PACKAGE_TARGET) $(INTERNAL_MMC_OTA_PACKAGE_TARGET) $(INTERNAL_2KNAND_OTA_PACKAGE_TARGET)
 
 # -----------------------------------------------------------------
 # The update package
