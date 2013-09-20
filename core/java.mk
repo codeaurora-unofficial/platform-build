@@ -194,6 +194,7 @@ endif
 # common_java.mk, and moving the include of base_rules.mk to
 # after all the declarations.
 
+LOCAL_UNINSTALLABLE_MODULE:=true
 #######################################
 include $(BUILD_SYSTEM)/base_rules.mk
 #######################################

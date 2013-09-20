@@ -23,46 +23,11 @@ PRODUCT_PROPERTY_OVERRIDES := \
     ro.config.alarm_alert=Alarm_Classic.ogg
 
 PRODUCT_PACKAGES := \
-    ApplicationsProvider \
-    BackupRestoreConfirmation \
-    Browser \
-    Contacts \
-    ContactsProvider \
-    DefaultContainerService \
-    DownloadProvider \
-    DownloadProviderUi \
-    HTMLViewer \
-    Home \
-    KeyChain \
-    MediaProvider \
-    PackageInstaller \
-    PicoTts \
-    SettingsProvider \
-    SharedStorageBackup \
-    TelephonyProvider \
-    UserDictionaryProvider \
-    VpnDialogs \
-    apache-xml \
-    bouncycastle \
     bu \
     cacerts \
-    com.android.location.provider \
-    com.android.location.provider.xml \
-    core \
-    core-junit \
-    dalvikvm \
-    dexdeps \
-    dexdump \
-    dexlist \
-    dexopt \
     dmtracedump \
     dx \
-    ext \
-    filterfw \
-    framework-res \
     hprof-conv \
-    icu.dat \
-    installd \
     ip \
     ip-up-vpn \
     ip6tables \
