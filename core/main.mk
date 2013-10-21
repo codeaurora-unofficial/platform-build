@@ -547,9 +547,19 @@ $(foreach m,$(ALL_MODULES), \
   $(eval r := $(ALL_MODULES.$(m).REQUIRED)) \
   $(if $(r), \
     $(eval r := $(call module-installed-files,$(r))) \
-    $(eval $(call add-required-deps,$(ALL_MODULES.$(m).INSTALLED),$(r))) \
+    $(eval t_m := $(filter $(TARGET_OUT_ROOT)/%, $(ALL_MODULES.$(m).INSTALLED))) \
+    $(eval h_m := $(filter $(HOST_OUT_ROOT)/%, $(ALL_MODULES.$(m).INSTALLED))) \
+    $(eval t_r := $(filter $(TARGET_OUT_ROOT)/%, $(r))) \
+    $(eval h_r := $(filter $(HOST_OUT_ROOT)/%, $(r))) \
+    $(if $(t_m), $(eval $(call add-required-deps, $(t_m),$(t_r)))) \
+    $(if $(h_m), $(eval $(call add-required-deps, $(h_m),$(h_r)))) \
    ) \
  )
+
+t_m :=
+h_m :=
+t_r :=
+h_r :=
 
 # Resolve the dependencies on shared libraries.
 $(foreach m,$(TARGET_DEPENDENCIES_ON_SHARED_LIBRARIES), \
@@ -794,9 +804,14 @@ ifneq ($(TARGET_BUILD_APPS),)
     unbundled_build_modules := $(TARGET_BUILD_APPS)
   endif
 
+  # Dist the installed files if they exist.
   apps_only_installed_files := $(foreach m,$(unbundled_build_modules),$(ALL_MODULES.$(m).INSTALLED))
-  # dist the unbundled app.
   $(call dist-for-goals,apps_only, $(apps_only_installed_files))
+  # For uninstallable modules such as static Java library, we have to dist the built file,
+  # as <module_name>.<suffix>
+  apps_only_dist_built_files := $(foreach m,$(unbundled_build_modules),$(if $(ALL_MODULES.$(m).INSTALLED),,\
+      $(ALL_MODULES.$(m).BUILT):$(m)$(suffix $(ALL_MODULES.$(m).BUILT))))
+  $(call dist-for-goals,apps_only, $(apps_only_dist_built_files))
 
   ifeq ($(EMMA_INSTRUMENT),true)
     $(EMMA_META_ZIP) : $(apps_only_installed_files)
@@ -822,6 +837,10 @@ else # TARGET_BUILD_APPS
     $(INSTALLED_FACTORY_RAMDISK_TARGET) \
     $(INSTALLED_FACTORY_BUNDLE_TARGET) \
    )
+
+  # Put a copy of the radio/bootloader files in the dist dir.
+  $(foreach f,$(INSTALLED_RADIOIMAGE_TARGET), \
+    $(call dist-for-goals, droidcore, $(f)))
 
   ifneq ($(TARGET_BUILD_PDK),true)
     $(call dist-for-goals, droidcore, \

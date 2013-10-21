@@ -27,6 +27,10 @@ Usage:  img_from_target_files [flags] input_target_files output_image_zip
       Include only the bootable images (eg 'boot' and 'recovery') in
       the output.
 
+  -d  (--device_type) <type>
+      Specify MMC or MTD type device. MTD by default
+
+
 """
 
 import sys
@@ -51,6 +55,7 @@ import build_image
 import common
 
 OPTIONS = common.OPTIONS
+OPTIONS.device_type = 'MTD'
 
 
 def AddSystem(output_zip):
@@ -186,6 +191,9 @@ def AddCache(output_zip):
   fstab = OPTIONS.info_dict["fstab"]
   if fstab:
     image_props["fs_type" ] = fstab["/cache"].fs_type
+    print "User dir: %s" % (user_dir,)
+    print "image_props %s" % (image_props,)
+    print "img.name %s" % (img.name,)
   succ = build_image.BuildImage(user_dir, image_props, img.name)
   assert succ, "build cache.img image failed"
 
@@ -210,14 +218,17 @@ def main(argv):
       pass       # deprecated
     if o in ("-z", "--bootable_zip"):
       bootable_only[0] = True
+    if o in ("-d", "--device_type"):
+      OPTIONS.device_type = a
     else:
       return False
     return True
 
   args = common.ParseOptions(argv, __doc__,
-                             extra_opts="b:z",
+                             extra_opts="b:zd:",
                              extra_long_opts=["board_config=",
-                                              "bootable_zip"],
+                                              "bootable_zip",
+                                              "device_type="],
                              extra_option_handler=option_handler)
 
   bootable_only = bootable_only[0]
@@ -227,7 +238,7 @@ def main(argv):
     sys.exit(1)
 
   OPTIONS.input_tmp, input_zip = common.UnzipTemp(args[0])
-  OPTIONS.info_dict = common.LoadInfoDict(input_zip)
+  OPTIONS.info_dict = common.LoadInfoDict(input_zip, OPTIONS.device_type)
 
   # If this image was originally labelled with SELinux contexts, make sure we
   # also apply the labels in our new image. During building, the "file_contexts"
