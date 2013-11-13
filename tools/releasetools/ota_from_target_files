@@ -514,6 +514,7 @@ def WriteIncrementalOTAPackage(target_zip, source_zip, output_zip, fota):
       output_zip=output_zip,
       script=script,
       metadata=metadata,
+      type=OPTIONS.device_type,
       info_dict=OPTIONS.info_dict)
 
   print "Loading target..."
