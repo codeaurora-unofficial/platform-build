@@ -265,7 +265,7 @@ class EdifyGenerator(object):
       self.script.append('unmount("%s");' % (p,))
     self.mounts = set()
 
-  def AddToZip(self, input_zip, output_zip, input_path=None):
+  def AddToZip(self, input_zip, output_zip, fota, input_path=None):
     """Write the accumulated script to the output_zip file.  input_zip
     is used as the source for the 'updater' binary needed to run
     script.  If input_path is not None, it will be used as a local
@@ -282,3 +282,14 @@ class EdifyGenerator(object):
       data = open(os.path.join(input_path, "updater")).read()
     common.ZipWriteStr(output_zip, "META-INF/com/google/android/update-binary",
                        data, perms=0755)
+    if fota is 1:
+        datadua = input_zip.read("OTA/bin/ipth_dua")
+    else:
+      data = open(os.path.join(input_path, "updater")).read()
+      if fota is 1:
+        datadua = open(os.path.join(input_path, "ipth_dua")).read()
+    common.ZipWriteStr(output_zip, "META-INF/com/google/android/update-binary",
+                        data, perms=0755)
+    if fota is 1:
+      common.ZipWriteStr(output_zip, "META-INF/com/google/android/ipth_dua",
+                         datadua, perms=0755)

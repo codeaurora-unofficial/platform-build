@@ -84,7 +84,7 @@ def CloseInheritedPipes():
       pass
 
 
-def LoadInfoDict(zip):
+def LoadInfoDict(zip, type):
   """Read and parse the META/misc_info.txt key/value pairs from the
   input target files and return a dict."""
 
@@ -176,7 +176,10 @@ def LoadRecoveryFSTab(zip, fstab_version):
     pass
 
   try:
-    data = zip.read("RECOVERY/RAMDISK/etc/recovery.fstab")
+    if type == 'MTD':
+        data = zip.read("RECOVERY/RAMDISK/etc/recovery_nand.fstab")
+    elif type == 'MMC':
+        data = zip.read("RECOVERY/RAMDISK/etc/recovery.fstab")
   except KeyError:
     print "Warning: could not find RECOVERY/RAMDISK/etc/recovery.fstab in %s." % zip
     data = ""
