@@ -63,6 +63,9 @@ Usage:  sign_target_files_apks [flags] input_target_files output_target_files
       removed.  Changes are processed in the order they appear.
       Default value is "-test-keys,-dev-keys,+release-keys".
 
+  -m  (--device_type) <type>
+      Specify MMC or MTD type device.  MMC by default
+
 """
 
 import sys
@@ -87,6 +90,7 @@ OPTIONS.extra_apks = {}
 OPTIONS.key_map = {}
 OPTIONS.replace_ota_keys = False
 OPTIONS.tag_changes = ("-test-keys", "-dev-keys", "+release-keys")
+OPTIONS.device_type = 'MMC'
 
 def GetApkCerts(tf_zip):
   certmap = common.ReadApkCerts(tf_zip)
@@ -310,17 +314,20 @@ def main(argv):
           raise ValueError("Bad tag change '%s'" % (i,))
         new.append(i[0] + i[1:].strip())
       OPTIONS.tag_changes = tuple(new)
+    elif o in ("-m", "--device_type"):
+      OPTIONS.device_type = a
     else:
       return False
     return True
 
   args = common.ParseOptions(argv, __doc__,
-                             extra_opts="e:d:k:ot:",
+                             extra_opts="e:d:k:ot:m:",
                              extra_long_opts=["extra_apks=",
                                               "default_key_mappings=",
                                               "key_mapping=",
                                               "replace_ota_keys",
-                                              "tag_changes="],
+                                              "tag_changes=",
+                                              "device_type="],
                              extra_option_handler=option_handler)
 
   if len(args) != 2:
@@ -330,7 +337,7 @@ def main(argv):
   input_zip = zipfile.ZipFile(args[0], "r")
   output_zip = zipfile.ZipFile(args[1], "w")
 
-  misc_info = common.LoadInfoDict(input_zip)
+  misc_info = common.LoadInfoDict(input_zip, OPTIONS.device_type)
 
   BuildKeyMap(misc_info, key_mapping_options)
 
