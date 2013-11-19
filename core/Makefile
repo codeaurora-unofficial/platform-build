@@ -1159,6 +1159,11 @@ built_ota_tools := \
 	$(call intermediates-dir-for,EXECUTABLES,check_prereq)/check_prereq \
 	$(call intermediates-dir-for,EXECUTABLES,sqlite3)/sqlite3 \
 	$(call intermediates-dir-for,EXECUTABLES,updater)/updater
+
+ifneq ($(TARGET_FOTA_UPDATE_LIB),)
+built_ota_tools += $(call intermediates-dir-for,EXECUTABLES,ipth_dua)/ipth_dua
+endif
+
 $(BUILT_TARGET_FILES_PACKAGE): PRIVATE_OTA_TOOLS := $(built_ota_tools)
 
 $(BUILT_TARGET_FILES_PACKAGE): PRIVATE_RECOVERY_API_VERSION := $(RECOVERY_API_VERSION)
@@ -1230,6 +1235,16 @@ endif
 ifdef BOARD_KERNEL_PAGESIZE
 	$(hide) echo "$(BOARD_KERNEL_PAGESIZE)" > $(zip_root)/BOOT/pagesize
 endif
+ifdef BOARD_KERNEL_TAGS_ADDR
+	$(hide) echo "$(BOARD_KERNEL_TAGS_ADDR)" > $(zip_root)/BOOT/tagsaddr
+endif
+ifdef BOARD_RAMDISK_OFFSET
+	$(hide) echo "$(BOARD_RAMDISK_OFFSET)" > $(zip_root)/BOOT/ramdisk_offset
+endif
+
+ifeq ($(strip $(BOARD_KERNEL_SEPARATED_DT)),true)
+	$(hide) echo "$(INSTALLED_DTIMAGE_TARGET)" > $(zip_root)/BOOT/dt_args
+endif
 	$(hide) $(foreach t,$(INSTALLED_RADIOIMAGE_TARGET),\
 	            mkdir -p $(zip_root)/RADIO; \
 	            $(ACP) $(t) $(zip_root)/RADIO/$(notdir $(t));)
@@ -1298,6 +1313,18 @@ ifeq ($(TARGET_BUILD_TYPE),debug)
 endif
 name := $(name)-ota-$(FILE_NAME_TAG)
 
+ifeq ($(TARGET_HAS_FOTA),true)
+  fota := 1
+else
+  fota := 0
+endif
+
+ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
+  device_type := MMC
+else
+  device_type := MTD
+endif
+
 INTERNAL_OTA_PACKAGE_TARGET := $(PRODUCT_OUT)/$(name).zip
 
 $(INTERNAL_OTA_PACKAGE_TARGET): KEY_CERT_PAIR := $(DEFAULT_KEY_CERT_PAIR)
@@ -1306,9 +1333,10 @@ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS)
 	@echo "Package OTA: $@"
 	$(hide) ./build/tools/releasetools/ota_from_target_files -v \
 	   -p $(HOST_OUT) \
-	   -k $(KEY_CERT_PAIR) \
-	   $(BUILT_TARGET_FILES_PACKAGE) $@
-
+           -d $(device_type) \
+           -k $(KEY_CERT_PAIR) \
+           -f $(fota) \
+           $(BUILT_TARGET_FILES_PACKAGE) $@
 .PHONY: otapackage
 otapackage: $(INTERNAL_OTA_PACKAGE_TARGET)
 
@@ -1330,9 +1358,16 @@ else
 $(INTERNAL_UPDATE_PACKAGE_TARGET): extensions := $(TARGET_RELEASETOOLS_EXTENSIONS)
 endif
 
+ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
+  device_type := MMC
+else
+  device_type := MTD
+endif
+
 $(INTERNAL_UPDATE_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS)
 	@echo "Package: $@"
 	$(hide) ./build/tools/releasetools/img_from_target_files -v \
+           -d $(device_type) \
 	   -s $(extensions) \
 	   -p $(HOST_OUT) \
 	   $(BUILT_TARGET_FILES_PACKAGE) $@
