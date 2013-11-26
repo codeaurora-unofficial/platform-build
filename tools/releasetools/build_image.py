@@ -64,8 +64,14 @@ def BuildImage(in_dir, prop_dict, out_file):
     if "selinux_fc" in prop_dict:
       build_command.append(prop_dict["selinux_fc"])
   else:
-    build_command = ["mkyaffs2image", "-f"]
+    """ Dont use '-f' option for cache mount point """
+    mnt_point = prop_dict.get("mount_point", "")
+    if mnt_point.startswith("cache"):
+      build_command = ["mkyaffs2image"]
+    else:
+      build_command = ["mkyaffs2image", "-f"]
     if prop_dict.get("mkyaffs2_extra_flags", None):
+      print "Extra args are :%s" % (mkyaffs2_extra_flags,)
       build_command.extend(prop_dict["mkyaffs2_extra_flags"].split())
     build_command.append(in_dir)
     build_command.append(out_file)
