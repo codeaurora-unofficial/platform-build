@@ -126,6 +126,8 @@ def LoadInfoDict(zip, type):
   if "fstab_version" not in d:
     d["fstab_version"] = "1"
 
+  if "device_type" not in d:
+    d["device_type"] = "MMC"
   try:
     data = zip.read("META/imagesizes.txt")
     for line in data.split("\n"):
@@ -152,7 +154,7 @@ def LoadInfoDict(zip, type):
   makeint("boot_size")
   makeint("fstab_version")
 
-  d["fstab"] = LoadRecoveryFSTab(zip, d["fstab_version"])
+  d["fstab"] = LoadRecoveryFSTab(zip, d["fstab_version"], d["device_type"])
   d["build.prop"] = LoadBuildProp(zip)
   return d
 
@@ -171,7 +173,7 @@ def LoadBuildProp(zip):
     d[name] = value
   return d
 
-def LoadRecoveryFSTab(zip, fstab_version):
+def LoadRecoveryFSTab(zip, fstab_version, type):
   class Partition(object):
     pass
 
@@ -305,11 +307,15 @@ def BuildBootableImage(sourcedir, fs_config_file, info_dict=None):
   fn = os.path.join(sourcedir, "tagsaddr")
   if os.access(fn, os.F_OK):
     cmd.append("--tags-addr")
+
+  fn = os.path.join(sourcedir, "tags_offset")
+  if os.access(fn, os.F_OK):
+    cmd.append("--tags_offset")
     cmd.append(open(fn).read().rstrip("\n"))
 
   fn = os.path.join(sourcedir, "ramdisk_offset")
   if os.access(fn, os.F_OK):
-    cmd.append("--offset")
+    cmd.append("--ramdisk_offset")
     cmd.append(open(fn).read().rstrip("\n"))
 
   fn = os.path.join(sourcedir, "dt_args")
@@ -975,3 +981,18 @@ def GetTypeAndDevice(mount_point, info):
     return PARTITION_TYPES[fstab[mount_point].fs_type], fstab[mount_point].device
   else:
     return None
+
+
+def ParseCertificate(data):
+  """Parse a PEM-format certificate."""
+  cert = []
+  save = False
+  for line in data.split("\n"):
+    if "--END CERTIFICATE--" in line:
+      break
+    if save:
+      cert.append(line)
+    if "--BEGIN CERTIFICATE--" in line:
+      save = True
+  cert = "".join(cert).decode('base64')
+  return cert
