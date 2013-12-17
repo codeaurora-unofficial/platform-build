@@ -13,6 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+#
+# This file was modified by Dolby Laboratories, Inc. The portions of the
+# code that are surrounded by "DOLBY..." are copyrighted and
+# licensed separately, as follows:
+#
+# (C) 2011 - 2013 Dolby Laboratories, Inc.
+# All rights reserved.
+#
+# This program is protected under international and U.S. Copyright laws as
+# an unpublished work. This program is confidential and proprietary to the
+# copyright owners. Reproduction or disclosure, in whole or in part, or the
+# production of derivative works therefrom without the express permission of
+# the copyright owners is prohibited.
+#
 
 # Restrict the vendor module owners here.
 _vendor_owner_whitelist := \
@@ -34,6 +48,13 @@ _vendor_owner_whitelist := \
         trusted_logic \
         widevine
 
+ifdef DOLBY_DAP
+        _vendor_owner_whitelist += dolby
+else
+    ifdef DOLBY_UDC
+        _vendor_owner_whitelist += dolby
+    endif
+endif
 
 ifneq (,$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_RESTRICT_VENDOR_FILES))
 
