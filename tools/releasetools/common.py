@@ -127,6 +127,9 @@ def LoadInfoDict(zip, type):
     d["fstab_version"] = "1"
 
   if "device_type" not in d:
+    d["device_type"] = type
+
+  if d["device_type"] not in ("MTD", "MMC"):
     d["device_type"] = "MMC"
   try:
     data = zip.read("META/imagesizes.txt")
