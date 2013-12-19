@@ -2238,6 +2238,7 @@ DISABLED_USER_MODULES := \
 	app_process__asan \
 	libnative-media-jni \
 	xaplay \
+	libdrmframework_jni \
 
 # broken:
 #	$(foreach file,$^,$(if $(findstring,.a,$(suffix $file)),-l$(file),$(file)))
