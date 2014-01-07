@@ -31,7 +31,6 @@ PRODUCT_PACKAGES += \
     libaudiopreprocessing \
     libaudioutils \
     libbcc \
-    libfilterpack_imageproc \
     libgabi++ \
     libkeystore \
     libmdnssd \
