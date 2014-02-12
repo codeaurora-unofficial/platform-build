@@ -34,7 +34,8 @@ PRODUCT_PACKAGES += \
     lib64OpenglRender \
     lib64GLES_CM_translator \
     lib64GLES_V2_translator \
-    lib64EGL_translator
+    lib64EGL_translator \
+    mksdcard
 
 # Device modules
 PRODUCT_PACKAGES += \
