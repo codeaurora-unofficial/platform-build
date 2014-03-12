@@ -47,6 +47,8 @@ PRODUCT_PACKAGES += \
     libOpenglSystemCommon \
     libGLESv2_emulation \
     libGLESv1_enc \
+    libvt_jni \
+    libimscamera_jni \
     qemu-props \
     qemud \
     camera.goldfish \
