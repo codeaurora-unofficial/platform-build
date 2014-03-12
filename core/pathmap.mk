@@ -53,6 +53,9 @@ pathmap_INCL := \
     audio-route:system/media/audio_route/include \
     wilhelm:frameworks/wilhelm/include \
     wilhelm-ut:frameworks/wilhelm/src/ut \
+    bluez:external/bluetooth/bluez \
+    glib:external/bluetooth/glib \
+    dbus:external/dbus \
     speex:external/speex/include
 
 #

@@ -35,6 +35,7 @@ GRANDFATHERED_ALL_PREBUILT := \
 	chat-ril \
 	cpcap-key.kl \
 	data \
+	dbus.conf \
 	dev \
 	egl.cfg \
 	firmware_error.565 \
