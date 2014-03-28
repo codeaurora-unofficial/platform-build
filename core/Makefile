@@ -670,6 +670,12 @@ else
 ifeq ($(TARGET_USERIMAGES_USE_EXT4),true)
 INTERNAL_USERIMAGES_USE_EXT := true
 INTERNAL_USERIMAGES_EXT_VARIANT := ext4
+else
+ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+INTERNAL_USERIMAGES_USE_UBIFS := true
+INTERNAL_USERIMAGES_EXT_VARIANT := ubifs
+INTERNAL_USERIMAGES_SPARSE_UBIFS_FLAG := -F -x lzo
+endif
 endif
 endif
 endif
@@ -692,7 +698,11 @@ ifeq ($(TARGET_USERIMAGES_USE_F2FS),true)
 INTERNAL_USERIMAGES_DEPS += $(MKF2FSUSERIMG) $(MAKE_F2FS)
 endif
 else
+ifeq ($(INTERNAL_USERIMAGES_USE_UBIFS),true)
+INTERNAL_USERIMAGES_DEPS := $(MAKE_UBIFS)
+else
 INTERNAL_USERIMAGES_DEPS := $(MKYAFFS2)
+endif
 endif
 
 INTERNAL_USERIMAGES_BINARY_PATHS := $(sort $(dir $(INTERNAL_USERIMAGES_DEPS)))
@@ -725,6 +735,7 @@ $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VERITY),$(hide) echo "verit
 $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SYSTEM_VERITY_PARTITION),$(hide) echo "system_verity_block_device=$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SYSTEM_VERITY_PARTITION)" >> $(1))
 $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VENDOR_VERITY_PARTITION),$(hide) echo "vendor_verity_block_device=$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VENDOR_VERITY_PARTITION)" >> $(1))
 $(if $(2),$(hide) $(foreach kv,$(2),echo "$(kv)" >> $(1);))
+$(if $(INTERNAL_USERIMAGES_SPARSE_UBIFS_FLAG),$(hide) echo "ubifs_sparse_flag=$(INTERNAL_USERIMAGES_SPARSE_UBIFS_FLAG)" >> $(1))
 endef
 
 # -----------------------------------------------------------------
@@ -990,8 +1001,12 @@ endif
 
 $(INSTALLED_SYSTEMIMAGE): $(BUILT_SYSTEMIMAGE) $(RECOVERY_FROM_BOOT_PATCH) | $(ACP)
 	@echo "Install system fs image: $@"
+ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+	$(hide) cp -f $(systemimage_intermediates)/*.img $(PRODUCT_OUT)/
+else
 	$(copy-file-to-target)
-	$(hide) $(call assert-max-image-size,$@ $(RECOVERY_FROM_BOOT_PATCH),$(BOARD_SYSTEMIMAGE_PARTITION_SIZE))
+	$(hide) $(call assert-max-image-size,$@ $(RECOVERY_FROM_BOOT_PATCH),$(BOARD_SYSTEMIMAGE_PARTITION_SIZE),yaffs)
+endif
 
 systemimage: $(INSTALLED_SYSTEMIMAGE)
 
@@ -1253,7 +1268,8 @@ DISTTOOLS :=  $(HOST_OUT_EXECUTABLES)/minigzip \
 	  $(HOST_OUT_EXECUTABLES)/build_verity_tree \
 	  $(HOST_OUT_EXECUTABLES)/verity_signer \
 	  $(HOST_OUT_EXECUTABLES)/append2simg \
-	  $(HOST_OUT_EXECUTABLES)/boot_signer
+	  $(HOST_OUT_EXECUTABLES)/boot_signer \
+	  $(HOST_OUT_EXECUTABLES)/mkfs.ubifs
 
 OTATOOLS := $(DISTTOOLS) \
 	  $(HOST_OUT_EXECUTABLES)/aapt
