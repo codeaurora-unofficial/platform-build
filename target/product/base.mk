@@ -25,6 +25,7 @@ PRODUCT_PACKAGES += \
     bmgr \
     bugreport \
     content \
+    dbus-daemon \
     dhcpcd \
     dhcpcd-run-hooks \
     dnsmasq \
