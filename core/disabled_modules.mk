@@ -12,4 +12,5 @@ DISABLED_USER_MODULES := \
 	libjavacore \
 	app_process__asan \
 	xaplay \
+	librs_jni \
 
