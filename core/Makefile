@@ -283,7 +283,7 @@ DEFAULT_KEY_CERT_PAIR := $(DEFAULT_SYSTEM_DEV_CERTIFICATE)
 # Rules that need to be present for the all targets, even
 # if they don't do anything.
 .PHONY: systemimage
-systemimage:
+systemimage: kernelheader
 
 # -----------------------------------------------------------------
 
@@ -404,6 +404,10 @@ else	# TARGET_NO_KERNEL
 # TODO: make the emulator use bootimages, and make mkbootimg accept
 #       kernel-less inputs.
 INSTALLED_BOOTIMAGE_TARGET := $(INSTALLED_RAMDISK_TARGET)
+endif
+
+ifeq ($(strip $(TARGET_NO_BOOTLOADER)),true)
+INSTALLED_UBOOT_TARGET :=
 endif
 
 # -----------------------------------------------------------------
