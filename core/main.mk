@@ -225,7 +225,7 @@ user_variant := $(filter userdebug user,$(TARGET_BUILD_VARIANT))
 enable_target_debugging := true
 ifneq (,$(user_variant))
   # Target is secure in user builds.
-  ADDITIONAL_DEFAULT_PROPERTIES += ro.secure=1
+  ADDITIONAL_DEFAULT_PROPERTIES += ro.secure=0
 
   tags_to_install := user
   ifeq ($(user_variant),userdebug)
@@ -269,7 +269,7 @@ ifeq (true,$(strip $(enable_target_debugging)))
   INCLUDE_TEST_OTA_KEYS := true
 else # !enable_target_debugging
   # Target is less debuggable and adbd is off by default
-  ADDITIONAL_DEFAULT_PROPERTIES += ro.debuggable=0
+  ADDITIONAL_DEFAULT_PROPERTIES += ro.debuggable=1
 endif # !enable_target_debugging
 
 ## eng ##
@@ -688,6 +688,12 @@ userdatatarball: $(INSTALLED_USERDATATARBALL_TARGET)
 .PHONY: bootimage
 bootimage: $(INSTALLED_BOOTIMAGE_TARGET)
 
+.PHONY: bootloader
+bootloader: $(INSTALLED_UBOOT_TARGET)
+
+.PHONY: kernelheader
+droid: kernelheader
+
 ifeq ($(BUILD_TINY_ANDROID), true)
 INSTALLED_RECOVERYIMAGE_TARGET :=
 endif
@@ -695,8 +701,9 @@ endif
 # Build files and then package it into the rom formats
 .PHONY: droidcore
 droidcore: files \
-	systemimage \
+	$(INSTALLED_UBOOT_TARGET) \
 	$(INSTALLED_BOOTIMAGE_TARGET) \
+	systemimage \
 	$(INSTALLED_RECOVERYIMAGE_TARGET) \
 	$(INSTALLED_USERDATAIMAGE_TARGET) \
 	$(INSTALLED_FILES_FILE)
