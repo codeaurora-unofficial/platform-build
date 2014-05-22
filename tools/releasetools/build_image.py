@@ -64,7 +64,10 @@ def BuildImage(in_dir, prop_dict, out_file):
     if "selinux_fc" in prop_dict:
       build_command.append(prop_dict["selinux_fc"])
   elif fs_type.startswith("ubifs"):
-    build_command = ["mkfs.ubifs"]
+    build_command = ["mkfs_ubifs"]
+    if "selinux_fc" in prop_dict:
+      build_command.append("-S")
+      build_command.append(prop_dict["selinux_fc"])
     build_command.append("-a")
     build_command.append(prop_dict["mount_point"])
     build_command.append("-r")
