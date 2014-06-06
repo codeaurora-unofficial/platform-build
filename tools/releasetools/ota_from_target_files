@@ -451,7 +451,7 @@ def WriteFullOTAPackage(input_zip, output_zip, fota):
   #dont want to format userdata partition
   #script.FormatPartition("/data")
   script.Mount("/data")
-  script.UnpackPackageDir("recovery", "/system")
+  #script.UnpackPackageDir("recovery", "/system")
   script.UnpackPackageDir("system", "/system")
   script.UnpackPackageDir("userdata", "/data")
 
