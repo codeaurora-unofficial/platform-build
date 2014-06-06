@@ -537,7 +537,7 @@ reboot_now("%(bcb_dev)s", "");
 endif;
 endif;
 """ % bcb_dev)
-  script.AddToZip(input_zip, output_zip)
+  script.AddToZip(input_zip, output_zip, fota)
   WriteMetadata(metadata, output_zip)
 
 def WritePolicyConfig(file_context, output_zip):
