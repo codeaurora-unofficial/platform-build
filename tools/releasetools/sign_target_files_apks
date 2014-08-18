@@ -146,7 +146,13 @@ def SignApk(data, keyname, pw):
 def ProcessTargetFiles(input_tf_zip, output_tf_zip, misc_info,
                        apk_key_map, key_passwords):
 
-  maxsize = max([len(os.path.basename(i.filename))
+  # For B2G, there are no apks in the target-files package.
+  # We cover that case by defaulting to a maxsize of 0.
+  maxsize = 0
+  apks = [i for i in input_tf_zip.infolist()
+          if i.filename.endswith('.apk')]
+  if apks:
+    maxsize = max([len(os.path.basename(i.filename))
                  for i in input_tf_zip.infolist()
                  if i.filename.endswith('.apk')])
   rebuild_recovery = False
