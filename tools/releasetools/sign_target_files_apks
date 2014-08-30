@@ -286,10 +286,9 @@ def ReplaceOtaKeys(input_tf_zip, output_tf_zip, misc_info):
   # predigested (by DumpPublicKey.java) and put in res/keys.
   # extra_recovery_keys are used only in recovery.
 
-  p = common.Run(["java", "-jar",
-                  os.path.join(OPTIONS.search_path, "framework", "dumpkey.jar")]
-                 + mapped_keys + extra_recovery_keys,
-                 stdout=subprocess.PIPE)
+  # On B2G we don't build java jars, use a python implementation of dumpkey instead.
+  p = common.Run([os.path.join(os.path.dirname(__file__), "..", "dumpkey.py")]
+                 + mapped_keys + extra_recovery_keys, stdout=subprocess.PIPE)
   data, _ = p.communicate()
   if p.returncode != 0:
     raise common.ExternalError("failed to run dumpkeys")
