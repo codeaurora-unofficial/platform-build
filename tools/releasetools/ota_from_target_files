@@ -652,6 +652,13 @@ def WriteIncrementalOTAPackage(target_zip, source_zip, output_zip):
     script.SetProgress(so_far / total_verify_size)
 
   if patch_list or updating_recovery or updating_boot:
+    # We clear Gecko's HTTP cache before the regular space check.
+    # During CacheFreeSpaceCheck(), the update-binary tries to clear files in
+    # /cache to free up the desired space. However, update-binary does not
+    # see the Gecko HTTP cache as safe to delete so it won't be touched.
+    script.Print("Clearing Gecko HTTP cache...")
+    script.DeleteFilesRecursive(["/cache/Cache"])
+    script.DeleteFilesRecursive(["/cache/cache2"])
     script.CacheFreeSpaceCheck(largest_source_size)
 
   device_specific.IncrementalOTA_VerifyEnd()
