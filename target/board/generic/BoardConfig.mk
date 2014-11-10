@@ -51,3 +51,17 @@ USE_OPENGL_RENDERER := true
 # Bluetooth
 BOARD_HAVE_BLUETOOTH := true
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/generic/goldfish/bluetooth
+
+# Build flags for Wifi Marionette Test
+BOARD_WPA_SUPPLICANT_DRIVER := TEST
+BOARD_HOSTAPD_DRIVER := TEST
+WPA_SUPPLICANT_VERSION := VER_0_8_X
+
+CONFIG_EAP := true
+CONFIG_EAP_PEAP := true
+CONFIG_EAP_TTLS := true
+CONFIG_EAP_TLS := true
+
+WIFI_DRIVER_FW_PATH_AP := "ap"
+WIFI_DRIVER_FW_PATH_STA := "sta"
+WIFI_DRIVER_FW_PATH_PARAM := "/data/misc/wifi/fake_fwpath"
