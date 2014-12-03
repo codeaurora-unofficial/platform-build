@@ -3,7 +3,7 @@
 #
 ####################################
 
-DEXPREOPT_BOOT_JARS := $(PRODUCT_BOOT_JARS)
+DEXPREOPT_BOOT_JARS :=  $(subst $(space),:,$(PRODUCT_BOOT_JARS))
 DEXPREOPT_BOOT_JARS_MODULES := $(subst :, ,$(DEXPREOPT_BOOT_JARS))
 PRODUCT_BOOTCLASSPATH := $(subst $(space),:,$(foreach m,$(DEXPREOPT_BOOT_JARS_MODULES),/system/framework/$(m).jar))
 
