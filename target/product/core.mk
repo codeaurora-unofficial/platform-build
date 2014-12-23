@@ -20,6 +20,9 @@
 # core_minimal.mk instead.
 
 PRODUCT_PACKAGES += \
+    SmartcardService \
+    org.simalliance.openmobileapi \
+    org.simalliance.openmobileapi.xml \
     BasicDreams \
     Browser \
     Calculator \
