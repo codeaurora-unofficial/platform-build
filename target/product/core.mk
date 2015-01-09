@@ -21,6 +21,9 @@
 
 PRODUCT_PACKAGES += \
     SmartcardService \
+	AssdTerminal \
+	eSETerminal \
+    UICCTerminal \
     org.simalliance.openmobileapi \
     org.simalliance.openmobileapi.xml \
     BasicDreams \
