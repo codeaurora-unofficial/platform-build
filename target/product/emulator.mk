@@ -51,6 +51,7 @@ PRODUCT_PACKAGES += \
     qemu-props \
     qemud \
     camera.goldfish \
+    camera.goldfish.jpeg \
     lights.goldfish \
     gps.goldfish \
     sensors.goldfish
@@ -65,3 +66,5 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.moz.ril.numclients=9 \
     $(empty)
+
+ANDROID_ENABLE_RENDERSCRIPT := false
