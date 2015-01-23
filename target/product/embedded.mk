@@ -70,16 +70,6 @@ PRODUCT_PACKAGES += \
     toolbox \
     libsigchain
 
-# SELinux packages
-PRODUCT_PACKAGES += \
-    sepolicy \
-    file_contexts \
-    seapp_contexts \
-    property_contexts \
-    mac_permissions.xml \
-    selinux_version \
-    service_contexts
-
 
 PRODUCT_COPY_FILES += \
     system/core/rootdir/init.usb.rc:root/init.usb.rc \
