@@ -262,6 +262,12 @@ class EdifyGenerator(object):
     common.ZipWriteStr(output_zip, "META-INF/com/google/android/updater-script",
                        "\n".join(self.script) + "\n")
     fval = int(fota)
+    if fval:
+      try:
+        ipth_dua_present = input_zip.getinfo("OTA/bin/ipth_dua")
+      except KeyError:
+        """Ignore ipth_dua"""
+        fval = 0;
 
     if input_path is None:
       data = input_zip.read("OTA/bin/updater")
