@@ -57,3 +57,6 @@ CONFIG_EAP_TLS := true
 WIFI_DRIVER_FW_PATH_AP := "ap"
 WIFI_DRIVER_FW_PATH_STA := "sta"
 WIFI_DRIVER_FW_PATH_PARAM := "/data/misc/wifi/fake_fwpath"
+
+# Bug 1124567: Disable Gaia screen timeout
+BOARD_GAIA_MAKE_FLAGS := SCREEN_TIMEOUT=0
