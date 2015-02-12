@@ -65,6 +65,7 @@ PRODUCT_COPY_FILES += \
 
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.moz.ril.numclients=9 \
+    ro.moz.ril.query_icc_count=true \
     $(empty)
 
 ANDROID_ENABLE_RENDERSCRIPT := false
