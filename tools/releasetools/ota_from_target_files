@@ -233,33 +233,37 @@ class Item:
 
   def SetPermissions(self, script):
     """Append set_perm/set_perm_recursive commands to 'script' to
-    set all permissions, users, and groups for the tree of files
-    rooted at 'self'."""
+    set all permissions, users, and groups for the file at 'self' or
+    the tree of files rooted at 'self'."""
 
-    self.CountChildMetadata()
+    if self.dir:
+      self.CountChildMetadata()
 
-    def recurse(item, current):
-      # current is the (uid, gid, dmode, fmode) tuple that the current
-      # item (and all its children) have already been set to.  We only
-      # need to issue set_perm/set_perm_recursive commands if we're
-      # supposed to be something different.
-      if item.dir:
-        if current != item.best_subtree:
-          script.SetPermissionsRecursive("/"+item.name, *item.best_subtree)
-          current = item.best_subtree
+      def recurse(item, current):
+        # current is the (uid, gid, dmode, fmode) tuple that the current
+        # item (and all its children) have already been set to.  We only
+        # need to issue set_perm/set_perm_recursive commands if we're
+        # supposed to be something different.
+        if item.dir:
+          if current != item.best_subtree:
+            script.SetPermissionsRecursive("/"+item.name, *item.best_subtree)
+            current = item.best_subtree
 
-        if item.uid != current[0] or item.gid != current[1] or \
-           item.mode != current[2]:
-          script.SetPermissions("/"+item.name, item.uid, item.gid, item.mode)
+          if item.uid != current[0] or item.gid != current[1] or \
+             item.mode != current[2]:
+            script.SetPermissions("/"+item.name, item.uid, item.gid, item.mode)
 
-        for i in item.children:
-          recurse(i, current)
-      else:
-        if item.uid != current[0] or item.gid != current[1] or \
-               item.mode != current[3]:
-          script.SetPermissions("/"+item.name, item.uid, item.gid, item.mode)
+          for i in item.children:
+            recurse(i, current)
+        else:
+          if item.uid != current[0] or item.gid != current[1] or \
+                 item.mode != current[3]:
+            script.SetPermissions("/"+item.name, item.uid, item.gid, item.mode)
 
-    recurse(self, (-1, -1, -1, -1))
+      recurse(self, (-1, -1, -1, -1))
+    else:
+      if self.name in self.ITEMS:
+        script.SetPermissions("/"+self.name, self.uid, self.gid, self.mode)
 
 
 def CopySystemFiles(input_zip, output_zip=None,
