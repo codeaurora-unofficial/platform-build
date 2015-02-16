@@ -136,6 +136,9 @@ $(warning ************************************************************)
 $(error Directory names containing spaces not supported)
 endif
 
+# For B2G, Emulators need to be built locally.
+BUILD_EMULATOR ?= true
+
 ifndef BUILD_EMULATOR
   # Emulator binaries are now provided under prebuilts/android-emulator/
   BUILD_EMULATOR := false
