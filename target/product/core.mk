@@ -24,7 +24,6 @@ PRODUCT_PACKAGES += \
     AssdTerminal \
     eSETerminal \
     UiccTerminal \
-    MscTerminal \
     org.simalliance.openmobileapi \
     org.simalliance.openmobileapi.xml \
     BasicDreams \
