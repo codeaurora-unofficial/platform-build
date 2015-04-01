@@ -20,7 +20,22 @@
 
 # Host modules
 PRODUCT_PACKAGES += \
-
+    emulator \
+    emulator-arm \
+    emulator-mips \
+    emulator-x86 \
+    emulator64-arm \
+    emulator64-mips \
+    emulator64-x86 \
+    lib64EGL_translator \
+    lib64GLES_CM_translator \
+    lib64GLES_V2_translator \
+    lib64OpenglRender \
+    libEGL_translator \
+    libGLES_CM_translator \
+    libGLES_V2_translator \
+    libOpenglRender \
+    mksdcard
 
 # Device modules
 PRODUCT_PACKAGES += \
@@ -37,7 +52,6 @@ PRODUCT_PACKAGES += \
     qemu-props \
     qemud \
     camera.goldfish \
-    camera.goldfish.jpeg \
     lights.goldfish \
     gps.goldfish \
     sensors.goldfish \
@@ -49,3 +63,7 @@ PRODUCT_COPY_FILES += \
     device/generic/goldfish/init.goldfish.rc:root/init.goldfish.rc \
     device/generic/goldfish/init.goldfish.sh:system/etc/init.goldfish.sh \
     device/generic/goldfish/ueventd.goldfish.rc:root/ueventd.goldfish.rc
+
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.moz.ril.numclients=9 \
+    $(empty)
