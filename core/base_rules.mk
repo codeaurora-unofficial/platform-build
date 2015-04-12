@@ -194,6 +194,7 @@ endif
 
 ifneq ($(filter $(DISABLED_USER_MODULES),$(LOCAL_MODULE)),)
 LOCAL_BUILT_MODULE :=
+LOCAL_INSTALLED_MODULE :=
 endif
 
 # Assemble the list of targets to create PRIVATE_ variables for.
