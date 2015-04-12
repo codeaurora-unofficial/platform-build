@@ -14,4 +14,5 @@ DISABLED_USER_MODULES := \
 	xaplay \
 	librs_jni \
 	libandroid_runtime \
+	hwuitest \
 
