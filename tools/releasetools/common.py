@@ -149,12 +149,9 @@ def LoadRecoveryFSTab(zip, type):
     pass
 
   try:
-    if type == 'MTD':
-        data = zip.read("RECOVERY/recovery.fstab") 
-    elif type == 'MMC':
-        data = zip.read("RECOVERY/RAMDISK/etc/recovery_mmc.fstab")
+    data = zip.read("RECOVERY/recovery.fstab")
   except KeyError:
-    print "Warning: could not find RECOVERY/RAMDISK/etc/recovery.fstab in %s." % zip
+    print "Warning: could not find RECOVERY/recovery.fstab in %s." % zip
     data = ""
 
   d = {}
@@ -426,6 +423,8 @@ def CheckSize(data, target, info_dict):
   if target.endswith(".img"): target = target[:-4]
   mount_point = "/" + target
 
+  fs_type = None
+  limit = None
   if info_dict["fstab"]:
     if mount_point == "/userdata": mount_point = "/data"
     p = info_dict["fstab"][mount_point]
@@ -854,6 +853,7 @@ def ComputeDifferences(diffs):
 
 # map recovery.fstab's fs_types to mount/format "partition types"
 PARTITION_TYPES = { "yaffs2": "MTD", "mtd": "MTD",
+                    "ubifs": "UBI", "ubi": "MTD",
                     "ext4": "EMMC", "emmc": "EMMC" }
 
 def GetTypeAndDevice(mount_point, info): 
