@@ -875,7 +875,13 @@ recovery_patch_path := $(call intermediates-dir-for,PACKAGING,recovery_patch)
 ota_temp_root := $(PRODUCT_OUT)/ota_temp
 $(RECOVERY_PATCH_INSTALL): PRIVATE_RECOVERY_API_VERSION := $(RECOVERY_API_VERSION)
 $(RECOVERY_PATCH_INSTALL): PRIVATE_RECOVERY_FSTAB_VERSION := $(RECOVERY_FSTAB_VERSION)
-$(RECOVERY_PATCH_INSTALL): $(INSTALLED_RECOVERYIMAGE_TARGET) $(RECOVERY_FROM_BOOT_PATCH)
+$(RECOVERY_PATCH_INSTALL): $(INSTALLED_RECOVERYIMAGE_TARGET) \
+	$(RECOVERY_FROM_BOOT_PATCH) \
+	$(ALL_PREBUILT) \
+	$(ALL_COPIED_HEADERS) \
+	$(ALL_GENERATED_SOURCES) \
+	$(ALL_DEFAULT_INSTALLED_MODULES) \
+	$(PDK_FUSION_SYSIMG_FILES)
 	@echo "Installing recovery patch to system partition"
 	$(hide) mkdir -p $(ota_temp_root)
 	$(hide) mkdir -p $(ota_temp_root)/BOOT
@@ -1508,7 +1514,7 @@ endif
 	$(hide) echo "use_set_metadata=1" >> $(zip_root)/META/misc_info.txt
 	$(hide) echo "multistage_support=1" >> $(zip_root)/META/misc_info.txt
 	$(hide) echo "update_rename_support=1" >> $(zip_root)/META/misc_info.txt
-	$(hide) echo "blockimgdiff_versions=1,2" >> $(zip_root)/META/misc_info.txt
+	$(hide) echo "blockimgdiff_versions=1,2,3" >> $(zip_root)/META/misc_info.txt
 ifneq ($(OEM_THUMBPRINT_PROPERTIES),)
 	# OTA scripts are only interested in fingerprint related properties
 	$(hide) echo "oem_fingerprint_properties=$(OEM_THUMBPRINT_PROPERTIES)" >> $(zip_root)/META/misc_info.txt
