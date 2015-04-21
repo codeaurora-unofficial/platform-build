@@ -30,9 +30,6 @@ if sys.hexversion < 0x02070000:
 
 import errno
 import os
-import re
-import shutil
-import subprocess
 import tempfile
 import zipfile
 
@@ -52,10 +49,8 @@ def AddSystem(output_zip, prefix="IMAGES/"):
   block_list = common.MakeTempFile(prefix="system-blocklist-", suffix=".map")
   imgname = BuildSystem(OPTIONS.input_tmp, OPTIONS.info_dict,
                         block_list=block_list)
-  with open(imgname, "rb") as f:
-    common.ZipWriteStr(output_zip, prefix + "system.img", f.read())
-  with open(block_list, "rb") as f:
-    common.ZipWriteStr(output_zip, prefix + "system.map", f.read())
+  common.ZipWrite(output_zip, imgname, prefix + "system.img")
+  common.ZipWrite(output_zip, block_list, prefix + "system.map")
 
 
 def BuildSystem(input_dir, info_dict, block_list=None):
@@ -70,10 +65,8 @@ def AddVendor(output_zip, prefix="IMAGES/"):
   block_list = common.MakeTempFile(prefix="vendor-blocklist-", suffix=".map")
   imgname = BuildVendor(OPTIONS.input_tmp, OPTIONS.info_dict,
                      block_list=block_list)
-  with open(imgname, "rb") as f:
-    common.ZipWriteStr(output_zip, prefix + "vendor.img", f.read())
-  with open(block_list, "rb") as f:
-    common.ZipWriteStr(output_zip, prefix + "vendor.map", f.read())
+  common.ZipWrite(output_zip, imgname, prefix + "vendor.img")
+  common.ZipWrite(output_zip, block_list, prefix + "vendor.map")
 
 
 def BuildVendor(input_dir, info_dict, block_list=None):
@@ -244,10 +237,22 @@ def AddImagesToTargetFiles(filename):
 
   output_zip.close()
 
-
 def main(argv):
-  args = common.ParseOptions(argv, __doc__)
+  def option_handler(o, a):
+    if o in ("-a", "--add_missing"):
+      OPTIONS.add_missing = True
+    elif o in ("-r", "--rebuild_recovery",):
+      OPTIONS.rebuild_recovery = True
+    else:
+      return False
+    return True
 
+  args = common.ParseOptions(argv, __doc__,
+                             extra_opts="ar",
+                             extra_long_opts=["add_missing",
+                                              "rebuild_recovery",
+                                              ],
+                             extra_option_handler=option_handler)
   if len(args) != 1:
     common.Usage(__doc__)
     sys.exit(1)
