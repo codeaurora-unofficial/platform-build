@@ -22,6 +22,7 @@
 PRODUCT_PACKAGES += \
     SmartcardService \
     AssdTerminal \
+    libassd \
     eSETerminal \
     UiccTerminal \
     org.simalliance.openmobileapi \
