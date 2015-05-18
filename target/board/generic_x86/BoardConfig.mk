@@ -34,6 +34,11 @@ BUILD_EMULATOR_OPENGL := true
 # the GLES renderer disables itself if host GL acceleration isn't available.
 USE_OPENGL_RENDERER := true
 
+
+# Build Bluetooth for emulator(goldfish) deivce
+BOARD_HAVE_BLUETOOTH := true
+BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/generic/goldfish/bluetooth
+
 TARGET_USERIMAGES_USE_EXT4 := true
 BOARD_SYSTEMIMAGE_PARTITION_SIZE := 576716800
 BOARD_USERDATAIMAGE_PARTITION_SIZE := 209715200

@@ -52,6 +52,7 @@ PRODUCT_PACKAGES += \
     nfcd \
     qemu-props \
     qemud \
+    bluetooth.default \
     camera.goldfish \
     camera.goldfish.jpeg \
     lights.goldfish \

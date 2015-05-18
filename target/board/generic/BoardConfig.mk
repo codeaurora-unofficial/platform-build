@@ -47,6 +47,10 @@ BUILD_EMULATOR_OPENGL := true
 # the GLES renderer disables itself if host GL acceleration isn't available.
 USE_OPENGL_RENDERER := true
 
+# Build Bluetooth for emulator(goldfish) deivce
+BOARD_HAVE_BLUETOOTH := true
+BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/generic/goldfish/bluetooth
+
 # Set the phase offset of the system's vsync event relative to the hardware
 # vsync. The system's vsync event drives Choreographer and SurfaceFlinger's
 # rendering. This value is the number of nanoseconds after the hardware vsync
