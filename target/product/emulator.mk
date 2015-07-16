@@ -20,21 +20,7 @@
 
 # Host modules
 PRODUCT_PACKAGES += \
-    emulator \
-    emulator-arm \
-    emulator-mips \
-    emulator-x86 \
-    emulator64-arm \
-    emulator64-mips \
-    emulator64-x86 \
-    lib64EGL_translator \
-    lib64GLES_CM_translator \
-    lib64GLES_V2_translator \
-    lib64OpenglRender \
-    libEGL_translator \
-    libGLES_CM_translator \
-    libGLES_V2_translator \
-    libOpenglRender \
+    emulator-standalone \
     mksdcard
 
 # Device modules
