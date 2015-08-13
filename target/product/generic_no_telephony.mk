@@ -26,6 +26,8 @@ PRODUCT_PACKAGES := \
     OneTimeInitializer \
     Provision \
     SystemUI \
+    hostapd \
+    wpa_supplicant.conf \
     WallpaperCropper
 
 PRODUCT_PACKAGES += \
