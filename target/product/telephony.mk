@@ -20,6 +20,7 @@
 PRODUCT_PACKAGES := \
     Dialer \
     Mms \
-    rild
+    rild \
+    wpa_supplicant
 
 PRODUCT_COPY_FILES := \
