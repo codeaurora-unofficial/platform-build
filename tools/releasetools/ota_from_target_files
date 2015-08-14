@@ -62,6 +62,9 @@ Usage:  ota_from_target_files [flags] input_target_files output_ota_package
       first, so that any changes made to the system partition are done
       using the new recovery (new kernel, etc.).
 
+  --factory
+      Create the factory reset package including the linaro rootfs.
+
 """
 
 import sys
@@ -69,6 +72,9 @@ import sys
 if sys.hexversion < 0x02040000:
   print >> sys.stderr, "Python 2.4 or newer is required."
   sys.exit(1)
+
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 import copy
 import errno
@@ -78,6 +84,7 @@ import subprocess
 import tempfile
 import time
 import zipfile
+import shutil
 
 try:
   from hashlib import sha1 as sha1
@@ -101,6 +108,7 @@ OPTIONS.worker_threads = 3
 OPTIONS.device_type = 'MTD'
 OPTIONS.fota = 0
 OPTIONS.two_step = False
+OPTIONS.factory_package = False
 
 def MostPopularKey(d, default):
   """Given a dict, return the key corresponding to the largest
@@ -189,7 +197,7 @@ class Item:
 
     # The target_files contains a record of what the uid,
     # gid, and mode are supposed to be.
-    output = input_zip.read("META/filesystem_config.txt")
+    output = input_zip.read("META/filesystem_config.txt").decode("utf-8")
 
     for line in output.split("\n"):
       if not line: continue
@@ -341,16 +349,60 @@ def CopySystemFiles(input_zip, output_zip=None,
         else:
           Item.Get(fn, dir=False)
 
+    if info.filename.startswith("QCOM-FIRMWARE/"):
+      basefilename = info.filename[14:]
+      if IsSymlink(info):
+        symlinks.append((input_zip.read(info.filename),
+                         "/qcom-firmware/" + basefilename))
+      else:
+        info2 = copy.copy(info)
+        fn = info2.filename = "qcom-firmware/" + basefilename
+        if substitute and fn in substitute and substitute[fn] is None:
+          continue
+        if output_zip is not None:
+          if substitute and fn in substitute:
+            data = substitute[fn]
+          else:
+            data = input_zip.read(info.filename)
+          output_zip.writestr(info2, data)
+        if fn.endswith("/"):
+          Item.Get(fn[:-1], dir=True)
+        else:
+          Item.Get(fn, dir=False)
+
+    if OPTIONS.factory_package:
+      if info.filename.startswith("LINARO-ROOTFS/"):
+        basefilename = info.filename[14:]
+        if IsSymlink(info):
+          symlinks.append((input_zip.read(info.filename),
+                           "/linaro-rootfs/" + basefilename))
+        else:
+          info2 = copy.copy(info)
+          fn = info2.filename = "linaro-rootfs/" + basefilename
+          if substitute and fn in substitute and substitute[fn] is None:
+            continue
+          if output_zip is not None:
+            if substitute and fn in substitute:
+              data = substitute[fn]
+            else:
+              data = input_zip.read(info.filename)
+            output_zip.writestr(info2, data)
+          if fn.endswith("/"):
+            Item.Get(fn[:-1], dir=True)
+          else:
+            Item.Get(fn, dir=False)
   symlinks.sort()
   return symlinks
 
 
 def SignOutput(temp_zip_name, output_zip_name):
-  key_passwords = common.GetKeyPasswords([OPTIONS.package_key])
-  pw = key_passwords[OPTIONS.package_key]
-
-  common.SignFile(temp_zip_name, output_zip_name, OPTIONS.package_key, pw,
-                  whole_file=True)
+  if OPTIONS.package_key is None:
+    shutil.copyfile(temp_zip_name, output_zip_name)
+  else:
+    key_passwords = common.GetKeyPasswords([OPTIONS.package_key])
+    pw = key_passwords[OPTIONS.package_key]
+    common.SignFile(temp_zip_name, output_zip_name, OPTIONS.package_key, pw,
+                    whole_file=True)
 
 
 def AppendAssertions(script, info_dict):
@@ -496,8 +548,16 @@ else if get_stage("%(bcb_dev)s", "stage") == "3/3" then
 
   script.FormatPartition("/system")
   script.Mount("/system")
+  script.FormatPartition("/qcom-firmware")
+  script.Mount("/qcom-firmware")
+  if OPTIONS.factory_package:
+    script.FormatPartition("/linaro-rootfs")
+    script.Mount("/linaro-rootfs")
   script.UnpackPackageDir("recovery", "/system")
   script.UnpackPackageDir("system", "/system")
+  script.UnpackPackageDir("qcom-firmware", "/qcom-firmware")
+  if OPTIONS.factory_package:
+    script.UnpackPackageDir("linaro-rootfs", "/linaro-rootfs")
 
   symlinks = CopySystemFiles(input_zip, output_zip)
   script.MakeSymlinks(symlinks)
@@ -508,6 +568,9 @@ else if get_stage("%(bcb_dev)s", "stage") == "3/3" then
 
   Item.GetMetadata(input_zip)
   Item.Get("system").SetPermissions(script)
+  Item.Get("qcom-firmware").SetPermissions(script)
+  if OPTIONS.factory_package:
+    Item.Get("linaro-rootfs").SetPermissions(script)
 
   common.CheckSize(boot_img.data, "boot.img", OPTIONS.info_dict)
   common.ZipWriteStr(output_zip, "boot.img", boot_img.data)
@@ -984,6 +1047,8 @@ def main(argv):
       OPTIONS.fota = a
     elif o in ("-2", "--two_step"):
       OPTIONS.two_step = True
+    elif o in ("--factory"):
+      OPTIONS.factory_package = True
     else:
       return False
     return True
@@ -1001,6 +1066,7 @@ def main(argv):
                                               "device_type=",
                                               "fota=",
                                               "two_step",
+                                              "factory",
                                               ],
                              extra_option_handler=option_handler)
 
@@ -1040,19 +1106,21 @@ def main(argv):
 
   if OPTIONS.incremental_source is None:
     WriteFullOTAPackage(input_zip, output_zip, OPTIONS.fota)
-    if OPTIONS.package_key is None:
-      OPTIONS.package_key = OPTIONS.info_dict.get(
-          "default_system_dev_certificate",
-          "build/target/product/security/testkey")
+    # FIXME: Don't sign if the key is empty
+    #if OPTIONS.package_key is None:
+    #  OPTIONS.package_key = OPTIONS.info_dict.get(
+    #      "default_system_dev_certificate",
+    #      "build/target/product/security/testkey")
   else:
     print "unzipping source target-files..."
     OPTIONS.source_tmp, source_zip = common.UnzipTemp(OPTIONS.incremental_source)
     OPTIONS.target_info_dict = OPTIONS.info_dict
     OPTIONS.source_info_dict = common.LoadInfoDict(source_zip, OPTIONS.device_type)
-    if OPTIONS.package_key is None:
-      OPTIONS.package_key = OPTIONS.source_info_dict.get(
-          "default_system_dev_certificate",
-          "build/target/product/security/testkey")
+    # FIXME: Don't sign if the key is empty
+    #if OPTIONS.package_key is None:
+    #  OPTIONS.package_key = OPTIONS.source_info_dict.get(
+    #      "default_system_dev_certificate",
+    #      "build/target/product/security/testkey")
     if OPTIONS.verbose:
       print "--- source info ---"
       common.DumpInfoDict(OPTIONS.source_info_dict)

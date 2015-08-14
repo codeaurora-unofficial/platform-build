@@ -579,7 +579,7 @@ class SignApk {
                 signer.finish();
             }
             catch (Exception e) {
-                throw new IOException(e);
+                throw new IOException(e.getMessage());
             }
         }
 
