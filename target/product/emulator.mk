@@ -68,7 +68,7 @@ PRODUCT_COPY_FILES += \
 
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.moz.nfc.enabled=true \
-    ro.moz.ril.numclients=9 \
+    ro.moz.ril.numclients=2 \
     ro.moz.ril.query_icc_count=true \
     $(empty)
 
