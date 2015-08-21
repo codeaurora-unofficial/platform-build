@@ -56,3 +56,6 @@ CONFIG_EAP := true
 CONFIG_EAP_PEAP := true
 CONFIG_EAP_TTLS := true
 CONFIG_EAP_TLS := true
+
+# Bug 1196630: Disable Gaia screen timeout
+BOARD_GAIA_MAKE_FLAGS := SCREEN_TIMEOUT=0
