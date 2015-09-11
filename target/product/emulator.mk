@@ -70,6 +70,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.moz.nfc.enabled=true \
     ro.moz.ril.numclients=2 \
     ro.moz.ril.query_icc_count=true \
+    ro.moz.ril.ipv6=true \
     $(empty)
 
 ANDROID_ENABLE_RENDERSCRIPT := false
