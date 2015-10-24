@@ -25,7 +25,6 @@ PRODUCT_PACKAGES += \
     DefaultContainerService \
     Home \
     TelephonyProvider \
-    UserDictionaryProvider \
     atrace \
     libandroidfw \
     libaudiopreprocessing \

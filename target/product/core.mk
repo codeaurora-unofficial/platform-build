@@ -21,18 +21,9 @@
 # core_tiny.mk in addition to core_minimal.mk.
 
 PRODUCT_PACKAGES += \
-    BasicDreams \
-    Browser \
-    Calculator \
-    Calendar \
-    CalendarProvider \
     CaptivePortalLogin \
     CertInstaller \
     Contacts \
-    DeskClock \
-    DocumentsUI \
-    DownloadProviderUi \
-    Email \
     Exchange2 \
     ExternalStorageProvider \
     FusedLocation \
@@ -45,14 +36,11 @@ PRODUCT_PACKAGES += \
     PicoTts \
     PacProcessor \
     libpac \
-    PrintSpooler \
     ProxyHandler \
-    QuickSearchBox \
     Settings \
     SharedStorageBackup \
     Telecom \
     TeleService \
-    VpnDialogs \
     MmsService
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_base.mk)
