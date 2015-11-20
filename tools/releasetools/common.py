@@ -870,6 +870,7 @@ DIFF_PROGRAM_BY_EXT = {
     ".jar" : ["imgdiff", "-z"],
     ".apk" : ["imgdiff", "-z"],
     ".img" : "imgdiff",
+    ".deb" : "debiff",
     }
 
 class Difference(object):

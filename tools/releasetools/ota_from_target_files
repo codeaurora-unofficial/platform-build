@@ -1015,7 +1015,7 @@ endif;
 endif;
 """ % bcb_dev)
 
-  script.AddToZip(target_zip, output_zip)
+  script.AddToZip(target_zip, output_zip, fota)
   WriteMetadata(metadata, output_zip)
 
 
