@@ -60,6 +60,7 @@ TOPDIR :=
 
 BUILD_SYSTEM := $(TOPDIR)android_compat/build/core
 BUILD_DIR    := $(TOPDIR)android_compat/build
+VENDOR_DIR   := $(TOPDIR)android_compat/common
 DEVICE_DIR   := $(TOPDIR)android_compat/device
 
 # This is the default target.  It must be the first declared target.

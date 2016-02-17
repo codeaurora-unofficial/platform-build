@@ -32,7 +32,7 @@ $(foreach p, $(PACKAGES), $(if $(PACKAGES.$(p).RESOURCE_OVERLAYS), \
   $(shell echo '$(p)' '$(PACKAGES.$(p).RESOURCE_OVERLAYS)' >> $(current_package_overlay_config))))
 
 ifneq (,$(wildcard $(previous_package_overlay_config)))
-packages_overlay_changed := $(shell build/tools/diff_package_overlays.py \
+packages_overlay_changed := $(shell $(BUILD_DIR)/tools/diff_package_overlays.py \
     $(current_all_packages_config) $(current_package_overlay_config) \
     $(previous_package_overlay_config))
 ifneq (,$(packages_overlay_changed))
