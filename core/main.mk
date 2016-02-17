@@ -58,7 +58,9 @@ PWD := $(shell pwd)
 TOP := .
 TOPDIR :=
 
-BUILD_SYSTEM := $(TOPDIR)build/core
+BUILD_SYSTEM := $(TOPDIR)android_compat/build/core
+BUILD_DIR    := $(TOPDIR)android_compat/build
+DEVICE_DIR   := $(TOPDIR)android_compat/device
 
 # This is the default target.  It must be the first declared target.
 .PHONY: droid
@@ -294,7 +296,7 @@ TARGET_BUILD_JAVA_SUPPORT_LEVEL := platform
 
 # -----------------------------------------------------------------
 # The pdk (Platform Development Kit) build
-include build/core/pdk_config.mk
+include $(BUILD_DIR)/core/pdk_config.mk
 
 # -----------------------------------------------------------------
 ###
@@ -461,7 +463,7 @@ include $(TOPDIR)development/build/windows_sdk_whitelist.mk
 
 # Exclude tools/acp when cross-compiling windows under linux
 ifeq ($(findstring Linux,$(UNAME)),)
-subdirs += build/tools/acp
+subdirs += $(BUILD_DIR)/tools/acp
 endif
 
 else	# !SDK_ONLY
@@ -513,7 +515,7 @@ ifneq ($(dont_bother),true)
 # Can't use first-makefiles-under here because
 # --mindepth=2 makes the prunes not work.
 subdir_makefiles := \
-	$(shell build/tools/findleaves.py --prune=$(OUT_DIR) --prune=.repo --prune=.git $(subdirs) Android.mk)
+	$(shell $(BUILD_DIR)/tools/findleaves.py --prune=$(OUT_DIR) --prune=.repo --prune=.git $(subdirs) Android.mk)
 
 $(foreach mk, $(subdir_makefiles), $(info including $(mk) ...)$(eval include $(mk)))
 
@@ -536,7 +538,7 @@ ifneq ($(filter-out $(GRANDFATHERED_ALL_PREBUILT),$(strip $(notdir $(ALL_PREBUIL
   $(warning * should not be used for new files.)
   $(warning * As an alternative, use PRODUCT_COPY_FILES in)
   $(warning * the appropriate product definition.)
-  $(warning * build/target/product/core.mk is the product)
+  $(warning * $(BUILD_DIR)/target/product/core.mk is the product)
   $(warning * definition used in all products.)
   $(warning *)
   $(foreach bad_prebuilt,$(filter-out $(GRANDFATHERED_ALL_PREBUILT),$(strip $(notdir $(ALL_PREBUILT)))),$(warning * unexpected $(bad_prebuilt) in ALL_PREBUILT))
@@ -789,7 +791,7 @@ ifdef is_sdk_build
       $(warning $(ALL_MODULES.$(m).MAKEFILE): Module '$(m)' in PRODUCT_PACKAGES_TESTS has nothing to install!)))
 endif
 
-# build/core/Makefile contains extra stuff that we don't want to pollute this
+# $(BUILD_DIR)/core/Makefile contains extra stuff that we don't want to pollute this
 # top-level makefile with.  It expects that ALL_DEFAULT_INSTALLED_MODULES
 # contains everything that's built during the current make, but it also further
 # extends ALL_DEFAULT_INSTALLED_MODULES.

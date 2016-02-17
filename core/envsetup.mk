@@ -150,8 +150,8 @@ endif
 board_config_mk := \
 	$(strip $(wildcard \
 		$(SRC_TARGET_DIR)/board/$(TARGET_DEVICE)/BoardConfig.mk \
-		$(shell test -d device && find device -maxdepth 4 -path '*/$(TARGET_DEVICE)/BoardConfig.mk') \
-		$(shell test -d vendor && find vendor -maxdepth 4 -path '*/$(TARGET_DEVICE)/BoardConfig.mk') \
+		$(shell test -d $(DEVICE_DIR) && find $(DEVICE_DIR) -maxdepth 4 -path '*/$(TARGET_DEVICE)/BoardConfig.mk') \
+		$(shell test -d $(VENDOR_DIR) && find $(VENDOR_DIR) -maxdepth 4 -path '*/$(TARGET_DEVICE)/BoardConfig.mk') \
 	))
 ifeq ($(board_config_mk),)
   $(error No config file found for TARGET_DEVICE $(TARGET_DEVICE))

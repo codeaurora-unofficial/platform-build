@@ -32,7 +32,7 @@ backslash := $(patsubst %a,%,$(backslash))
 export PYTHONDONTWRITEBYTECODE := 1
 
 # Standard source directories.
-SRC_DOCS:= $(TOPDIR)docs
+SRC_DOCS:= $(TOPDIR)android_compat/docs
 # TODO: Enforce some kind of layering; only add include paths
 #       when a module links against a particular library.
 # TODO: See if we can remove most of these from the global list.
@@ -46,15 +46,15 @@ SRC_HEADERS := \
 	$(TOPDIR)frameworks/native/opengl/include \
 	$(TOPDIR)frameworks/av/include \
 	$(TOPDIR)frameworks/base/include
-SRC_HOST_HEADERS:=$(TOPDIR)tools/include
-SRC_LIBRARIES:= $(TOPDIR)libs
-SRC_SERVERS:= $(TOPDIR)servers
-SRC_TARGET_DIR := $(TOPDIR)build/target
-SRC_API_DIR := $(TOPDIR)prebuilts/sdk/api
-SRC_SYSTEM_API_DIR := $(TOPDIR)prebuilts/sdk/system-api
+SRC_HOST_HEADERS:=$(TOPDIR)android_compat/tools/include
+SRC_LIBRARIES:= $(TOPDIR)android_compat/libs
+SRC_SERVERS:= $(TOPDIR)android_compat/servers
+SRC_TARGET_DIR := $(TOPDIR)android_compat/build/target
+SRC_API_DIR := $(TOPDIR)android_compat/prebuilts/sdk/api
+SRC_SYSTEM_API_DIR := $(TOPDIR)android_compat/prebuilts/sdk/system-api
 
 # Some specific paths to tools
-SRC_DROIDDOC_DIR := $(TOPDIR)build/tools/droiddoc
+SRC_DROIDDOC_DIR := $(TOPDIR)android_compat/build/tools/droiddoc
 
 # Various mappings to avoid hard-coding paths all over the place
 include $(BUILD_SYSTEM)/pathmap.mk
@@ -218,7 +218,7 @@ TARGET_CPU_ABI2 := $(strip $(TARGET_CPU_ABI2))
 
 # $(1): os/arch
 define select-android-config-h
-build/core/combo/include/arch/$(1)/AndroidConfig.h
+$(BUILD_DIR)/core/combo/include/arch/$(1)/AndroidConfig.h
 endef
 
 combo_target := HOST_
@@ -400,12 +400,12 @@ MKF2FSUSERIMG := $(HOST_OUT_EXECUTABLES)/mkf2fsuserimg.sh
 MKEXT2BOOTIMG := external/genext2fs/mkbootimg_ext2.sh
 SIMG2IMG := $(HOST_OUT_EXECUTABLES)/simg2img$(HOST_EXECUTABLE_SUFFIX)
 E2FSCK := $(HOST_OUT_EXECUTABLES)/e2fsck$(HOST_EXECUTABLE_SUFFIX)
-MKTARBALL := build/tools/mktarball.sh
+MKTARBALL := $(BUILD_DIR)/tools/mktarball.sh
 TUNE2FS := $(HOST_OUT_EXECUTABLES)/tune2fs$(HOST_EXECUTABLE_SUFFIX)
 E2FSCK := $(HOST_OUT_EXECUTABLES)/e2fsck$(HOST_EXECUTABLE_SUFFIX)
 JARJAR := $(HOST_OUT_JAVA_LIBRARIES)/jarjar.jar
 PROGUARD := external/proguard/bin/proguard.sh
-JAVATAGS := build/tools/java-event-log-tags.py
+JAVATAGS := $(BUILD_DIR)/tools/java-event-log-tags.py
 LLVM_RS_CC := $(HOST_OUT_EXECUTABLES)/llvm-rs-cc$(HOST_EXECUTABLE_SUFFIX)
 BCC_COMPAT := $(HOST_OUT_EXECUTABLES)/bcc_compat$(HOST_EXECUTABLE_SUFFIX)
 LINT := prebuilts/sdk/tools/lint
@@ -477,7 +477,7 @@ APICHECK_COMMAND := $(APICHECK) -JXmx1024m -J"classpath $(APICHECK_CLASSPATH)"
 ifdef PRODUCT_DEFAULT_DEV_CERTIFICATE
   DEFAULT_SYSTEM_DEV_CERTIFICATE := $(PRODUCT_DEFAULT_DEV_CERTIFICATE)
 else
-  DEFAULT_SYSTEM_DEV_CERTIFICATE := build/target/product/security/testkey
+  DEFAULT_SYSTEM_DEV_CERTIFICATE := $(BUILD_DIR)/target/product/security/testkey
 endif
 
 # ###############################################################
