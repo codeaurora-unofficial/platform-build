@@ -57,6 +57,11 @@ TARGET_TOOLCHAIN_ROOT := prebuilts/gcc/$(HOST_PREBUILT_TAG)/aarch64/aarch64-linu
 TARGET_TOOLS_PREFIX := $(TARGET_TOOLCHAIN_ROOT)/bin/aarch64-linux-android-
 endif
 
+ifneq ($(strip $(TARGET_SYSROOT)),)
+TARGET_GLOBAL_CFLAGS += --sysroot=$(TARGET_SYSROOT)
+TARGET_GLOBAL_LDFLAGS += --sysroot=$(TARGET_SYSROOT)
+endif
+
 TARGET_CC := $(TARGET_TOOLS_PREFIX)gcc$(HOST_EXECUTABLE_SUFFIX)
 TARGET_CXX := $(TARGET_TOOLS_PREFIX)g++$(HOST_EXECUTABLE_SUFFIX)
 TARGET_AR := $(TARGET_TOOLS_PREFIX)ar$(HOST_EXECUTABLE_SUFFIX)
@@ -137,13 +142,15 @@ KERNEL_HEADERS_COMMON := $(libc_root)/kernel/uapi
 KERNEL_HEADERS_ARCH   := $(libc_root)/kernel/uapi/asm-$(TARGET_ARCH)
 KERNEL_HEADERS := $(KERNEL_HEADERS_COMMON) $(KERNEL_HEADERS_ARCH)
 
-TARGET_C_INCLUDES := \
+#TARGET_C_INCLUDES := \
 	$(libc_root)/arch-arm64/include \
 	$(libc_root)/include \
 	$(libstdc++_root)/include \
 	$(KERNEL_HEADERS) \
 	$(libm_root)/include \
 	$(libm_root)/include/arm64 \
+
+TARGET_C_INCLUDES:=
 
 TARGET_CRTBEGIN_STATIC_O := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_static.o
 TARGET_CRTBEGIN_DYNAMIC_O := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_dynamic.o
@@ -154,15 +161,16 @@ TARGET_CRTEND_SO_O := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtend_so.o
 
 TARGET_STRIP_MODULE:=true
 
-TARGET_DEFAULT_SYSTEM_SHARED_LIBRARIES := libc libstdc++ libm
+#TARGET_DEFAULT_SYSTEM_SHARED_LIBRARIES := libc libstdc++ libm
+TARGET_DEFAULT_SYSTEM_SHARED_LIBRARIES :=
 
 TARGET_CUSTOM_LD_COMMAND := true
 
 define transform-o-to-shared-lib-inner
 $(hide) $(PRIVATE_CXX) \
-	-nostdlib -Wl,-soname,$(notdir $@) \
+	-Wl,-soname,$(notdir $@) \
 	-Wl,--gc-sections \
-	$(if $(filter true,$(PRIVATE_CLANG)),-shared,-Wl,-shared) \
+	-shared \
 	$(PRIVATE_TARGET_GLOBAL_LD_DIRS) \
 	$(if $(filter true,$(PRIVATE_NO_CRT)),,$(PRIVATE_TARGET_CRTBEGIN_SO_O)) \
 	$(PRIVATE_ALL_OBJECTS) \
@@ -184,7 +192,7 @@ $(hide) $(PRIVATE_CXX) \
 endef
 
 define transform-o-to-executable-inner
-$(hide) $(PRIVATE_CXX) -nostdlib -Bdynamic -pie \
+$(hide) $(PRIVATE_CXX) -Bdynamic -pie \
 	-Wl,-dynamic-linker,/system/bin/linker64 \
 	-Wl,--gc-sections \
 	-Wl,-z,nocopyreloc \
@@ -210,7 +218,7 @@ $(hide) $(PRIVATE_CXX) -nostdlib -Bdynamic -pie \
 endef
 
 define transform-o-to-static-executable-inner
-$(hide) $(PRIVATE_CXX) -nostdlib -Bstatic \
+$(hide) $(PRIVATE_CXX) -Bstatic \
 	-Wl,--gc-sections \
 	-o $@ \
 	$(PRIVATE_TARGET_GLOBAL_LD_DIRS) \

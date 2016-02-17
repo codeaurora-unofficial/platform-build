@@ -38,4 +38,4 @@ endif # BUILD_HOST_static
 
 LOCAL_MODULE := zipalign
 
-include $(BUILD_HOST_EXECUTABLE)
+#include $(BUILD_HOST_EXECUTABLE)

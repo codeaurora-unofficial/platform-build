@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+ifneq ($(WITHOUT_CHECK_API),true)
+
 ifneq ($(TARGET_BUILD_PDK),true)
 LOCAL_PATH := $(call my-dir)
 
@@ -37,4 +39,5 @@ $(LOCAL_BUILT_MODULE): $(LOCAL_PATH)/etc/apicheck | $(ACP)
 	$(hide) chmod 755 $@
 
 # Apicheck is now part of Doclava -- See external/doclava.
+endif
 endif

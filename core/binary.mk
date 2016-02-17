@@ -154,6 +154,14 @@ ifdef my_libcxx
 my_system_shared_libraries := $(filter-out libstdc++, $(my_system_shared_libraries))
 endif
 
+ifndef LOCAL_IS_HOST_MODULE
+# on a target build, exclude these libcutils, libc, liblog and libdl
+my_shared_libraries := $(filter-out libcutils, $(my_shared_libraries))
+my_shared_libraries := $(filter-out libc, $(my_shared_libraries))
+my_shared_libraries := $(filter-out liblog, $(my_shared_libraries))
+my_shared_libraries := $(filter-out libdl, $(my_shared_libraries))
+endif
+
 # Add static HAL libraries
 ifdef LOCAL_HAL_STATIC_LIBRARIES
 $(foreach lib, $(LOCAL_HAL_STATIC_LIBRARIES), \
@@ -179,7 +187,7 @@ endif
 
 # Add in libcompiler_rt for all regular device builds
 ifeq (,$(LOCAL_SDK_VERSION)$(LOCAL_IS_HOST_MODULE)$(WITHOUT_LIBCOMPILER_RT))
-  my_static_libraries += $(COMPILER_RT_CONFIG_EXTRA_STATIC_LIBRARIES)
+#  my_static_libraries += $(COMPILER_RT_CONFIG_EXTRA_STATIC_LIBRARIES)
 endif
 
 my_compiler_dependencies :=
