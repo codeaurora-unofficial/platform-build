@@ -19,7 +19,6 @@
 
 ifeq ($(strip $($(combo_2nd_arch_prefix)HOST_TOOLCHAIN_PREFIX)),)
 $(combo_2nd_arch_prefix)HOST_TOOLCHAIN_PREFIX := /usr/bin/
-HOST_GLOBAL_CFLAGS += -I /usr/include/x86_64-linux-gnu
 endif
 # Don't do anything if the toolchain is not there
 ifneq (,$(strip $(wildcard $($(combo_2nd_arch_prefix)HOST_TOOLCHAIN_PREFIX)gcc)))
@@ -31,8 +30,11 @@ endif # $($(combo_2nd_arch_prefix)HOST_TOOLCHAIN_PREFIX)gcc exists
 # gcc location for clang; to be updated when clang is updated
 $(combo_2nd_arch_prefix)HOST_TOOLCHAIN_FOR_CLANG := prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.11-4.6/
 
+# add this path for resolving <sys/stat.h>
+$(combo_2nd_arch_prefix)HOST_GLOBAL_CFLAGS += -I /usr/include/$(shell $(HOST_CC) -print-multiarch)
+
 # We expect SSE3 floating point math.
-$(combo_2nd_arch_prefix)HOST_GLOBAL_CFLAGS += -mstackrealign -msse3 -mfpmath=sse -m32 -Wa,--noexecstack -march=prescott -I /usr/include/x86_64-linux-gnu
+$(combo_2nd_arch_prefix)HOST_GLOBAL_CFLAGS += -mstackrealign -msse3 -mfpmath=sse -m32 -Wa,--noexecstack -march=prescott
 $(combo_2nd_arch_prefix)HOST_GLOBAL_LDFLAGS += -m32 -Wl,-z,noexecstack
 
 ifneq ($(strip $(BUILD_HOST_static)),)
