@@ -275,7 +275,7 @@
 /*
  * Define if the strlcpy() function exists on the system.
  */
-#define HAVE_STRLCPY 1
+#define HAVE_STRLCPY 0
 
 /*
  * Define if the open_memstream() function exists on the system.
@@ -336,5 +336,8 @@
  * Define to 1 if <stdlib.h> provides qsort_r() with a GNU style function prototype.
  */
 #define HAVE_GNU_QSORT_R 0
+
+/** TODO: find a better place for such defines */
+#define FEATURE_LE_DIAG
 
 #endif /* _ANDROID_CONFIG_H */

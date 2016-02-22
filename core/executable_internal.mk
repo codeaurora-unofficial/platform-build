@@ -62,7 +62,7 @@ ifeq ($(LOCAL_FORCE_STATIC_EXECUTABLE),true)
 $(linked_module): $(all_objects) $(all_libraries)
 	$(transform-o-to-static-executable)
 else
-$(linked_module): $(my_target_crtbegin_dynamic_o) $(all_objects) $(all_libraries) $(my_target_crtend_o)
+$(linked_module): $(all_objects) $(all_libraries)
 	$(transform-o-to-executable)
 endif
 

@@ -160,6 +160,9 @@ my_shared_libraries := $(filter-out libcutils, $(my_shared_libraries))
 my_shared_libraries := $(filter-out libc, $(my_shared_libraries))
 my_shared_libraries := $(filter-out liblog, $(my_shared_libraries))
 my_shared_libraries := $(filter-out libdl, $(my_shared_libraries))
+my_shared_libraries := $(filter-out libutils, $(my_shared_libraries))
+
+my_static_libraries := $(filter-out liblog, $(my_static_libraries))
 endif
 
 # Add static HAL libraries
