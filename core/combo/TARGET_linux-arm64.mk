@@ -194,7 +194,6 @@ endef
 
 define transform-o-to-executable-inner
 $(hide) $(PRIVATE_CXX) -Bdynamic -pie \
-	-Wl,-dynamic-linker,/system/bin/linker64 \
 	-Wl,--gc-sections \
 	-Wl,-z,nocopyreloc \
 	$(PRIVATE_TARGET_GLOBAL_LD_DIRS) \
