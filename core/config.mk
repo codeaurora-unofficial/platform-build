@@ -46,15 +46,15 @@ SRC_HEADERS := \
 	$(TOPDIR)frameworks/native/opengl/include \
 	$(TOPDIR)frameworks/av/include \
 	$(TOPDIR)frameworks/base/include
-SRC_HOST_HEADERS:=$(TOPDIR)android_compat/tools/include
-SRC_LIBRARIES:= $(TOPDIR)android_compat/libs
-SRC_SERVERS:= $(TOPDIR)android_compat/servers
-SRC_TARGET_DIR := $(TOPDIR)android_compat/build/target
-SRC_API_DIR := $(TOPDIR)android_compat/prebuilts/sdk/api
-SRC_SYSTEM_API_DIR := $(TOPDIR)android_compat/prebuilts/sdk/system-api
+SRC_HOST_HEADERS:=$(ANDROID_COMPAT_DIR)/tools/include
+SRC_LIBRARIES:= $(ANDROID_COMPAT_DIR)/libs
+SRC_SERVERS:= $(ANDROID_COMPAT_DIR)/servers
+SRC_TARGET_DIR := $(ANDROID_COMPAT_DIR)/build/target
+SRC_API_DIR := $(ANDROID_COMPAT_DIR)/prebuilts/sdk/api
+SRC_SYSTEM_API_DIR := $(ANDROID_COMPAT_DIR)/prebuilts/sdk/system-api
 
 # Some specific paths to tools
-SRC_DROIDDOC_DIR := $(TOPDIR)android_compat/build/tools/droiddoc
+SRC_DROIDDOC_DIR := $(ANDROID_COMPAT_DIR)/build/tools/droiddoc
 
 # Various mappings to avoid hard-coding paths all over the place
 include $(BUILD_SYSTEM)/pathmap.mk

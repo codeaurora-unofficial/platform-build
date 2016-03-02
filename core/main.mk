@@ -1,3 +1,13 @@
+TOP ?= .
+$(info TOP=$(TOP))
+ifneq ($(TOP),.)
+TOPDIR ?= $(TOP)/
+else
+TOPDIR :=
+endif
+
+ANDROID_COMPAT_DIR ?= $(TOPDIR)android_compat
+
 # Only use ANDROID_BUILD_SHELL to wrap around bash.
 # DO NOT use other shells such as zsh.
 ifdef ANDROID_BUILD_SHELL
@@ -22,21 +32,6 @@ endif
 # If a rule fails, delete $@.
 .DELETE_ON_ERROR:
 
-# Figure out where we are.
-#TOP := $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
-#TOP := $(patsubst %/,%,$(TOP))
-
-# TOPDIR is the normal variable you should use, because
-# if we are executing relative to the current directory
-# it can be "", whereas TOP must be "." which causes
-# pattern matching probles when make strips off the
-# trailing "./" from paths in various places.
-#ifeq ($(TOP),.)
-#TOPDIR :=
-#else
-#TOPDIR := $(TOP)/
-#endif
-
 # Check for broken versions of make.
 # (Allow any version under Cygwin since we don't actually build the platform there.)
 ifeq (,$(findstring CYGWIN,$(shell uname -sm)))
@@ -55,13 +50,12 @@ endif
 # the top of the source tree, for example when "make -C" is used in m/mm/mmm.
 PWD := $(shell pwd)
 
-TOP := .
-TOPDIR :=
 
-BUILD_SYSTEM := $(TOPDIR)android_compat/build/core
-BUILD_DIR    := $(TOPDIR)android_compat/build
-VENDOR_DIR   := $(TOPDIR)android_compat/common
-DEVICE_DIR   := $(TOPDIR)android_compat/device
+BUILD_DIR    := $(ANDROID_COMPAT_DIR)/build
+VENDOR_DIR   := $(ANDROID_COMPAT_DIR)/common
+DEVICE_DIR   := $(ANDROID_COMPAT_DIR)/device
+
+BUILD_SYSTEM := $(BUILD_DIR)/core
 
 # This is the default target.  It must be the first declared target.
 .PHONY: droid
@@ -197,8 +191,8 @@ endif
 ifneq ($(filter-out $(INTERNAL_VALID_VARIANTS),$(TARGET_BUILD_VARIANT)),)
 $(info ***************************************************************)
 $(info ***************************************************************)
-$(info Invalid variant: $(TARGET_BUILD_VARIANT)
-$(info Valid values are: $(INTERNAL_VALID_VARIANTS)
+$(info Invalid variant: $(TARGET_BUILD_VARIANT))
+$(info Valid values are: $(INTERNAL_VALID_VARIANTS))
 $(info ***************************************************************)
 $(info ***************************************************************)
 $(error stopping)

@@ -2,7 +2,6 @@
 #define _HOST_COPYFILE_H
 
 #include <stdbool.h>
-#include <sys/stat.h>
 
 #if __cplusplus
 extern "C" {

@@ -58,7 +58,8 @@ TARGET_TOOLS_PREFIX := $(TARGET_TOOLCHAIN_ROOT)/bin/aarch64-linux-android-
 endif
 
 ifneq ($(strip $(TARGET_SYSROOT)),)
-TARGET_GLOBAL_CFLAGS += --sysroot=$(TARGET_SYSROOT)
+TARGET_GLOBAL_CFLAGS += --sysroot=$(TARGET_SYSROOT) 
+TARGET_GLOBAL_CFLAGS += -isystem $(ANDROID_COMPAT_DIR)/inc
 TARGET_GLOBAL_CFLAGS += -Wno-unused-result
 TARGET_GLOBAL_LDFLAGS += --sysroot=$(TARGET_SYSROOT) -lpthread
 endif

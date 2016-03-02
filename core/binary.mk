@@ -545,7 +545,7 @@ yacc_objects := $(yacc_cpps:$(LOCAL_CPP_EXTENSION)=.o)
 
 ifneq ($(strip $(y_yacc_cpps)),)
 $(y_yacc_cpps): $(intermediates)/%$(LOCAL_CPP_EXTENSION): \
-    $(TOPDIR)$(LOCAL_PATH)/%.y \
+    $(LOCAL_PATH)/%.y \
     $(lex_cpps) $(LOCAL_ADDITIONAL_DEPENDENCIES)
 	$(call transform-y-to-cpp,$(PRIVATE_CPP_EXTENSION))
 $(yacc_headers): $(intermediates)/%.h: $(intermediates)/%$(LOCAL_CPP_EXTENSION)
@@ -553,7 +553,7 @@ endif
 
 ifneq ($(strip $(yy_yacc_cpps)),)
 $(yy_yacc_cpps): $(intermediates)/%$(LOCAL_CPP_EXTENSION): \
-    $(TOPDIR)$(LOCAL_PATH)/%.yy \
+    $(LOCAL_PATH)/%.yy \
     $(lex_cpps) $(LOCAL_ADDITIONAL_DEPENDENCIES)
 	$(call transform-y-to-cpp,$(PRIVATE_CPP_EXTENSION))
 $(yacc_headers): $(intermediates)/%.h: $(intermediates)/%$(LOCAL_CPP_EXTENSION)
@@ -583,13 +583,13 @@ lex_objects := $(lex_cpps:$(LOCAL_CPP_EXTENSION)=.o)
 
 ifneq ($(strip $(l_lex_cpps)),)
 $(l_lex_cpps): $(intermediates)/%$(LOCAL_CPP_EXTENSION): \
-    $(TOPDIR)$(LOCAL_PATH)/%.l
+    $(LOCAL_PATH)/%.l
 	$(transform-l-to-cpp)
 endif
 
 ifneq ($(strip $(ll_lex_cpps)),)
 $(ll_lex_cpps): $(intermediates)/%$(LOCAL_CPP_EXTENSION): \
-    $(TOPDIR)$(LOCAL_PATH)/%.ll
+    $(LOCAL_PATH)/%.ll
 	$(transform-l-to-cpp)
 endif
 
@@ -624,7 +624,7 @@ cpp_objects        := $(cpp_arm_objects) $(cpp_normal_objects)
 
 ifneq ($(strip $(cpp_objects)),)
 $(cpp_objects): $(intermediates)/%.o: \
-    $(TOPDIR)$(LOCAL_PATH)/%$(LOCAL_CPP_EXTENSION) \
+    $(LOCAL_PATH)/%$(LOCAL_CPP_EXTENSION) \
     $(yacc_cpps) $(proto_generated_headers) \
     $(LOCAL_ADDITIONAL_DEPENDENCIES) \
     | $(my_compiler_dependencies)
@@ -705,7 +705,7 @@ $(c_normal_objects): PRIVATE_ARM_CFLAGS := $(normal_objects_cflags)
 c_objects        := $(c_arm_objects) $(c_normal_objects)
 
 ifneq ($(strip $(c_objects)),)
-$(c_objects): $(intermediates)/%.o: $(TOPDIR)$(LOCAL_PATH)/%.c $(yacc_cpps) $(proto_generated_headers) \
+$(c_objects): $(intermediates)/%.o: $(LOCAL_PATH)/%.c $(yacc_cpps) $(proto_generated_headers) \
     $(LOCAL_ADDITIONAL_DEPENDENCIES) \
     | $(my_compiler_dependencies)
 	$(transform-$(PRIVATE_HOST)c-to-o)
@@ -739,7 +739,7 @@ objc_sources := $(filter %.m,$(my_src_files))
 objc_objects := $(addprefix $(intermediates)/,$(objc_sources:.m=.o))
 
 ifneq ($(strip $(objc_objects)),)
-$(objc_objects): $(intermediates)/%.o: $(TOPDIR)$(LOCAL_PATH)/%.m $(yacc_cpps) $(proto_generated_headers) \
+$(objc_objects): $(intermediates)/%.o: $(LOCAL_PATH)/%.m $(yacc_cpps) $(proto_generated_headers) \
     $(LOCAL_ADDITIONAL_DEPENDENCIES) \
     | $(my_compiler_dependencies)
 	$(transform-$(PRIVATE_HOST)m-to-o)
@@ -754,7 +754,7 @@ asm_sources_S := $(filter %.S,$(my_src_files))
 asm_objects_S := $(addprefix $(intermediates)/,$(asm_sources_S:.S=.o))
 
 ifneq ($(strip $(asm_objects_S)),)
-$(asm_objects_S): $(intermediates)/%.o: $(TOPDIR)$(LOCAL_PATH)/%.S \
+$(asm_objects_S): $(intermediates)/%.o: $(LOCAL_PATH)/%.S \
     $(LOCAL_ADDITIONAL_DEPENDENCIES) \
     | $(my_compiler_dependencies)
 	$(transform-$(PRIVATE_HOST)s-to-o)
@@ -765,7 +765,7 @@ asm_sources_s := $(filter %.s,$(my_src_files))
 asm_objects_s := $(addprefix $(intermediates)/,$(asm_sources_s:.s=.o))
 
 ifneq ($(strip $(asm_objects_s)),)
-$(asm_objects_s): $(intermediates)/%.o: $(TOPDIR)$(LOCAL_PATH)/%.s \
+$(asm_objects_s): $(intermediates)/%.o: $(LOCAL_PATH)/%.s \
     $(LOCAL_ADDITIONAL_DEPENDENCIES) \
     | $(my_compiler_dependencies)
 	$(transform-$(PRIVATE_HOST)s-to-o-no-deps)
@@ -780,7 +780,7 @@ ifeq (x86,$($(my_prefix)$(LOCAL_2ND_ARCH_VAR_PREFIX)ARCH))
 asm_sources_asm := $(filter %.asm,$(my_src_files))
 ifneq ($(strip $(asm_sources_asm)),)
 asm_objects_asm := $(addprefix $(intermediates)/,$(asm_sources_asm:.asm=.o))
-$(asm_objects_asm): $(intermediates)/%.o: $(TOPDIR)$(LOCAL_PATH)/%.asm \
+$(asm_objects_asm): $(intermediates)/%.o: $(LOCAL_PATH)/%.asm \
     $(LOCAL_ADDITIONAL_DEPENDENCIES)
 	$(transform-asm-to-o)
 
@@ -825,11 +825,11 @@ normal_objects := \
     $(yacc_objects) \
     $(lex_objects) \
     $(proto_generated_objects) \
-    $(addprefix $(TOPDIR)$(LOCAL_PATH)/,$(LOCAL_PREBUILT_OBJ_FILES))
+    $(addprefix $(LOCAL_PATH)/,$(LOCAL_PREBUILT_OBJ_FILES))
 
 all_objects := $(normal_objects) $(gen_o_objects)
 
-my_c_includes += $(TOPDIR)$(LOCAL_PATH) $(intermediates) $(generated_sources_dir)
+my_c_includes += $(LOCAL_PATH) $(intermediates) $(generated_sources_dir)
 
 ifndef LOCAL_SDK_VERSION
   my_c_includes += $(JNI_H_INCLUDE)
