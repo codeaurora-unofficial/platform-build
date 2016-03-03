@@ -63,3 +63,7 @@ BOARD_GAIA_MAKE_FLAGS := SCREEN_TIMEOUT=0
 WIFI_DRIVER_FW_PATH_AP := "ap"
 WIFI_DRIVER_FW_PATH_STA := "sta"
 WIFI_DRIVER_FW_PATH_PARAM := "/data/misc/wifi/fake_fwpath"
+
+# Set Gecko toolchain. If it's not set here, Gecko will use the same toolchain
+# used to build Gonk
+GECKO_TOOLS_PREFIX = prebuilts/gcc/$(HOST_PREBUILT_TAG)/x86/x86_64-linux-android-4.9/bin/x86_64-linux-android-
