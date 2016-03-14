@@ -117,3 +117,7 @@ CONFIG_EAP_TLS := true
 WIFI_DRIVER_FW_PATH_AP := "ap"
 WIFI_DRIVER_FW_PATH_STA := "sta"
 WIFI_DRIVER_FW_PATH_PARAM := "/data/misc/wifi/fake_fwpath"
+
+# Set Gecko toolchain. If it's not set here, Gecko will use the same toolchain
+# used to build Gonk
+GECKO_TOOLS_PREFIX = prebuilts/gcc/$(HOST_PREBUILT_TAG)/arm/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-

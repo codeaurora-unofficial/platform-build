@@ -68,3 +68,7 @@ BOARD_SEPOLICY_UNION += \
         shell.te \
         system_server.te \
         zygote.te
+
+# Set Gecko toolchain. If it's not set here, Gecko will use the same toolchain
+# used to build Gonk
+GECKO_TOOLS_PREFIX = prebuilts/gcc/$(HOST_PREBUILT_TAG)/x86/x86_64-linux-android-4.9/bin/x86_64-linux-android-
