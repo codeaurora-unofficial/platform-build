@@ -791,8 +791,8 @@ endif
 ####################################################
 ## Import includes
 ####################################################
-import_includes := $(intermediates)/import_includes
-import_includes_deps := $(strip \
+#import_includes := $(intermediates)/import_includes
+#import_includes_deps := $(strip \
     $(foreach l, $(installed_shared_library_module_names), \
       $(call intermediates-dir-for,SHARED_LIBRARIES,$(l),$(LOCAL_IS_HOST_MODULE),,$(LOCAL_2ND_ARCH_VAR_PREFIX))/export_includes) \
     $(foreach l, $(my_static_libraries) $(my_whole_static_libraries), \
@@ -989,7 +989,7 @@ $(LOCAL_INSTALLED_MODULE): | $(installed_static_library_notice_file_targets)
 ###########################################################
 # Export includes
 ###########################################################
-export_includes := $(intermediates)/export_includes
+#export_includes := $(intermediates)/export_includes
 $(export_includes): PRIVATE_EXPORT_C_INCLUDE_DIRS := $(LOCAL_EXPORT_C_INCLUDE_DIRS)
 # Make sure .pb.h are already generated before any dependent source files get compiled.
 $(export_includes) : $(LOCAL_MODULE_MAKEFILE) $(proto_generated_headers)
