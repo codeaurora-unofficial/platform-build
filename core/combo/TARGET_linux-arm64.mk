@@ -61,7 +61,7 @@ ifneq ($(strip $(TARGET_SYSROOT)),)
 TARGET_GLOBAL_CFLAGS += --sysroot=$(TARGET_SYSROOT) 
 TARGET_GLOBAL_CFLAGS += -isystem $(ANDROID_COMPAT_DIR)/inc
 TARGET_GLOBAL_CFLAGS += -Wno-unused-result
-TARGET_GLOBAL_LDFLAGS += --sysroot=$(TARGET_SYSROOT) -lpthread
+TARGET_GLOBAL_LDFLAGS += --sysroot=$(TARGET_SYSROOT) -lpthread -ldl
 endif
 
 TARGET_CC := $(TARGET_TOOLS_PREFIX)gcc$(HOST_EXECUTABLE_SUFFIX)
@@ -79,9 +79,11 @@ TARGET_GLOBAL_CFLAGS += \
 
 android_config_h := $(call select-android-config-h,linux-arm64)
 
+#
+# TODO:: in the below CFLAGS we removed -ffunction-sections
+# It was causing  mis-aligned opcodes error when building
 TARGET_GLOBAL_CFLAGS += \
 			-fstack-protector \
-			-ffunction-sections \
 			-fdata-sections \
 			-funwind-tables \
 			-Wa,--noexecstack \
