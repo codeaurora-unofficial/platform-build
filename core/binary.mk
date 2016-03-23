@@ -891,7 +891,7 @@ my_system_shared_libraries_fullpath := \
 
 built_shared_libraries += $(my_system_shared_libraries_fullpath)
 else
-built_shared_libraries := \
+#built_shared_libraries := \
     $(addprefix $($(LOCAL_2ND_ARCH_VAR_PREFIX)$(my_prefix)OUT_INTERMEDIATE_LIBRARIES)/, \
       $(addsuffix $(so_suffix), \
         $(installed_shared_library_module_names)))
