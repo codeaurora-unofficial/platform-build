@@ -273,7 +273,7 @@
 /*
  * Define if the strlcpy() function exists on the system.
  */
-#define HAVE_STRLCPY 1
+#define HAVE_STRLCPY 0
 
 /*
  * Define if the open_memstream() function exists on the system.
