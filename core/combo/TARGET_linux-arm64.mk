@@ -61,7 +61,7 @@ ifneq ($(strip $(TARGET_SYSROOT)),)
 TARGET_GLOBAL_CFLAGS += --sysroot=$(TARGET_SYSROOT) 
 TARGET_GLOBAL_CFLAGS += -isystem $(ANDROID_COMPAT_DIR)/inc
 TARGET_GLOBAL_CFLAGS += -Wno-unused-result
-TARGET_GLOBAL_LDFLAGS += --sysroot=$(TARGET_SYSROOT) -lpthread -ldl
+TARGET_GLOBAL_LDFLAGS += --sysroot=$(TARGET_SYSROOT) -lpthread -ldl -lrt
 endif
 
 TARGET_CC := $(TARGET_TOOLS_PREFIX)gcc$(HOST_EXECUTABLE_SUFFIX)
