@@ -156,13 +156,20 @@ endif
 
 ifndef LOCAL_IS_HOST_MODULE
 # on a target build, exclude these libcutils, libc, liblog and libdl
-my_shared_libraries := $(filter-out libcutils, $(my_shared_libraries))
-my_shared_libraries := $(filter-out libc, $(my_shared_libraries))
-my_shared_libraries := $(filter-out liblog, $(my_shared_libraries))
-my_shared_libraries := $(filter-out libdl, $(my_shared_libraries))
-my_shared_libraries := $(filter-out libutils, $(my_shared_libraries))
+my_suppress_shared_libraries := libcutils libc liblog libdl libutils
+#include libraries to supress as mentioned in the recipe
+my_suppress_shared_libraries += $(TARGET_LIBRARY_SUPPRESS_LIST)
+$(foreach lib, $(my_suppress_shared_libraries), \
+   $(eval my_shared_libraries := $(filter-out $(lib), $(my_shared_libraries))))
 
-my_static_libraries := $(filter-out liblog, $(my_static_libraries))
+my_suppress_static_libraries := libcutils libc liblog libdl libutils
+my_suppress_static_libraries += $(TARGET_LIBRARY_SUPPRESS_LIST)
+$(foreach lib, $(my_suppress_static_libraries), \
+   $(eval my_static_libraries := $(filter-out $(lib), $(my_static_libraries))))
+
+#Add CFLAGS and LDFLAGS mentioned in the recipe
+my_ldflags += $(LDFLAGS)
+my_cflags += $(CFLAGS)
 endif
 
 # Add static HAL libraries
