@@ -549,7 +549,7 @@ ifeq ($(USE_INSTALL),true)
 $(LOCAL_INSTALLED_MODULE): $(LOCAL_BUILT_MODULE)
 	@echo "Install: $@"
 	@mkdir -p $(dir $@)
-	$(hide) install -m 0644 -D $< $@
+	$(hide) install -D $< $@
 	$(PRIVATE_POST_INSTALL_CMD)
 else ifneq ($(LOCAL_ACP_UNAVAILABLE),true)
 $(LOCAL_INSTALLED_MODULE): $(LOCAL_BUILT_MODULE) | $(ACP)
