@@ -1931,6 +1931,10 @@ $(INTERNAL_FINDBUGS_HTML_TARGET): $(INTERNAL_FINDBUGS_XML_TARGET)
 
 # -----------------------------------------------------------------
 # These are some additional build tasks that need to be run.
+ifneq (,$(filter oem_image, $(MAKECMDGOALS)))
+include build/core/tasks/oem_image.mk
+endif
+
 ifneq ($(dont_bother),true)
 include $(sort $(wildcard $(BUILD_SYSTEM)/tasks/*.mk))
 -include $(sort $(wildcard vendor/*/build/tasks/*.mk))
