@@ -22,25 +22,17 @@
 
 PRODUCT_PACKAGES += \
     CaptivePortalLogin \
-    CertInstaller \
-    Contacts \
-    Exchange2 \
     ExternalStorageProvider \
     FusedLocation \
     InputDevices \
     KeyChain \
     Keyguard \
-    LatinIME \
     Launcher2 \
     ManagedProvisioning \
-    PicoTts \
     PacProcessor \
     libpac \
     ProxyHandler \
-    Settings \
-    SharedStorageBackup \
     Telecom \
-    TeleService \
-    MmsService
+    TeleService
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_base.mk)

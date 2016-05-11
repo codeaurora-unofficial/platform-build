@@ -23,9 +23,6 @@ PRODUCT_DEVICE := generic
 PRODUCT_NAME := core
 
 PRODUCT_PACKAGES += \
-    BackupRestoreConfirmation \
-    DownloadProvider \
-    HTMLViewer \
     MediaProvider \
     PackageInstaller \
     SettingsProvider \
@@ -75,7 +72,6 @@ PRODUCT_PACKAGES += \
     uiautomator \
     uncrypt \
     voip-common \
-    webview \
     wifi-service
 
 PRODUCT_COPY_FILES += \

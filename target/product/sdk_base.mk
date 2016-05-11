@@ -37,7 +37,6 @@ PRODUCT_PACKAGES := \
 	Mms \
 	Music \
 	OpenWnn \
-	Protips \
 	rild \
 	SdkSetup \
 	SmokeTest \
