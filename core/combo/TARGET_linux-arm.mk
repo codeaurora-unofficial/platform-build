@@ -59,7 +59,7 @@ endif
 
 ifneq ($(strip $($(combo_2nd_arch_prefix)TARGET_SYSROOT)),)
 $(combo_2nd_arch_prefix)TARGET_GLOBAL_CFLAGS += --sysroot=$($(combo_2nd_arch_prefix)TARGET_SYSROOT) 
-$(combo_2nd_arch_prefix)TARGET_GLOBAL_CFLAGS += -isystem $(ANDROID_COMPAT_DIR)/inc -include $(ANDROID_COMPAT_DIR)/inc/android_compat.h
+$(combo_2nd_arch_prefix)TARGET_GLOBAL_CFLAGS += -DFEATURE_ANDROID_COMPAT_BUILDER
 $(combo_2nd_arch_prefix)TARGET_GLOBAL_CFLAGS += -Wno-unused-result
 $(combo_2nd_arch_prefix)TARGET_GLOBAL_LDFLAGS += --sysroot=$(TARGET_SYSROOT) -lpthread -ldl
 endif
