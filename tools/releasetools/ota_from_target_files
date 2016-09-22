@@ -188,9 +188,13 @@ class Item:
 
   @classmethod
   def Get(cls, name, dir=False):
-    if name not in cls.ITEMS:
-      cls.ITEMS[name] = Item(name, dir=dir)
-    return cls.ITEMS[name]
+    # To be safe against filesystem differences, we always encode the name key
+    # as UTF-8, and look it up as UTF-8. Sometimes, the filesystem modules
+    # return the name as non-UTF-8 and this fails the lookup in the dict
+    encname = name.encode('utf8')
+    if encname not in cls.ITEMS:
+      cls.ITEMS[encname] = Item(encname, dir=dir)
+    return cls.ITEMS[encname]
 
   @classmethod
   def GetMetadata(cls, input_zip):
@@ -215,7 +219,7 @@ class Item:
         if key == "capabilities":
           capabilities = value
 
-      i = cls.ITEMS.get(name, None)
+      i = cls.ITEMS.get(name.encode('utf8'), None)
       if i is not None:
         i.uid = int(uid)
         i.gid = int(gid)
