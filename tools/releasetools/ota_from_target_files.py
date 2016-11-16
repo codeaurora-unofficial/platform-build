@@ -392,6 +392,11 @@ def CopyPartitionFiles(itemset, input_zip, output_zip=None, substitute=None):
             data = substitute[fn]
           else:
             data = input_zip.read(info.filename)
+          if fn.endswith("/"):
+            #zip does not play nice with empty folders. Create dummy file to make sure folder is saved in archive.
+            info_dummy = copy.copy(info2)
+            info_dummy.filename = info_dummy.filename + "__emptyfile__"
+            output_zip.writestr(info_dummy,data)
           common.ZipWriteStr(output_zip, info2, data)
         if fn.endswith("/"):
           itemset.Get(fn[:-1], is_dir=True)
@@ -411,6 +416,8 @@ def SignOutput(temp_zip_name, output_zip_name):
 
 
 def AppendAssertions(script, info_dict, oem_dict=None):
+  print "Skip assertions"
+  return
   oem_props = info_dict.get("oem_fingerprint_properties")
   if oem_props is None or len(oem_props) == 0:
     device = GetBuildProp("ro.product.device", info_dict)
@@ -714,6 +721,8 @@ def LoadPartitionFiles(z, partition):
 
 
 def GetBuildProp(prop, info_dict):
+  #We dont need the properties from here. Returning dummy value
+  return "None"
   """Return the fingerprint of the build of a given target-files info_dict."""
   try:
     return info_dict.get("build.prop", {})[prop]

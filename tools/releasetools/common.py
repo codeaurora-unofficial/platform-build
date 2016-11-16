@@ -213,9 +213,9 @@ def LoadRecoveryFSTab(read_helper, fstab_version):
       self.context = context
 
   try:
-    data = read_helper("RECOVERY/RAMDISK/etc/recovery.fstab")
+    data = read_helper("RECOVERY/recovery.fstab")
   except KeyError:
-    print "Warning: could not find RECOVERY/RAMDISK/etc/recovery.fstab"
+    print "Warning: could not find RECOVERY/recovery.fstab"
     data = ""
 
   if fstab_version == 1:
@@ -251,7 +251,7 @@ def LoadRecoveryFSTab(read_helper, fstab_version):
 
       d[mount_point] = Partition(mount_point=mount_point, fs_type=pieces[1],
                                  device=pieces[2], length=length,
-                                 device2=device2)
+                                 device2=device2, context=None)
 
   elif fstab_version == 2:
     d = {}
@@ -1342,7 +1342,9 @@ PARTITION_TYPES = {
     "ext4": "EMMC",
     "emmc": "EMMC",
     "f2fs": "EMMC",
-    "squashfs": "EMMC"
+    "squashfs": "EMMC",
+    "ubifs" : "UBI",
+    "ubi" : "MTD"
 }
 
 def GetTypeAndDevice(mount_point, info):
