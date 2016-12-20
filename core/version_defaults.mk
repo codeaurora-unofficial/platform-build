@@ -104,7 +104,7 @@ ifeq "" "$(PLATFORM_SECURITY_PATCH)"
   #
   # If there is no $PLATFORM_SECURITY_PATCH set, keep it empty.
 
-  PLATFORM_SECURITY_PATCH := 2016-06-01
+  PLATFORM_SECURITY_PATCH := 2016-11-06
 endif
 
 ifeq "" "$(PLATFORM_BASE_OS)"
