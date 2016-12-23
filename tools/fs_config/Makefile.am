@@ -10,6 +10,9 @@ bin_PROGRAMS := fs_config
 
 fs_config_SOURCES := $(c_sources)
 fs_config_CPPFLAGS := $(AM_CPPFLAGS)
+if BUILD_HOST
+fs_config_CPPFLAGS += -DHOST_BUILD
+endif
 
 fs_config_LDFLAGS := -lselinux -lcutils
 

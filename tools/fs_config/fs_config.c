@@ -24,7 +24,10 @@
 
 #include <selinux/selinux.h>
 #include <selinux/label.h>
+
+#ifndef HOST_BUILD
 #include <selinux/android.h>
+#endif
 
 #include "private/android_filesystem_config.h"
 
