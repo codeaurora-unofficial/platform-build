@@ -15,6 +15,11 @@ AC_SUBST([LIBSELINUX_LIBS])
 
 AM_CONDITIONAL(USE_GLIB, test "x${with_glib}" = "xyes")
 
+AS_CASE([$host],
+        [x86_64*], [X86_64=yes],
+        [X86_64=no]
+)
+AM_CONDITIONAL(BUILD_HOST, [test "x$X86_64" = "xyes"])
 
 AC_ARG_WITH([core-headers],
       AC_HELP_STRING([--with-core-headers=@<:@dir@:>@],

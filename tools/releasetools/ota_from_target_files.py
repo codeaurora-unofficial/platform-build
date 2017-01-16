@@ -85,6 +85,9 @@ Usage:  ota_from_target_files [flags] input_target_files output_ota_package
       instead of the binary in the build's target_files.  Use for
       development only.
 
+  -d  (--device_type) <type>
+      Specify mmc or mtd type device. mtd by default
+
   -t  (--worker_threads) <int>
       Specifies the number of worker-threads that will be used when
       generating patches for incremental updates (defaults to 3).
@@ -133,6 +136,7 @@ OPTIONS.full_radio = False
 OPTIONS.full_bootloader = False
 # Stash size cannot exceed cache_size * threshold.
 OPTIONS.cache_size = None
+OPTIONS.device_type = 'MTD'
 OPTIONS.stash_threshold = 0.8
 
 def MostPopularKey(d, default):
@@ -535,7 +539,8 @@ def WriteFullOTAPackage(input_zip, output_zip):
       script=script,
       input_tmp=OPTIONS.input_tmp,
       metadata=metadata,
-      info_dict=OPTIONS.info_dict)
+      info_dict=OPTIONS.info_dict,
+      type=OPTIONS.device_type)
 
   has_recovery_patch = HasRecoveryPatch(input_zip)
   block_based = OPTIONS.block_based and has_recovery_patch
@@ -768,7 +773,8 @@ def WriteBlockIncrementalOTAPackage(target_zip, source_zip, output_zip):
       output_zip=output_zip,
       script=script,
       metadata=metadata,
-      info_dict=OPTIONS.source_info_dict)
+      info_dict=OPTIONS.source_info_dict,
+      type=OPTIONS.device_type)
 
   # TODO: Currently this works differently from WriteIncrementalOTAPackage().
   # This function doesn't consider thumbprints when writing
@@ -1168,7 +1174,8 @@ def WriteIncrementalOTAPackage(target_zip, source_zip, output_zip):
       output_zip=output_zip,
       script=script,
       metadata=metadata,
-      info_dict=OPTIONS.source_info_dict)
+      info_dict=OPTIONS.source_info_dict,
+      type=OPTIONS.device_type)
 
   system_diff = FileDifference("system", source_zip, target_zip, output_zip)
   script.Mount("/system", recovery_mount_options)
@@ -1184,7 +1191,8 @@ def WriteIncrementalOTAPackage(target_zip, source_zip, output_zip):
                                    OPTIONS.source_info_dict)
 
   if oem_props is None:
-    script.AssertSomeFingerprint(source_fp, target_fp)
+    #script.AssertSomeFingerprint(source_fp, target_fp)
+    print "Skip AssertSomeFingerprint"
   else:
     script.AssertSomeThumbprint(
         GetBuildProp("ro.build.thumbprint", OPTIONS.target_info_dict),
@@ -1200,6 +1208,11 @@ def WriteIncrementalOTAPackage(target_zip, source_zip, output_zip):
       "/tmp/boot.img", "boot.img", OPTIONS.target_tmp, "BOOT")
   updating_boot = (not OPTIONS.two_step and
                    (source_boot.data != target_boot.data))
+
+  if updating_boot and not OPTIONS.block_based:
+      include_full_boot = True;
+      print "boot image changed; including full boot image."
+      common.ZipWriteStr(output_zip, "boot.img", target_boot.data)
 
   source_recovery = common.GetBootableImage(
       "/tmp/recovery.img", "recovery.img", OPTIONS.source_tmp, "RECOVERY",
@@ -1271,7 +1284,7 @@ else if get_stage("%(bcb_dev)s") != "3/3" then
   if vendor_diff:
     so_far += vendor_diff.EmitVerification(script)
 
-  if updating_boot:
+  if updating_boot and not include_full_boot:
     d = common.Difference(target_boot, source_boot)
     _, _, d = d.ComputePatch()
     print "boot      target: %d  source: %d  diff: %d" % (
@@ -1336,20 +1349,25 @@ else
 
   if not OPTIONS.two_step:
     if updating_boot:
-      # Produce the boot image by applying a patch to the current
-      # contents of the boot partition, and write it back to the
-      # partition.
-      script.Print("Patching boot image...")
-      script.ApplyPatch("%s:%s:%d:%s:%d:%s"
-                        % (boot_type, boot_device,
-                           source_boot.size, source_boot.sha1,
-                           target_boot.size, target_boot.sha1),
-                        "-",
-                        target_boot.size, target_boot.sha1,
-                        source_boot.sha1, "patch/boot.img.p")
-      so_far += target_boot.size
-      script.SetProgress(so_far / total_patch_size)
-      print "boot image changed; including."
+        if include_full_boot:
+            print "boot image changed; installing full."
+            script.Print("Installing full boot image...")
+            script.WriteRawImage("/boot", "boot.img")
+        else:
+          # Produce the boot image by applying a patch to the current
+          # contents of the boot partition, and write it back to the
+          # partition.
+          script.Print("Patching boot image...")
+          script.ApplyPatch("%s:%s:%d:%s:%d:%s"
+                            % (boot_type, boot_device,
+                               source_boot.size, source_boot.sha1,
+                               target_boot.size, target_boot.sha1),
+                            "-",
+                            target_boot.size, target_boot.sha1,
+                            source_boot.sha1, "patch/boot.img.p")
+          so_far += target_boot.size
+          script.SetProgress(so_far / total_patch_size)
+          print "boot image changed; including patch."
     else:
       print "boot image unchanged; skipping."
 
@@ -1553,6 +1571,8 @@ def main(argv):
       OPTIONS.updater_binary = a
     elif o in ("--no_fallback_to_full",):
       OPTIONS.fallback_to_full = False
+    elif o in ("-d", "--device_type"):
+      OPTIONS.device_type = a
     elif o == "--stash_threshold":
       try:
         OPTIONS.stash_threshold = float(a)
@@ -1564,7 +1584,7 @@ def main(argv):
     return True
 
   args = common.ParseOptions(argv, __doc__,
-                             extra_opts="b:k:i:d:wne:t:a:2o:",
+                             extra_opts="b:k:i:d:wne:t:a:2o:d:",
                              extra_long_opts=[
                                  "board_config=",
                                  "package_key=",
@@ -1584,6 +1604,7 @@ def main(argv):
                                  "verify",
                                  "no_fallback_to_full",
                                  "stash_threshold=",
+                                 "device_type=",
                              ], extra_option_handler=option_handler)
 
   if len(args) != 2:
