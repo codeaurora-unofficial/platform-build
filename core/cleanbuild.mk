@@ -104,6 +104,9 @@ else
   endif
   _crs_new_cmd :=
   steps :=
+  INTERNAL_CLEAN_STEPS := $(shell echo $(INTERNAL_CLEAN_STEPS) | xargs | sed 's/\t/ /g')
+  INTERNAL_CLEAN_STEPS := $(shell echo $(INTERNAL_CLEAN_STEPS) | xargs | sed 's/ $//g')
+
 endif
 CURRENT_CLEAN_BUILD_VERSION :=
 CURRENT_CLEAN_STEPS :=
