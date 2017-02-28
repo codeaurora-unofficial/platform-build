@@ -1307,7 +1307,7 @@ else if get_stage("%(bcb_dev)s") != "3/3" then
   if vendor_diff:
     if vendor_diff.patch_list:
       size.append(vendor_diff.largest_source_size)
-  if size or updating_recovery or updating_boot:
+  if size and (updating_recovery or updating_boot):
     script.CacheFreeSpaceCheck(max(size))
 
   device_specific.IncrementalOTA_VerifyEnd()
