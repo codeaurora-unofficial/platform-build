@@ -207,6 +207,11 @@ class EdifyGenerator(object):
             'package_extract_file("%(fn)s", "%(device)s");' % args)
       else:
         raise ValueError("don't know how to write \"%s\" partitions" % (p.fs_type,))
+  
+  def CurrentStage(self, stage):
+    """sets the stage as main or backup and returns true if the current
+    stage matches"""
+    self.script.append('current_stage("%s");' % (stage))
 
   def SetPermissions(self, fn, uid, gid, mode):
     """Set file ownership and permissions."""

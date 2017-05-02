@@ -470,14 +470,29 @@ def WriteFullOTAPackage(input_zip, output_zip, fota):
                                      OPTIONS.input_tmp, "BOOT")
   recovery_img = common.GetBootableImage("recovery.img", "recovery.img",
                                          OPTIONS.input_tmp, "RECOVERY")
+  appsboot_mbn = common.GetBootableImage("appsboot.mbn", "appsboot.mbn",
+                                        OPTIONS.input_tmp, "ABOOT")
+  tz_mbn = common.GetBootableImage("tz.mbn", "tz.mbn",
+                              OPTIONS.input_tmp, "TZ")
+  rpm_mbn = common.GetBootableImage("rpm.mbn", "rpm.mbn",
+                              OPTIONS.input_tmp, "RPM")
 
   Item.GetMetadata(input_zip)
   Item.Get("system").SetPermissions(script)
   Item.Get("userdata").SetPermissions(script)
-  
+
   common.CheckSize(boot_img.data, "boot.img", OPTIONS.info_dict)
   common.ZipWriteStr(output_zip, "boot.img", boot_img.data)
-  
+
+  common.CheckSize(appsboot_mbn.data, "aboot.mbn", OPTIONS.info_dict)
+  common.ZipWriteStr(output_zip, "appsboot.mbn", appsboot_mbn.data)
+
+  common.CheckSize(tz_mbn.data, "tz.mbn", OPTIONS.info_dict)
+  common.ZipWriteStr(output_zip, "tz.mbn", tz_mbn.data)
+
+  common.CheckSize(rpm_mbn.data, "rpm.mbn", OPTIONS.info_dict)
+  common.ZipWriteStr(output_zip, "rpm.mbn", rpm_mbn.data)
+
   #Write dsp diff/mbn images to zip file
   dsp_image_names = ["dsp1.diff", "dsp2.diff", "dsp3.diff", "dsp1.mbn", "dsp2.mbn", "dsp3.mbn"]
   for dsp_image_name in dsp_image_names:
@@ -486,12 +501,32 @@ def WriteFullOTAPackage(input_zip, output_zip, fota):
       print dsp_image_name + " image found. Writing to zip"
       dsp_file = common.File.FromLocalFile(dsp_image_name, dsp_image_path)
       common.ZipWriteStr(output_zip, dsp_image_name, dsp_file.data)
-
+  
+  script.CurrentStage("main")
   #if os.path.exists
   script.ShowProgress(0.2, 0)
 
   script.ShowProgress(0.2, 10)
   script.WriteRawImage("/boot", "boot.img")
+
+  script.ShowProgress(0.2, 10)
+  script.WriteRawImage("/aboot", "appsboot.mbn")
+
+  script.ShowProgress(0.2, 10)
+  script.WriteRawImage("/tz", "tz.mbn")
+
+  script.ShowProgress(0.2, 10)
+  script.WriteRawImage("/rpm", "rpm.mbn")
+  
+  script.CurrentStage("backup")
+  script.ShowProgress(0.2, 10)
+  script.WriteRawImage("/abootbak", "appsboot.mbn")
+
+  script.ShowProgress(0.2, 10)
+  script.WriteRawImage("/tzbak", "tz.mbn")
+
+  script.ShowProgress(0.2, 10)
+  script.WriteRawImage("/rpmbak", "rpm.mbn")
 
   script.ShowProgress(0.1, 0)
   device_specific.FullOTA_InstallEnd()
