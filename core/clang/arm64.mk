@@ -1,11 +1,4 @@
 # Clang flags for arm64 arch, target or host.
-
-CLANG_CONFIG_arm64_EXTRA_ASFLAGS := \
-  -no-integrated-as
-
-CLANG_CONFIG_arm64_EXTRA_CFLAGS := \
-  -no-integrated-as
-
 CLANG_CONFIG_arm64_EXTRA_LDFLAGS :=
 
 # Include common unknown flags
