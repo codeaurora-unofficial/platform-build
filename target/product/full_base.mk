@@ -24,9 +24,15 @@ PRODUCT_PACKAGES := \
     OpenWnn \
     libWnnEngDic \
     libWnnJpnDic \
-    libwnndict \
-    WAPPushManager
+    libwnndict
 
+ifneq ($(strip $(TARGET_ENABLE_OPTIMIZATION)),true)
+    PRODUCT_PACKAGES += \
+    PhotoTable \
+    WAPPushManager
+endif
+
+ifneq ($(strip $(TARGET_ENABLE_OPTIMIZATION)),true)
 PRODUCT_PACKAGES += \
     Galaxy4 \
     HoloSpiralWallpaper \
@@ -34,8 +40,8 @@ PRODUCT_PACKAGES += \
     LiveWallpapersPicker \
     MagicSmokeWallpapers \
     NoiseField \
-    PhaseBeam \
-    PhotoTable
+    PhaseBeam
+endif
 
 # Additional settings used in all AOSP builds
 PRODUCT_PROPERTY_OVERRIDES := \

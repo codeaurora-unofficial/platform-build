@@ -20,44 +20,49 @@
 # core_minimal.mk instead. If you care about wearables, you need to modify
 # core_tiny.mk in addition to core_minimal.mk.
 
+ifneq ($(strip $(TARGET_ENABLE_OPTIMIZATION)),true)
+ PRODUCT_PACKAGES += \
+     Calendar \
+     CalendarProvider \
+     BlockedNumberProvider \
+     SharedStorageBackup \
+     VpnDialogs \
+     DeskClock \
+     Email \
+     ExactCalculator \
+     Exchange2 \
+     PacProcessor \
+     PicoTts \
+     Launcher2 \
+     BookmarkProvider \
+     QuickSearchBox \
+     DownloadProviderUi \
+     KeyChain \
+     DocumentsUI \
+     Telecom \
+     Contacts \
+     PrintSpooler
+endif
+
 PRODUCT_PACKAGES += \
     BasicDreams \
-    BlockedNumberProvider \
-    BookmarkProvider \
-    Browser2 \
-    Calendar \
-    CalendarProvider \
     CaptivePortalLogin \
+    MmsService \
     CertInstaller \
-    Contacts \
-    DeskClock \
-    DocumentsUI \
-    DownloadProviderUi \
-    Email \
-    ExactCalculator \
-    Exchange2 \
     ExternalStorageProvider \
     FusedLocation \
     InputDevices \
-    KeyChain \
     Keyguard \
     LatinIME \
-    Launcher2 \
+    Browser2 \
     ManagedProvisioning \
     MtpDocumentsProvider \
-    PicoTts \
-    PacProcessor \
     libpac \
-    PrintSpooler \
     PrintRecommendationService \
     ProxyHandler \
-    QuickSearchBox \
     Settings \
-    SharedStorageBackup \
     StorageManager \
-    Telecom \
-    TeleService \
-    VpnDialogs \
-    MmsService
+    TeleService
+
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_base.mk)

@@ -37,7 +37,6 @@ PRODUCT_PACKAGES += \
     dpm \
     framework \
     fsck_msdos \
-    hid \
     ime \
     input \
     javax.obex \
@@ -129,6 +128,10 @@ PRODUCT_PACKAGES += \
     vold \
     wm
 
+ifneq ($(strip $(TARGET_ENABLE_OPTIMIZATION)),true)
+    PRODUCT_PACKAGES += \
+       hid
+endif
 
 PRODUCT_COPY_FILES := $(call add-to-product-copy-files-if-exists,\
     frameworks/base/preloaded-classes:system/etc/preloaded-classes)

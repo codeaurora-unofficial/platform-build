@@ -22,20 +22,24 @@ PRODUCT_BRAND := generic
 PRODUCT_DEVICE := generic
 PRODUCT_NAME := core
 
+ifneq ($(strip $(TARGET_ENABLE_OPTIMIZATION)),true)
 PRODUCT_PACKAGES += \
-    BackupRestoreConfirmation \
+       WallpaperBackup \
+       DownloadProvider \
+       HTMLViewer \
+       BackupRestoreConfirmation
+endif
+
+PRODUCT_PACKAGES += \
     CtsShimPrebuilt \
     CtsShimPrivPrebuilt \
-    DownloadProvider \
     ExtShared \
     ExtServices \
-    HTMLViewer \
     MediaProvider \
     PackageInstaller \
     SettingsProvider \
     Shell \
     StatementService \
-    WallpaperBackup \
     bcc \
     bu \
     com.android.future.usb.accessory \

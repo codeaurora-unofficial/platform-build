@@ -32,4 +32,6 @@ PRODUCT_COPY_FILES := \
 endif
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_base.mk)
+ifneq ($(strip $(TARGET_ENABLE_OPTIMIZATION)),true)
 $(call inherit-product, $(SRC_TARGET_DIR)/product/telephony.mk)
+endif

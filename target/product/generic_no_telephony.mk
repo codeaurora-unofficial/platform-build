@@ -20,15 +20,19 @@
 PRODUCT_PACKAGES := \
     Bluetooth \
     BluetoothMidiService \
-    Camera2 \
-    Gallery2 \
-    Music \
-    MusicFX \
-    OneTimeInitializer \
     Provision \
     SystemUI \
-    EasterEgg \
     WallpaperCropper
+
+ifneq ($(strip $(TARGET_ENABLE_OPTIMIZATION)),true)
+    PRODUCT_PACKAGES += \
+    Camera2 \
+    Gallery2 \
+    OneTimeInitializer \
+    Music \
+    MusicFX \
+    EasterEgg
+endif
 
 PRODUCT_PACKAGES += \
     clatd \
