@@ -34,8 +34,6 @@ PRODUCT_PACKAGES += \
     dumpsys \
     fastboot \
     gralloc.default \
-    grep \
-    gzip \
     healthd \
     hwservicemanager \
     init \
@@ -72,23 +70,20 @@ PRODUCT_PACKAGES += \
     logcat \
     logwrapper \
     lshal \
-    mkshrc \
-    reboot \
     recovery \
     service \
     servicemanager \
-    sh \
+    shell_and_utilities \
     storaged \
     surfaceflinger \
     tombstoned \
-    toolbox \
-    toybox \
     tzdatacheck \
     vndservice \
     vndservicemanager \
-    matrix.xml \
+    compatibility_matrix.xml \
     manifest.xml \
     system_manifest.xml \
+    system_compatibility_matrix.xml \
 
 # SELinux packages
 PRODUCT_PACKAGES += \
