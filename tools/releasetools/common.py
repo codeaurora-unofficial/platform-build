@@ -1408,11 +1408,11 @@ def MakeRecoveryPatch(input_dir, output_sink, recovery_img, boot_img,
   except KeyError:
     return
 
-  sh = """#!/system/bin/sh
+  sh = """#!/bin/sh
 if ! applypatch -c %(recovery_type)s:%(recovery_device)s:%(recovery_size)d:%(recovery_sha1)s; then
-  applypatch %(bonus_args)s %(boot_type)s:%(boot_device)s:%(boot_size)d:%(boot_sha1)s %(recovery_type)s:%(recovery_device)s %(recovery_sha1)s %(recovery_size)d %(boot_sha1)s:/system/recovery-from-boot.p && log -t recovery "Installing new recovery image: succeeded" || log -t recovery "Installing new recovery image: failed"
+  applypatch %(bonus_args)s %(boot_type)s:%(boot_device)s:%(boot_size)d:%(boot_sha1)s %(recovery_type)s:%(recovery_device)s %(recovery_sha1)s %(recovery_size)d %(boot_sha1)s:/recovery-from-boot.p && echo "Installing new recovery image: succeeded" || echo "Installing new recovery image: failed"
 else
-  log -t recovery "Recovery image already installed"
+  echo "Recovery image already installed"
 fi
 """ % {'boot_size': boot_img.size,
        'boot_sha1': boot_img.sha1,
