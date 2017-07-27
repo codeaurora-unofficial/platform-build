@@ -51,12 +51,19 @@ PRODUCT_PACKAGES += \
     android.hardware.audio@2.0-service \
     vibrator.goldfish \
     power.goldfish \
+    power.ranchu \
     fingerprint.ranchu \
     android.hardware.biometrics.fingerprint@2.1-service \
     sensors.ranchu \
     android.hardware.graphics.composer@2.1-impl \
-	hwcomposer.goldfish \
-	hwcomposer.ranchu \
+    android.hardware.graphics.composer@2.1-service \
+    android.hardware.graphics.allocator@2.0-service \
+    android.hardware.graphics.allocator@2.0-impl \
+    android.hardware.graphics.mapper@2.0-impl \
+    hwcomposer.goldfish \
+    hwcomposer.ranchu \
+    vintf \
+    CarrierConfig
 
 PRODUCT_PACKAGES += \
     android.hardware.audio@2.0-impl \
@@ -76,6 +83,10 @@ PRODUCT_PACKAGES += \
 	android.hardware.sensors@1.0-impl \
 	android.hardware.sensors@1.0-service
 
+PRODUCT_PACKAGES += \
+    android.hardware.power@1.0-service \
+    android.hardware.power@1.0-impl
+
 # camera service treble disable until all backwards compat is complete
 PRODUCT_PROPERTY_OVERRIDES += \
     camera.disable_treble=1
@@ -84,10 +95,14 @@ PRODUCT_COPY_FILES += \
     device/generic/goldfish/fstab.goldfish:root/fstab.goldfish \
     device/generic/goldfish/init.goldfish.rc:root/init.goldfish.rc \
     device/generic/goldfish/init.goldfish.sh:system/etc/init.goldfish.sh \
+    device/generic/goldfish/init.ranchu-core.sh:$(TARGET_COPY_OUT_VENDOR)/bin/init.ranchu-core.sh \
+    device/generic/goldfish/init.ranchu-net.sh:$(TARGET_COPY_OUT_VENDOR)/bin/init.ranchu-net.sh \
+    device/generic/goldfish/init.ranchu.rc:root/init.ranchu.rc \
     device/generic/goldfish/ueventd.goldfish.rc:root/ueventd.goldfish.rc \
     device/generic/goldfish/init.ranchu.rc:root/init.ranchu.rc \
     device/generic/goldfish/fstab.ranchu:root/fstab.ranchu \
     device/generic/goldfish/ueventd.ranchu.rc:root/ueventd.ranchu.rc \
+    device/generic/goldfish/manifest.xml:$(TARGET_COPY_OUT_VENDOR)/manifest.xml \
     device/generic/goldfish/input/goldfish_rotary.idc:system/usr/idc/goldfish_rotary.idc \
     frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml
 

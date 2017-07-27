@@ -130,7 +130,7 @@ class EdifyGenerator(object):
            '    getprop("ro.build.thumbprint") == "{tp}" ||\n'
            '    abort("Package expects build fingerprint of {fp} or '
            'thumbprint of {tp}; this device has a fingerprint of " '
-           '+ getprop("ro.build.fingerprint") and a thumbprint of " '
+           '+ getprop("ro.build.fingerprint") + " and a thumbprint of " '
            '+ getprop("ro.build.thumbprint") + ".");').format(fp=fp, tp=tp)
     self.script.append(cmd)
 
@@ -229,11 +229,6 @@ class EdifyGenerator(object):
           p.fs_type, common.PARTITION_TYPES[p.fs_type], p.device,
           p.mount_point, mount_flags))
       self.mounts.add(p.mount_point)
-
-  def UnpackPackageDir(self, src, dst):
-    """Unpack a given directory from the OTA package into the given
-    destination directory."""
-    self.script.append('package_extract_dir("%s", "%s");' % (src, dst))
 
   def Comment(self, comment):
     """Write a comment into the update script."""
