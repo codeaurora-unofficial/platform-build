@@ -32,7 +32,6 @@ PRODUCT_PACKAGES += \
     bmgr \
     bugreport \
     bugreportz \
-    cameraserver \
     content \
     dnsmasq \
     dpm \
