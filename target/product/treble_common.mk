@@ -14,6 +14,11 @@
 # limitations under the License.
 #
 
+# PRODUCT_PROPERTY_OVERRIDES cannot be used here because sysprops will be at
+# /vendor/[build|default].prop when build split is on. In order to have sysprops
+# on the generic system image, place them in build/make/target/board/
+# treble_system.prop.
+
 # Split selinux policy
 PRODUCT_FULL_TREBLE_OVERRIDE := true
 
@@ -75,6 +80,7 @@ PRODUCT_PACKAGES := \
     android.hardware.tetheroffload.config@1.0 \
     android.hardware.tetheroffload.control@1.0 \
     android.hardware.thermal@1.0 \
+    android.hardware.thermal@1.1 \
     android.hardware.tv.cec@1.0 \
     android.hardware.tv.input@1.0 \
     android.hardware.usb@1.0 \
@@ -83,11 +89,13 @@ PRODUCT_PACKAGES := \
     android.hardware.vr@1.0 \
     android.hardware.weaver@1.0 \
     android.hardware.wifi@1.0 \
+    android.hardware.wifi@1.1 \
     android.hardware.wifi.supplicant@1.0 \
     android.hidl.allocator@1.0 \
     android.hidl.manager@1.0 \
     android.hidl.memory@1.0 \
     android.hidl.token@1.0 \
+    android.system.net.netd@1.0 \
     android.system.wifi.keystore@1.0 \
 
 # VNDK:
@@ -205,3 +213,21 @@ PRODUCT_COPY_FILES += \
 #   audio.a2dp.default to support A2DP if board has the capability.
 PRODUCT_PACKAGES += \
     audio.a2dp.default
+
+# Net:
+#   Vendors can use the platform-provided network configuration utilities (ip,
+#   iptable, etc.) to configure the Linux networking stack, but these utilities
+#   do not yet include a HIDL interface wrapper. This is a solution on
+#   Android O.
+PRODUCT_PACKAGES += \
+    netutils-wrapper-1.0
+
+# Android Verified Boot (AVB):
+#   Builds a special vbmeta.img that disables AVB verification.
+#   Otherwise, AVB will prevent the device from booting the generic system.img.
+#   Also checks that BOARD_AVB_ENABLE is not set, to prevent adding verity
+#   metadata into system.img.
+ifeq ($(BOARD_AVB_ENABLE),true)
+$(error BOARD_AVB_ENABLE cannot be set for Treble GSI)
+endif
+BOARD_BUILD_DISABLED_VBMETAIMAGE := true

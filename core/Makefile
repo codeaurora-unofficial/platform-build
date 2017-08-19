@@ -419,8 +419,10 @@ package-stats: $(PACKAGE_STATS_FILE)
 # -----------------------------------------------------------------
 # Cert-to-package mapping.  Used by the post-build signing tools.
 # Use a macro to add newline to each echo command
-define _apkcerts_echo_with_newline
-$(hide) echo $(1)
+define _apkcerts_write_line
+$(hide) echo -n 'name="$(1).apk" certificate="$2" private_key="$3"' >> $5
+$(if $(4), $(hide) echo -n ' compressed="$4"' >> $5)
+$(hide) echo '' >> $5
 
 endef
 
@@ -440,12 +442,8 @@ $(APKCERTS_FILE):
 	@rm -f $@
 	$(foreach p,$(PACKAGES),\
 	  $(if $(PACKAGES.$(p).EXTERNAL_KEY),\
-	    $(call _apkcerts_echo_with_newline,\
-	      'name="$(p).apk" certificate="EXTERNAL" \
-	      private_key=""' >> $@),\
-	    $(call _apkcerts_echo_with_newline,\
-	      'name="$(p).apk" certificate="$(PACKAGES.$(p).CERTIFICATE)" \
-	      private_key="$(PACKAGES.$(p).PRIVATE_KEY)"' >> $@)))
+	    $(call _apkcerts_write_line,$(p),"EXTERNAL","",$(PACKAGES.$(p).COMPRESSED),$@),\
+	    $(call _apkcerts_write_line,$(p),$(PACKAGES.$(p).CERTIFICATE),$(PACKAGES.$(p).PRIVATE_KEY),$(PACKAGES.$(p).COMPRESSED),$@)))
 	# In case value of PACKAGES is empty.
 	$(hide) touch $@
 
@@ -2013,6 +2011,14 @@ $(INSTALLED_VBMETAIMAGE_TARGET): $(AVBTOOL) $(INSTALLED_BOOTIMAGE_TARGET) $(INST
 vbmetaimage-nodeps:
 	$(build-vbmetaimage-target)
 
+else ifeq (true,$(BOARD_BUILD_DISABLED_VBMETAIMAGE))
+BUILT_DISABLED_VBMETAIMAGE := $(PRODUCT_OUT)/vbmeta.img
+
+INSTALLED_VBMETAIMAGE_TARGET := $(BUILT_DISABLED_VBMETAIMAGE)
+$(INSTALLED_VBMETAIMAGE_TARGET): $(AVBTOOL)
+	$(hide) $(AVBTOOL) make_vbmeta_image \
+	  --flag 2 --padding_size 4096 --output $@
+
 endif # BOARD_AVB_ENABLE
 
 # -----------------------------------------------------------------
@@ -2085,7 +2091,8 @@ OTATOOLS :=  $(HOST_OUT_EXECUTABLES)/minigzip \
   $(HOST_OUT_EXECUTABLES)/lib/shflags/shflags \
   $(HOST_OUT_EXECUTABLES)/delta_generator \
   $(AVBTOOL) \
-  $(BLK_ALLOC_TO_BASE_FS)
+  $(BLK_ALLOC_TO_BASE_FS) \
+  $(BRO)
 
 ifeq (true,$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VBOOT))
 OTATOOLS += \
@@ -2119,7 +2126,9 @@ OTATOOLS += \
   $(HOST_LIBRARY_PATH)/libz-host$(HOST_SHLIB_SUFFIX) \
   $(HOST_LIBRARY_PATH)/libsparse-host$(HOST_SHLIB_SUFFIX) \
   $(HOST_LIBRARY_PATH)/libbase$(HOST_SHLIB_SUFFIX) \
-  $(HOST_LIBRARY_PATH)/libpcre2$(HOST_SHLIB_SUFFIX)
+  $(HOST_LIBRARY_PATH)/libpcre2$(HOST_SHLIB_SUFFIX) \
+  $(HOST_LIBRARY_PATH)/libbrotli$(HOST_SHLIB_SUFFIX)
+
 
 .PHONY: otatools
 otatools: $(OTATOOLS)
@@ -2568,6 +2577,8 @@ $(INTERNAL_OTA_PACKAGE_TARGET): KEY_CERT_PAIR := $(DEFAULT_KEY_CERT_PAIR)
 
 ifeq ($(AB_OTA_UPDATER),true)
 $(INTERNAL_OTA_PACKAGE_TARGET): $(BRILLO_UPDATE_PAYLOAD)
+else
+$(INTERNAL_OTA_PACKAGE_TARGET): $(BRO)
 endif
 
 $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) \
@@ -2678,19 +2689,35 @@ $(APPS_ZIP): $(INSTALLED_SYSTEMIMAGE)
 		zip -qjX $@ $$apps_to_zip; \
 	fi
 
-#------------------------------------------------------------------
-# A zip of emma code coverage meta files. Generated for fully emma
-# instrumented build.
-#
 ifeq (true,$(EMMA_INSTRUMENT))
-EMMA_META_ZIP := $(PRODUCT_OUT)/emma_meta.zip
-# the dependency will be set up later in build/core/main.mk.
+  #------------------------------------------------------------------
+  # An archive of classes for use in generating code-coverage reports
+  # These are the uninstrumented versions of any classes that were
+  # to be instrumented.
+  # Any dependencies are set up later in build/core/main.mk.
+
+  ifeq ($(ANDROID_COMPILE_WITH_JACK),false)
+    JACOCO_REPORT_CLASSES_ALL := $(PRODUCT_OUT)/jacoco-report-classes-all.jar
+$(JACOCO_REPORT_CLASSES_ALL) :
+	@echo "Collecting uninstrumented classes"
+	$(hide) find $(TARGET_COMMON_OUT_ROOT) $(HOST_COMMON_OUT_ROOT) -name "jacoco-report-classes.jar" | \
+		zip -@ -0 -q -X $@
+# Meaning of these options:
+# -@ scan stdin for file paths to add to the zip
+# -0 don't do any compression
+# -q supress most output
+# -X skip storing extended file attributes
+
+  else
+    EMMA_META_ZIP := $(PRODUCT_OUT)/emma_meta.zip
 $(EMMA_META_ZIP) :
 	@echo "Collecting Emma coverage meta files."
 	$(hide) find $(TARGET_COMMON_OUT_ROOT) $(HOST_COMMON_OUT_ROOT) -name "coverage.em" | \
 		zip -@ -qX $@
+endif
 
 endif # EMMA_INSTRUMENT=true
+
 
 #------------------------------------------------------------------
 # A zip of Proguard obfuscation dictionary files.
@@ -2719,6 +2746,26 @@ endif # TARGET_BUILD_APPS
 .PHONY: dalvikfiles
 dalvikfiles: $(INTERNAL_DALVIK_MODULES)
 
+ifeq ($(BUILD_QEMU_IMAGES),true)
+INSTALLED_QEMU_SYSTEMIMAGE := $(PRODUCT_OUT)/system-qemu.img
+MK_QEMU_IMAGE_SH := device/generic/goldfish/tools/mk_qemu_image.sh
+SGDISK_HOST := $(HOST_OUT_EXECUTABLES)/sgdisk
+$(INSTALLED_QEMU_SYSTEMIMAGE): $(INSTALLED_SYSTEMIMAGE) $(MK_QEMU_IMAGE_SH) $(SGDISK_HOST)
+	@echo Create system-qemu.img
+	(export SGDISK=$(SGDISK_HOST); $(MK_QEMU_IMAGE_SH) ${PRODUCT_OUT}/system.img)
+
+systemimage: $(INSTALLED_QEMU_SYSTEMIMAGE)
+droidcore: $(INSTALLED_QEMU_SYSTEMIMAGE)
+ifeq ($(BOARD_USES_VENDORIMAGE),true)
+INSTALLED_QEMU_VENDORIMAGE := $(PRODUCT_OUT)/vendor-qemu.img
+$(INSTALLED_QEMU_VENDORIMAGE): $(INSTALLED_VENDORIMAGE_TARGET) $(MK_QEMU_IMAGE_SH) $(SGDISK_HOST)
+	@echo Create vendor-qemu.img
+	(export SGDISK=$(SGDISK_HOST); $(MK_QEMU_IMAGE_SH) ${PRODUCT_OUT}/vendor.img)
+
+vendorimage: $(INSTALLED_QEMU_VENDORIMAGE)
+droidcore: $(INSTALLED_QEMU_VENDORIMAGE)
+endif
+endif
 # -----------------------------------------------------------------
 # The emulator package
 ifeq ($(BUILD_EMULATOR),true)
@@ -2814,6 +2861,8 @@ deps := \
 	$(SYMBOLS_ZIP) \
 	$(COVERAGE_ZIP) \
 	$(INSTALLED_SYSTEMIMAGE) \
+	$(INSTALLED_QEMU_SYSTEMIMAGE) \
+	$(INSTALLED_QEMU_VENDORIMAGE) \
 	$(INSTALLED_USERDATAIMAGE_TARGET) \
 	$(INSTALLED_RAMDISK_TARGET) \
 	$(INSTALLED_SDK_BUILD_PROP_TARGET) \
