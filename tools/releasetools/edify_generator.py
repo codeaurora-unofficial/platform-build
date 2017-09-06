@@ -342,8 +342,8 @@ class EdifyGenerator(object):
     for d, l in symlink_list:
       by_dest.setdefault(d, []).append(l)
 
-    for dest, links in sorted(by_dest.iteritems()):
-      cmd = ('symlink("%s", ' % (dest,) +
+    for dest, links in sorted(by_dest.items()):
+      cmd = ('symlink("%s", ' % (dest.decode('utf-8'),) +
              ",\0".join(['"' + i + '"' for i in sorted(links)]) + ");")
       self.script.append(self.WordWrap(cmd))
 
