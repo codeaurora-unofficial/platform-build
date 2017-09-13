@@ -1661,11 +1661,11 @@ def main(argv):
       if os.path.exists(args[1]):
         os.unlink(args[1])
       output_zip = zipfile.ZipFile(args[1], "w",
-                                   compression=zipfile.ZIP_DEFLATED)
+                                   compression=zipfile.ZIP_DEFLATED,allowZip64=True)
     else:
       temp_zip_file = tempfile.NamedTemporaryFile()
       output_zip = zipfile.ZipFile(temp_zip_file, "w",
-                                   compression=zipfile.ZIP_DEFLATED)
+                                   compression=zipfile.ZIP_DEFLATED,allowZip64=True)
 
     cache_size = OPTIONS.info_dict.get("cache_size", None)
     if cache_size is None:
