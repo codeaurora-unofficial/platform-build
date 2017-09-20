@@ -122,7 +122,18 @@ ifneq ($(PRODUCT_ENFORCE_RRO_TARGETS),)
   endif
 endif
 
-ifndef enforce_rro_enabled
+ifdef enforce_rro_enabled
+  ifneq ($(PRODUCT_ENFORCE_RRO_EXCLUDED_OVERLAYS),)
+    static_only_resource_overlays := $(filter $(addsuffix %,$(PRODUCT_ENFORCE_RRO_EXCLUDED_OVERLAYS)),$(package_resource_overlays))
+    ifneq ($(static_only_resource_overlays),)
+      package_resource_overlays := $(filter-out $(static_only_resource_overlays),$(package_resource_overlays))
+      LOCAL_RESOURCE_DIR := $(static_only_resource_overlays) $(LOCAL_RESOURCE_DIR)
+      ifeq ($(package_resource_overlays),)
+        enforce_rro_enabled :=
+      endif
+    endif
+  endif
+else
 LOCAL_RESOURCE_DIR := $(package_resource_overlays) $(LOCAL_RESOURCE_DIR)
 endif
 
@@ -327,9 +338,11 @@ endif
 
 include $(BUILD_SYSTEM)/android_manifest.mk
 
+called_from_package_internal := true
 #################################
 include $(BUILD_SYSTEM)/java.mk
 #################################
+called_from_package_internal :=
 
 LOCAL_SDK_RES_VERSION:=$(strip $(LOCAL_SDK_RES_VERSION))
 ifeq ($(LOCAL_SDK_RES_VERSION),)
