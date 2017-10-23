@@ -54,4 +54,3 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # doesn't take all of the RAM.
 PRODUCT_PROPERTY_OVERRIDES += dalvik.vm.heapgrowthlimit=128m
 PRODUCT_PROPERTY_OVERRIDES += dalvik.vm.heapsize=256m
-
