@@ -26,7 +26,7 @@ PRODUCT_PACKAGES := \
 	EmulatorSmokeTests \
 	Gallery2 \
 	GestureBuilder \
-	Launcher3 \
+	Launcher3Go \
 	Camera2 \
 	librs_jni \
 	libwnndict \
