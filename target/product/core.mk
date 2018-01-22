@@ -25,7 +25,6 @@ PRODUCT_PACKAGES += \
     BlockedNumberProvider \
     BookmarkProvider \
     Browser2 \
-    BuiltInPrintService \
     Calendar \
     CalendarProvider \
     CaptivePortalLogin \
@@ -34,23 +33,17 @@ PRODUCT_PACKAGES += \
     DeskClock \
     DocumentsUI \
     DownloadProviderUi \
-    Email \
-    Exchange2 \
     ExactCalculator \
     ExternalStorageProvider \
     FusedLocation \
     InputDevices \
     KeyChain \
     Keyguard \
-    LatinIME \
-    Launcher2 \
     ManagedProvisioning \
     MtpDocumentsProvider \
     PicoTts \
     PacProcessor \
     libpac \
-    PrintSpooler \
-    PrintRecommendationService \
     ProxyHandler \
     QuickSearchBox \
     Settings \
@@ -61,6 +54,17 @@ PRODUCT_PACKAGES += \
     VpnDialogs \
     vr \
     MmsService
+
+ifneq ($(strip $(TARGET_HAS_LOW_RAM)),true)
+PRODUCT_PACKAGES += \
+    Email \
+    Exchange2 \
+    LatinIME \
+    Launcher2 \
+    BuiltInPrintService \
+    PrintSpooler \
+    PrintRecommendationService
+endif
 
 # The set of packages whose code can be loaded by the system server.
 PRODUCT_SYSTEM_SERVER_APPS += \
