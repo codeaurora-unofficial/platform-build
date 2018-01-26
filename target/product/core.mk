@@ -39,6 +39,7 @@ PRODUCT_PACKAGES += \
     InputDevices \
     KeyChain \
     Keyguard \
+    LatinIME \
     ManagedProvisioning \
     MtpDocumentsProvider \
     PicoTts \
@@ -59,7 +60,6 @@ ifneq ($(strip $(TARGET_HAS_LOW_RAM)),true)
 PRODUCT_PACKAGES += \
     Email \
     Exchange2 \
-    LatinIME \
     Launcher2 \
     BuiltInPrintService \
     PrintSpooler \
