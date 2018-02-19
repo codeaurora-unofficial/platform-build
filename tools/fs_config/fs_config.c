@@ -202,6 +202,13 @@ int main(int argc, char** argv) {
     }
   }
 
+  if (product_out_path == NULL) {
+    fprintf(stderr, "fs_config: rootfs/product_out_path not specified!!\n");
+    printf("fs_config: rootfs/product_out_path not specified!!\n");
+    usage();
+    exit(EXIT_FAILURE);
+  }
+
   if (context_file != NULL) {
     sehnd = get_sehnd(context_file);
   }
@@ -237,6 +244,46 @@ int main(int argc, char** argv) {
     printf("%s %d %d %o", buffer, uid, gid, mode);
 
     if (sehnd != NULL) {
+      // if sehnd is not NULL,
+      // compute the file "mode" to be passed to
+      // selabel_lookup.
+
+      // assuming that all filenames lead with "system/",
+      // ignore the first 6 chars from the given filename.
+      char* file_to_check = (char*) malloc(strlen(buffer+6) + \
+          strlen(product_out_path) + 1);
+
+      if (file_to_check == NULL) {
+        perror("malloc");
+        printf("fs_config: malloc failed, exiting!\n");
+        exit(EXIT_FAILURE);
+      }
+      strcpy(file_to_check, product_out_path);
+      strcat(file_to_check, buffer+6);
+
+      // printf("checking file %s", file_to_check);
+      struct stat info;
+      if (lstat(file_to_check, &info) != 0) {
+        perror("lstat() error");
+        // incase of error, set mode to REG or DIR
+        mode = mode | (is_dir ? S_IFDIR : S_IFREG);
+      } else {
+        // printf("lstat() returned:");
+        // printf("   mode:   %08x\n",       info.st_mode);
+        // printf("    uid:   %d\n",   (int) info.st_uid);
+        // printf("    gid:   %d\n",   (int) info.st_gid);
+        if (S_ISLNK(info.st_mode)) {
+          // printf ("stat says link\n");
+          mode = mode | S_IFLNK;
+        } else if (S_ISDIR(info.st_mode)) {
+          // printf ("stat says dir\n");
+          mode = mode | S_IFDIR;
+        } else {
+          // printf ("stat says regular file\n");
+          mode = mode | S_IFREG;
+        }
+      }
+
       size_t buffer_strlen = strnlen(buffer, sizeof(buffer));
       if (buffer_strlen >= sizeof(buffer)) {
         fprintf(stderr, "non null terminated buffer, aborting\n");
@@ -254,7 +301,7 @@ int main(int argc, char** argv) {
       full_name[full_name_size - 1] = '\0';
 
       char* secontext;
-      if (selabel_lookup(sehnd, &secontext, full_name, ( mode | (is_dir ? S_IFDIR : S_IFREG)))) {
+      if (selabel_lookup(sehnd, &secontext, full_name, mode)) {
         secontext = strdup("u:object_r:unlabeled:s0");
       }
 
