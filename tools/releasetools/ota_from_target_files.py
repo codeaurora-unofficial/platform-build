@@ -390,6 +390,11 @@ def CopyPartitionFiles(itemset, input_zip, output_zip=None, substitute=None):
       if IsSymlink(info):
         symlinks.append((input_zip.read(info.filename),
                          "/" + partition + "/" + basefilename))
+        # create an explicit itemset object for symlinks as well
+        # If not created, after symlink creation, setting permissions
+        # and selabels to symlinks are missed out.
+        itemset.Get(partition + "/" + basefilename);
+
       else:
         import copy
         info2 = copy.copy(info)
