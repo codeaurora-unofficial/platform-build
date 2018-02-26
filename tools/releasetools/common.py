@@ -1428,6 +1428,8 @@ fi
        'recovery_device': recovery_device,
        'bonus_args': bonus_args}
 
+# Commenting below lines to prevent the patching of recovery partition which is not required on this platform.
+  '''
   # The install script location moved from /system/etc to /system/bin
   # in the L release.  Parse the init.rc file to find out where the
   # target-files expects it to be, and put it there.
@@ -1443,4 +1445,4 @@ fi
   except (OSError, IOError) as e:
     print ("failed to read init.rc: %s" % (e,))
 
-  output_sink(sh_location, sh)
+  output_sink(sh_location, sh)'''
