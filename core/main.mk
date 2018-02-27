@@ -9,6 +9,9 @@ else
 SHELL := /bin/bash
 endif
 
+#Turn ON the Reverie modules
+MULTI_LANG_ENGINE := REVERIE
+
 # this turns off the suffix rules built into make
 .SUFFIXES:
 
