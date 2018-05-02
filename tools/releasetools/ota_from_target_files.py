@@ -390,6 +390,11 @@ def CopyPartitionFiles(itemset, input_zip, output_zip=None, substitute=None):
       if IsSymlink(info):
         symlinks.append((input_zip.read(info.filename),
                          "/" + partition + "/" + basefilename))
+        # create an explicit itemset object for symlinks as well
+        # If not created, after symlink creation, setting permissions
+        # and selabels to symlinks are missed out.
+        itemset.Get(partition + "/" + basefilename);
+
       else:
         import copy
         info2 = copy.copy(info)
@@ -897,10 +902,11 @@ else if get_stage("%(bcb_dev)s") != "3/3" then
     # patching on a device that's already on the target build will damage the
     # system. Because operations like move don't check the block state, they
     # always apply the changes unconditionally.
-    if blockimgdiff_version <= 2:
-      script.AssertSomeFingerprint(source_fp)
-    else:
-      script.AssertSomeFingerprint(source_fp, target_fp)
+    #if blockimgdiff_version <= 2:
+    #  script.AssertSomeFingerprint(source_fp)
+    #else:
+    #  script.AssertSomeFingerprint(source_fp, target_fp)
+    print ("Skip AssertSomeFingerprint")
   else:
     if blockimgdiff_version <= 2:
       script.AssertSomeThumbprint(
