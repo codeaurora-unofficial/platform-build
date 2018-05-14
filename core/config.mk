@@ -182,6 +182,9 @@ endef
 # Set common values
 # ###############################################################
 
+# Initialize SOONG_CONFIG_NAMESPACES so that it isn't recursive.
+SOONG_CONFIG_NAMESPACES :=
+
 # Set the extensions used for various packages
 COMMON_PACKAGE_SUFFIX := .zip
 COMMON_JAVA_PACKAGE_SUFFIX := .jar
@@ -837,6 +840,21 @@ $(KATI_obsolete_var PRODUCT_USE_VNDK_OVERRIDE,Use PRODUCT_USE_VNDK instead)
 .KATI_READONLY := \
     PRODUCT_USE_VNDK
 
+# Set BOARD_SYSTEMSDK_VERSIONS to the latest SystemSDK version starting from P-launching
+# devices if unset.
+ifndef BOARD_SYSTEMSDK_VERSIONS
+  ifdef PRODUCT_SHIPPING_API_LEVEL
+  ifneq ($(call math_gt_or_eq,$(PRODUCT_SHIPPING_API_LEVEL),28),)
+    ifeq (REL,$(PLATFORM_VERSION_CODENAME))
+      BOARD_SYSTEMSDK_VERSIONS := $(PLATFORM_SDK_VERSION)
+    else
+      BOARD_SYSTEMSDK_VERSIONS := $(PLATFORM_VERSION_CODENAME)
+    endif
+  endif
+  endif
+endif
+
+
 ifdef PRODUCT_SHIPPING_API_LEVEL
   ifneq ($(call math_gt_or_eq,$(PRODUCT_SHIPPING_API_LEVEL),27),)
     ifneq ($(TARGET_USES_MKE2FS),true)
@@ -850,6 +868,11 @@ ifdef PRODUCT_SHIPPING_API_LEVEL
     ifneq ($(TARGET_IS_64_BIT), true)
       ifneq ($(TARGET_USES_64_BIT_BINDER), true)
         $(error When PRODUCT_SHIPPING_API_LEVEL >= 28, TARGET_USES_64_BIT_BINDER must be true)
+      endif
+    endif
+    ifeq ($(PRODUCT_FULL_TREBLE),true)
+      ifneq ($(BOARD_BUILD_SYSTEM_ROOT_IMAGE), true)
+        $(error When PRODUCT_SHIPPING_API_LEVEL >= 28, BOARD_BUILD_SYSTEM_ROOT_IMAGE must be true)
       endif
     endif
   endif
@@ -877,17 +900,19 @@ BUILD_DATETIME_FROM_FILE := $$(cat $(BUILD_DATETIME_FILE))
 # is made which breaks compatibility with the previous platform sepolicy version,
 # not just on every increase in PLATFORM_SDK_VERSION.  The minor version should
 # be reset to 0 on every bump of the PLATFORM_SDK_VERSION.
-sepolicy_major_vers := 27
+sepolicy_major_vers := 28
 sepolicy_minor_vers := 0
 
 ifneq ($(sepolicy_major_vers), $(PLATFORM_SDK_VERSION))
 $(error sepolicy_major_version does not match PLATFORM_SDK_VERSION, please update.)
 endif
+
+TOT_SEPOLICY_VERSION := 10000.0
 ifneq (REL,$(PLATFORM_VERSION_CODENAME))
-    sepolicy_major_vers := 10000
-    sepolicy_minor_vers := 0
+    PLATFORM_SEPOLICY_VERSION := $(TOT_SEPOLICY_VERSION)
+else
+    PLATFORM_SEPOLICY_VERSION := $(join $(addsuffix .,$(sepolicy_major_vers)), $(sepolicy_minor_vers))
 endif
-PLATFORM_SEPOLICY_VERSION := $(join $(addsuffix .,$(sepolicy_major_vers)), $(sepolicy_minor_vers))
 sepolicy_major_vers :=
 sepolicy_minor_vers :=
 
@@ -895,6 +920,11 @@ sepolicy_minor_vers :=
 PLATFORM_SEPOLICY_COMPAT_VERSIONS := \
     26.0 \
     27.0
+
+.KATI_READONLY := \
+    PLATFORM_SEPOLICY_COMPAT_VERSIONS \
+    PLATFORM_SEPOLICY_VERSION \
+    TOT_SEPOLICY_VERSION \
 
 # ###############################################################
 # Set up final options.
