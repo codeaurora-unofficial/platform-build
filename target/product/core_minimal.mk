@@ -27,16 +27,13 @@ PRODUCT_PACKAGES += \
     CompanionDeviceManager \
     CtsShimPrebuilt \
     CtsShimPrivPrebuilt \
-    DownloadProvider \
     ExtShared \
     ExtServices \
-    HTMLViewer \
     MediaProvider \
     PackageInstaller \
     SettingsProvider \
     Shell \
     StatementService \
-    WallpaperBackup \
     android.hidl.base-V1.0-java \
     android.hidl.manager-V1.0-java \
     bcc \
@@ -53,7 +50,6 @@ PRODUCT_PACKAGES += \
     framework-res \
     idmap \
     installd \
-    ims-common \
     ip \
     ip-up-vpn \
     ip6tables \
@@ -83,12 +79,8 @@ PRODUCT_PACKAGES += \
     tune2fs \
     screencap \
     sensorservice \
-    telephony-common \
     uiautomator \
-    uncrypt \
-    voip-common \
-    webview \
-    webview_zygote \
+    uncrypt
 
 # Wifi modules
 PRODUCT_PACKAGES += \
