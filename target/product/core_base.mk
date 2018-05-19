@@ -21,11 +21,7 @@ PRODUCT_PROPERTY_OVERRIDES := \
     ro.config.alarm_alert=Alarm_Classic.ogg
 
 PRODUCT_PACKAGES += \
-    ContactsProvider \
     DefaultContainerService \
-    Home \
-    TelephonyProvider \
-    UserDictionaryProvider \
     atrace \
     libandroidfw \
     libaudiopreprocessing \
@@ -60,7 +56,7 @@ PRODUCT_PACKAGES += \
     libvariablespeed \
     libwebrtc_audio_preprocessing \
     mdnsd \
-    requestsync \
+    requestsync
 
 # Wifi modules
 PRODUCT_PACKAGES += \

@@ -22,52 +22,20 @@
 
 PRODUCT_PACKAGES += \
     BasicDreams \
-    BlockedNumberProvider \
-    BookmarkProvider \
-    Browser2 \
-    BuiltInPrintService \
-    Calendar \
-    CalendarProvider \
-    CaptivePortalLogin \
     CertInstaller \
-    Contacts \
-    DeskClock \
-    DocumentsUI \
-    DownloadProviderUi \
-    Email \
-    Exchange2 \
-    ExactCalculator \
     ExternalStorageProvider \
     FusedLocation \
-    InputDevices \
     KeyChain \
     Keyguard \
-    LatinIME \
-    Launcher2 \
     ManagedProvisioning \
-    MtpDocumentsProvider \
-    PicoTts \
-    PacProcessor \
     libpac \
-    PrintSpooler \
-    PrintRecommendationService \
-    ProxyHandler \
-    QuickSearchBox \
-    Settings \
     SharedStorageBackup \
-    StorageManager \
-    Telecom \
-    TeleService \
-    VpnDialogs \
-    vr \
-    MmsService
+    StorageManager
 
 # The set of packages whose code can be loaded by the system server.
 PRODUCT_SYSTEM_SERVER_APPS += \
     FusedLocation \
-    InputDevices \
-    KeyChain \
-    Telecom \
+    KeyChain
 
 # The set of packages we want to force 'speed' compilation on.
 PRODUCT_DEXPREOPT_SPEED_APPS += \

@@ -18,25 +18,17 @@ PRODUCT_PROPERTY_OVERRIDES :=
 
 PRODUCT_PACKAGES := \
 	ApiDemos \
-	CellBroadcastReceiver \
 	CubeLiveWallpapers \
 	CustomLocale \
 	Development \
-	Dialer \
 	EmulatorSmokeTests \
-	Gallery2 \
 	GestureBuilder \
-	Launcher3 \
 	Camera2 \
 	librs_jni \
 	libwnndict \
 	libWnnEngDic \
 	libWnnJpnDic \
-	LiveWallpapersPicker \
-	Mms \
-	Music \
 	OpenWnn \
-	Protips \
 	rild \
 	screenrecord \
 	SdkSetup \
@@ -44,10 +36,8 @@ PRODUCT_PACKAGES := \
 	SmokeTestApp \
 	SoftKeyboard \
 	sqlite3 \
-	SystemUI \
 	SysuiDarkThemeOverlay \
 	EasterEgg \
-	WallpaperPicker \
 	WidgetPreview
 
 # Define the host tools and libs that are parts of the SDK.
