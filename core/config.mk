@@ -182,6 +182,9 @@ endef
 # Set common values
 # ###############################################################
 
+# Initialize SOONG_CONFIG_NAMESPACES so that it isn't recursive.
+SOONG_CONFIG_NAMESPACES :=
+
 # Set the extensions used for various packages
 COMMON_PACKAGE_SUFFIX := .zip
 COMMON_JAVA_PACKAGE_SUFFIX := .jar
@@ -837,6 +840,21 @@ $(KATI_obsolete_var PRODUCT_USE_VNDK_OVERRIDE,Use PRODUCT_USE_VNDK instead)
 .KATI_READONLY := \
     PRODUCT_USE_VNDK
 
+# Set BOARD_SYSTEMSDK_VERSIONS to the latest SystemSDK version starting from P-launching
+# devices if unset.
+ifndef BOARD_SYSTEMSDK_VERSIONS
+  ifdef PRODUCT_SHIPPING_API_LEVEL
+  ifneq ($(call math_gt_or_eq,$(PRODUCT_SHIPPING_API_LEVEL),28),)
+    ifeq (REL,$(PLATFORM_VERSION_CODENAME))
+      BOARD_SYSTEMSDK_VERSIONS := $(PLATFORM_SDK_VERSION)
+    else
+      BOARD_SYSTEMSDK_VERSIONS := $(PLATFORM_VERSION_CODENAME)
+    endif
+  endif
+  endif
+endif
+
+
 ifdef PRODUCT_SHIPPING_API_LEVEL
   ifneq ($(call math_gt_or_eq,$(PRODUCT_SHIPPING_API_LEVEL),27),)
     ifneq ($(TARGET_USES_MKE2FS),true)
@@ -882,7 +900,7 @@ BUILD_DATETIME_FROM_FILE := $$(cat $(BUILD_DATETIME_FILE))
 # is made which breaks compatibility with the previous platform sepolicy version,
 # not just on every increase in PLATFORM_SDK_VERSION.  The minor version should
 # be reset to 0 on every bump of the PLATFORM_SDK_VERSION.
-sepolicy_major_vers := 27
+sepolicy_major_vers := 28
 sepolicy_minor_vers := 0
 
 ifneq ($(sepolicy_major_vers), $(PLATFORM_SDK_VERSION))
@@ -994,6 +1012,7 @@ INTERNAL_PLATFORM_API_FILE := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/publi
 INTERNAL_PLATFORM_PRIVATE_API_FILE := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/private.txt
 INTERNAL_PLATFORM_PRIVATE_DEX_API_FILE := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/private-dex.txt
 INTERNAL_PLATFORM_REMOVED_API_FILE := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/removed.txt
+INTERNAL_PLATFORM_REMOVED_DEX_API_FILE := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/removed-dex.txt
 INTERNAL_PLATFORM_SYSTEM_API_FILE := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/system-api.txt
 INTERNAL_PLATFORM_SYSTEM_PRIVATE_API_FILE := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/system-private.txt
 INTERNAL_PLATFORM_SYSTEM_PRIVATE_DEX_API_FILE := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/system-private-dex.txt
@@ -1006,6 +1025,10 @@ INTERNAL_PLATFORM_TEST_EXACT_API_FILE := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACK
 INTERNAL_PLATFORM_HIDDENAPI_LIGHT_GREYLIST := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/hiddenapi-light-greylist.txt
 INTERNAL_PLATFORM_HIDDENAPI_DARK_GREYLIST := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/hiddenapi-dark-greylist.txt
 INTERNAL_PLATFORM_HIDDENAPI_BLACKLIST := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/hiddenapi-blacklist.txt
+
+# Missing optional uses-libraries so that the platform doesn't create build rules that depend on
+# them. See setup_one_odex.mk.
+INTERNAL_PLATFORM_MISSING_USES_LIBRARIES := com.google.android.ble com.google.android.wearable
 
 # This is the standard way to name a directory containing prebuilt target
 # objects. E.g., prebuilt/$(TARGET_PREBUILT_TAG)/libc.so
