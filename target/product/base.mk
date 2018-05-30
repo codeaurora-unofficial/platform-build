@@ -106,10 +106,8 @@ PRODUCT_PACKAGES += \
     locksettings \
     media \
     media_cmd \
-    mediadrmserver \
     mediaserver \
     mediametrics \
-    mediaextractor \
     monkey \
     mtpd \
     ndc \
@@ -135,6 +133,13 @@ PRODUCT_PACKAGES += \
     vdc \
     vold \
     wm
+
+
+ifneq ($(TARGET_PRODUCT), qcs605)
+PRODUCT_PACKAGES += \
+    mediadrmserver \
+    mediaextractor
+endif
 
 # Essential HAL modules
 PRODUCT_PACKAGES += \
