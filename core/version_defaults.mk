@@ -79,7 +79,7 @@ PLATFORM_VERSION.PPR1 := 9
 
 # These are the current development codenames, if the build is not a final
 # release build.  If this is a final release build, it is simply "REL".
-PLATFORM_VERSION_CODENAME.PPR1 := P
+PLATFORM_VERSION_CODENAME.PPR1 := REL
 
 ifndef PLATFORM_VERSION
   PLATFORM_VERSION := $(PLATFORM_VERSION.$(TARGET_PLATFORM_VERSION))
@@ -167,7 +167,7 @@ else
     # assuming the device can only support APIs as of the previous official
     # public release.
     # This value will always be 0 for release builds.
-    PLATFORM_PREVIEW_SDK_VERSION := 2
+    PLATFORM_PREVIEW_SDK_VERSION := 0
   endif
 endif
 
@@ -207,10 +207,7 @@ ifndef PLATFORM_SYSTEMSDK_MIN_VERSION
   # to the public SDK where platform essentially supports all previous SDK versions,
   # platform supports only a few number of recent system SDK versions as some of
   # old system APIs are gradually deprecated, removed and then deleted.
-  # However, currently in P, we only support the single latest version since there
-  # is no old system SDK versions. Therefore, this is set to empty for now. This
-  # should later (in post P) be set to a number, like 28.
-  PLATFORM_SYSTEMSDK_MIN_VERSION :=
+  PLATFORM_SYSTEMSDK_MIN_VERSION := 28
 endif
 
 # This is the list of system SDK versions that the current platform supports.
@@ -234,7 +231,7 @@ ifndef PLATFORM_SECURITY_PATCH
     #  It must be of the form "YYYY-MM-DD" on production devices.
     #  It must match one of the Android Security Patch Level strings of the Public Security Bulletins.
     #  If there is no $PLATFORM_SECURITY_PATCH set, keep it empty.
-      PLATFORM_SECURITY_PATCH := 2018-05-05
+      PLATFORM_SECURITY_PATCH := 2018-06-05
 endif
 
 ifndef PLATFORM_BASE_OS

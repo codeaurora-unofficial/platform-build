@@ -121,7 +121,9 @@ ifeq (true,$(my_process_profile))
 ifdef LOCAL_VENDOR_MODULE
 $(call pretty-error, Internal error: profiles are not supported for vendor modules)
 else
+ifeq (,$(LOCAL_DEX_PREOPT_APP_IMAGE))
 LOCAL_DEX_PREOPT_APP_IMAGE := true
+endif
 endif
 
 ifndef LOCAL_DEX_PREOPT_PROFILE
@@ -159,6 +161,7 @@ $(my_built_profile):
 	  --copy-and-update-profile-key \
 		--profile-file=$(PRIVATE_SOURCE_CLASSES) \
 		--apk=$(PRIVATE_BUILT_MODULE) \
+		--dex-location=$(PRIVATE_DEX_LOCATION) \
 		--reference-profile-file=$@ \
 	|| echo "Profile out of date for $(PRIVATE_BUILT_MODULE)"
 endif

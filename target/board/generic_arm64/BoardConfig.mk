@@ -85,13 +85,28 @@ BOARD_FLASH_BLOCK_SIZE := 512
 TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
 DEVICE_MATRIX_FILE   := device/generic/goldfish/compatibility_matrix.xml
 
+# Set this to create /cache mount point for non-A/B devices that mounts /cache.
+# The partition size doesn't matter, just to make build pass.
+BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE := ext4
+BOARD_CACHEIMAGE_PARTITION_SIZE := 16777216
+
 BOARD_PROPERTY_OVERRIDES_SPLIT_ENABLED := true
 BOARD_SEPOLICY_DIRS += build/target/board/generic/sepolicy
+
+# Android Verified Boot (AVB):
+#   Builds a special vbmeta.img that disables AVB verification.
+#   Otherwise, AVB will prevent the device from booting the generic system.img.
+#   Also checks that BOARD_AVB_ENABLE is not set, to prevent adding verity
+#   metadata into system.img.
+ifeq ($(BOARD_AVB_ENABLE),true)
+$(error BOARD_AVB_ENABLE cannot be set for GSI)
+endif
+BOARD_BUILD_DISABLED_VBMETAIMAGE := true
 
 ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
 # GSI is always userdebug and needs a couple of properties taking precedence
 # over those set by the vendor.
-TARGET_SYSTEM_PROP := build/make/target/board/treble_system.prop
+TARGET_SYSTEM_PROP := build/make/target/board/gsi_system.prop
 endif
 BOARD_VNDK_VERSION := current
 
@@ -101,6 +116,10 @@ BOARD_VNDK_VERSION := current
 # TODO(jiyong) These might be SoC specific.
 BOARD_ROOT_EXTRA_FOLDERS += firmware firmware/radio persist
 BOARD_ROOT_EXTRA_SYMLINKS := /vendor/lib/dsp:/dsp
+
+# TODO(b/79781913): This is a temporary mount pointer for FBE.
+#   Will be remove after the FBE change the placement.
+BOARD_ROOT_EXTRA_FOLDERS += metadata
 
 # TODO(b/36764215): remove this setting when the generic system image
 # no longer has QCOM-specific directories under /.
