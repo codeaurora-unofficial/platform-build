@@ -29,7 +29,6 @@ PRODUCT_PACKAGES += \
     CtsShimPrivPrebuilt \
     ExtShared \
     ExtServices \
-    MediaProvider \
     PackageInstaller \
     SettingsProvider \
     Shell \
