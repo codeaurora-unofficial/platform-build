@@ -12,9 +12,11 @@ LOCAL_PATH := $(BUILD_SYSTEM)
 # The filter part means "only eval the copy-one-file rule if this
 # src:dest pair is the first one to match the same dest"
 #$(1): the src:dest pair
+#$(2): the dest
 define check-product-copy-files
-$(if $(filter %.apk, $(call word-colon, 2, $(1))),$(error \
-    Prebuilt apk found in PRODUCT_COPY_FILES: $(1), use BUILD_PREBUILT instead!))
+$(if $(filter-out $(TARGET_COPY_OUT_SYSTEM_OTHER)/%,$(2)), \
+  $(if $(filter %.apk, $(2)),$(error \
+     Prebuilt apk found in PRODUCT_COPY_FILES: $(1), use BUILD_PREBUILT instead!)))
 endef
 # filter out the duplicate <source file>:<dest file> pairs.
 unique_product_copy_files_pairs :=
@@ -26,7 +28,7 @@ product_copy_files_ignored :=
 $(foreach cf,$(unique_product_copy_files_pairs), \
     $(eval _src := $(call word-colon,1,$(cf))) \
     $(eval _dest := $(call word-colon,2,$(cf))) \
-    $(call check-product-copy-files,$(cf)) \
+    $(call check-product-copy-files,$(cf),$(_dest)) \
     $(if $(filter $(unique_product_copy_files_destinations),$(_dest)), \
         $(eval product_copy_files_ignored += $(cf)), \
         $(eval _fulldest := $(call append-path,$(PRODUCT_OUT),$(_dest))) \
@@ -123,8 +125,12 @@ ifdef BOARD_VNDK_VERSION
   else
     FINAL_VENDOR_DEFAULT_PROPERTIES := ro.vndk.version=$(BOARD_VNDK_VERSION)
   endif
+  ifdef BOARD_VNDK_RUNTIME_DISABLE
+    FINAL_VENDOR_DEFAULT_PROPERTIES += ro.vndk.lite=true
+  endif
 else
-  FINAL_VENDOR_DEFAULT_PROPERTIES :=
+  FINAL_VENDOR_DEFAULT_PROPERTIES := ro.vndk.version=$(PLATFORM_VNDK_VERSION)
+  FINAL_VENDOR_DEFAULT_PROPERTIES += ro.vndk.lite=true
 endif
 FINAL_VENDOR_DEFAULT_PROPERTIES += \
     $(call collapse-pairs, $(PRODUCT_DEFAULT_PROPERTY_OVERRIDES))
@@ -411,6 +417,7 @@ $(INSTALLED_VENDOR_BUILD_PROP_TARGET): $(VENDOR_BUILDINFO_SH) $(intermediate_sys
 	$(hide) echo ro.vendor.build.date=`$(DATE_FROM_FILE)`>>$@
 	$(hide) echo ro.vendor.build.date.utc=`$(DATE_FROM_FILE) +%s`>>$@
 	$(hide) echo ro.vendor.build.fingerprint="$(BUILD_FINGERPRINT_FROM_FILE)">>$@
+	$(hide) echo ro.vendor.build.security_patch="$(VENDOR_SECURITY_PATCH)">>$@
 	$(hide) echo ro.vendor.product.cpu.abilist="$(TARGET_CPU_ABI_LIST)">>$@
 	$(hide) echo ro.vendor.product.cpu.abilist32="$(TARGET_CPU_ABI_LIST_32_BIT)">>$@
 	$(hide) echo ro.vendor.product.cpu.abilist64="$(TARGET_CPU_ABI_LIST_64_BIT)">>$@
@@ -2402,7 +2409,8 @@ $(BUILT_OTATOOLS_PACKAGE): zip_root := $(call intermediates-dir-for,PACKAGING,ot
 OTATOOLS_DEPS := \
   system/extras/verity/build_verity_metadata.py \
   system/extras/ext4_utils/mke2fs.conf \
-  external/avb/test/data/testkey_rsa4096.pem \
+  $(sort $(shell find external/avb/test/data -type f -name "testkey_*.pem" -o \
+      -name "atx_metadata.bin")) \
   $(sort $(shell find system/update_engine/scripts -name \*.pyc -prune -o -type f -print)) \
   $(sort $(shell find build/target/product/security -type f -name \*.x509.pem -o -name \*.pk8 -o \
       -name verity_key)) \

@@ -79,7 +79,7 @@ PLATFORM_VERSION.PPR1 := 9
 
 # These are the current development codenames, if the build is not a final
 # release build.  If this is a final release build, it is simply "REL".
-PLATFORM_VERSION_CODENAME.PPR1 := P
+PLATFORM_VERSION_CODENAME.PPR1 := REL
 
 ifndef PLATFORM_VERSION
   PLATFORM_VERSION := $(PLATFORM_VERSION.$(TARGET_PLATFORM_VERSION))
@@ -167,7 +167,7 @@ else
     # assuming the device can only support APIs as of the previous official
     # public release.
     # This value will always be 0 for release builds.
-    PLATFORM_PREVIEW_SDK_VERSION := 2
+    PLATFORM_PREVIEW_SDK_VERSION := 0
   endif
 endif
 
@@ -231,8 +231,18 @@ ifndef PLATFORM_SECURITY_PATCH
     #  It must be of the form "YYYY-MM-DD" on production devices.
     #  It must match one of the Android Security Patch Level strings of the Public Security Bulletins.
     #  If there is no $PLATFORM_SECURITY_PATCH set, keep it empty.
-      PLATFORM_SECURITY_PATCH := 2018-05-05
+      PLATFORM_SECURITY_PATCH := 2018-06-05
 endif
+
+ifndef PLATFORM_SECURITY_PATCH_TIMESTAMP
+  # Used to indicate the matching timestamp for the security patch string in PLATFORM_SECURITY_PATCH.
+  ifneq (,$(findstring Darwin,$(UNAME)))
+    PLATFORM_SECURITY_PATCH_TIMESTAMP := $(shell date -jf '%Y-%m-%d %T %Z' '$(PLATFORM_SECURITY_PATCH) 00:00:00 GMT' +%s)
+  else
+    PLATFORM_SECURITY_PATCH_TIMESTAMP := $(shell date -d 'TZ="GMT" $(PLATFORM_SECURITY_PATCH)' +%s)
+  endif
+endif
+.KATI_READONLY := PLATFORM_SECURITY_PATCH_TIMESTAMP
 
 ifndef PLATFORM_BASE_OS
   # Used to indicate the base os applied to the device.

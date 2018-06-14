@@ -26,6 +26,13 @@ PRODUCT_COPY_FILES += \
     device/generic/goldfish/data/etc/encryptionkey.img:encryptionkey.img \
     prebuilts/qemu-kernel/x86_64/4.9/kernel-qemu2:kernel-ranchu-64
 
+# TODO(b/78308559): includes vr_hwc into GSI before vr_hwc move to vendor
+PRODUCT_PACKAGES += \
+    vr_hwc
+
 include $(SRC_TARGET_DIR)/product/full_x86.mk
+
+# Needed by Pi newly launched device to pass VtsTrebleSysProp on GSI
+PRODUCT_COMPATIBLE_PROPERTY_OVERRIDE := true
 
 PRODUCT_NAME := aosp_x86

@@ -96,15 +96,17 @@ ifeq ($(LOCAL_SANITIZE),never)
   my_sanitize_diag :=
 endif
 
-# Enable CFI in included paths.
+# Enable CFI in included paths (for Arm64 only).
 ifeq ($(filter cfi, $(my_sanitize)),)
-  combined_include_paths := $(CFI_INCLUDE_PATHS) \
-                            $(PRODUCT_CFI_INCLUDE_PATHS)
+  ifneq ($(filter arm64,$(TARGET_$(LOCAL_2ND_ARCH_VAR_PREFIX)ARCH)),)
+    combined_include_paths := $(CFI_INCLUDE_PATHS) \
+                              $(PRODUCT_CFI_INCLUDE_PATHS)
 
-  ifneq ($(strip $(foreach dir,$(subst $(comma),$(space),$(combined_include_paths)),\
-         $(filter $(dir)%,$(LOCAL_PATH)))),)
-    my_sanitize := cfi $(my_sanitize)
-    my_sanitize_diag := cfi $(my_sanitize_diag)
+    ifneq ($(strip $(foreach dir,$(subst $(comma),$(space),$(combined_include_paths)),\
+           $(filter $(dir)%,$(LOCAL_PATH)))),)
+      my_sanitize := cfi $(my_sanitize)
+      my_sanitize_diag := cfi $(my_sanitize_diag)
+    endif
   endif
 endif
 
@@ -335,6 +337,7 @@ ifeq ($(LOCAL_IS_HOST_MODULE)$(LOCAL_IS_AUX_MODULE),)
   ifeq ($(filter STATIC_LIBRARIES,$(LOCAL_MODULE_CLASS)),)
     ifndef LOCAL_SDK_VERSION
       my_static_libraries += $($(LOCAL_2ND_ARCH_VAR_PREFIX)UBSAN_MINIMAL_RUNTIME_LIBRARY)
+      my_ldflags += -Wl,--exclude-libs,$($(LOCAL_2ND_ARCH_VAR_PREFIX)UBSAN_MINIMAL_RUNTIME_LIBRARY).a
     endif
   endif
   ifneq ($(filter unsigned-integer-overflow signed-integer-overflow integer,$(my_sanitize)),)

@@ -2092,7 +2092,7 @@ endef
 define aapt2-compile-resource-zips
 @mkdir -p $(dir $@)
 $(ZIPSYNC) -d $@.contents -l $@.list $(PRIVATE_SOURCE_RES_ZIPS)
-$(hide) $(AAPT2) compile -o $@ --dir $@.tmp $(PRIVATE_AAPT2_CFLAGS) --legacy
+$(hide) $(AAPT2) compile -o $@ --dir $@.contents $(PRIVATE_AAPT2_CFLAGS) --legacy
 endef
 
 # Set up rule to compile one resource file with aapt2.
@@ -2125,6 +2125,7 @@ $(call dump-words-to-file,$(PRIVATE_RES_FLAT),$(dir $@)aapt2-flat-list)
 $(call dump-words-to-file,$(PRIVATE_OVERLAY_FLAT),$(dir $@)aapt2-flat-overlay-list)
 $(hide) $(AAPT2) link -o $@ \
   $(PRIVATE_AAPT_FLAGS) \
+  $(if $(PRIVATE_STATIC_LIBRARY_EXTRA_PACKAGES),$$(cat $(PRIVATE_STATIC_LIBRARY_EXTRA_PACKAGES))) \
   $(addprefix --manifest ,$(PRIVATE_ANDROID_MANIFEST)) \
   $(addprefix -I ,$(PRIVATE_AAPT_INCLUDES)) \
   $(addprefix -I ,$(PRIVATE_SHARED_ANDROID_LIBRARIES)) \
@@ -2143,6 +2144,7 @@ $(hide) $(AAPT2) link -o $@ \
   -R \@$(dir $@)aapt2-flat-overlay-list \
   \@$(dir $@)aapt2-flat-list
 $(SOONG_ZIP) -o $(PRIVATE_SRCJAR) -C $(PRIVATE_JAVA_GEN_DIR) -D $(PRIVATE_JAVA_GEN_DIR)
+$(EXTRACT_JAR_PACKAGES) -i $(PRIVATE_SRCJAR) -o $(PRIVATE_AAPT_EXTRA_PACKAGES) --prefix '--extra-packages '
 endef
 
 ###########################################################
