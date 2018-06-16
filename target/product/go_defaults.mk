@@ -13,7 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 # Inherit common Android Go defaults.
 $(call inherit-product, build/target/product/go_defaults_common.mk)
-
