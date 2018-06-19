@@ -15,7 +15,7 @@
 #
 
 PRODUCT_PROPERTY_OVERRIDES += \
-	rild.libpath=/vendor/lib/libreference-ril.so
+	vendor.rild.libpath=/vendor/lib/libreference-ril.so
 
 # Note: the following lines need to stay at the beginning so that it can
 # take priority  and override the rules it inherit from other mk files
@@ -30,5 +30,8 @@ PRODUCT_PACKAGES += \
     vr_hwc
 
 include $(SRC_TARGET_DIR)/product/full.mk
+
+# Needed by Pi newly launched device to pass VtsTrebleSysProp on GSI
+PRODUCT_COMPATIBLE_PROPERTY_OVERRIDE := true
 
 PRODUCT_NAME := aosp_arm

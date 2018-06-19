@@ -125,8 +125,12 @@ ifdef BOARD_VNDK_VERSION
   else
     FINAL_VENDOR_DEFAULT_PROPERTIES := ro.vndk.version=$(BOARD_VNDK_VERSION)
   endif
+  ifdef BOARD_VNDK_RUNTIME_DISABLE
+    FINAL_VENDOR_DEFAULT_PROPERTIES += ro.vndk.lite=true
+  endif
 else
-  FINAL_VENDOR_DEFAULT_PROPERTIES :=
+  FINAL_VENDOR_DEFAULT_PROPERTIES := ro.vndk.version=$(PLATFORM_VNDK_VERSION)
+  FINAL_VENDOR_DEFAULT_PROPERTIES += ro.vndk.lite=true
 endif
 FINAL_VENDOR_DEFAULT_PROPERTIES += \
     $(call collapse-pairs, $(PRODUCT_DEFAULT_PROPERTY_OVERRIDES))
@@ -2405,7 +2409,8 @@ $(BUILT_OTATOOLS_PACKAGE): zip_root := $(call intermediates-dir-for,PACKAGING,ot
 OTATOOLS_DEPS := \
   system/extras/verity/build_verity_metadata.py \
   system/extras/ext4_utils/mke2fs.conf \
-  external/avb/test/data/testkey_rsa4096.pem \
+  $(sort $(shell find external/avb/test/data -type f -name "testkey_*.pem" -o \
+      -name "atx_metadata.bin")) \
   $(sort $(shell find system/update_engine/scripts -name \*.pyc -prune -o -type f -print)) \
   $(sort $(shell find build/target/product/security -type f -name \*.x509.pem -o -name \*.pk8 -o \
       -name verity_key)) \
