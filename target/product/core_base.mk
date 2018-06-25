@@ -20,6 +20,14 @@ PRODUCT_PROPERTY_OVERRIDES := \
     ro.config.notification_sound=OnTheHunt.ogg \
     ro.config.alarm_alert=Alarm_Classic.ogg
 
+ifneq ($(strip $(TARGET_USES_IOTCC_HEADLESS)),true)
+PRODUCT_PACKAGES += \
+    ContactsProvider \
+    Home \
+    TelephonyProvider \
+    UserDictionaryProvider
+endif
+
 PRODUCT_PACKAGES += \
     DefaultContainerService \
     atrace \

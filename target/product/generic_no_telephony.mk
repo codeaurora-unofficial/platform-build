@@ -25,6 +25,17 @@ PRODUCT_PACKAGES := \
     SysuiDarkThemeOverlay \
     EasterEgg
 
+ifneq ($(strip $(TARGET_USES_IOTCC_HEADLESS)),true)
+PRODUCT_PACKAGES += \
+    Gallery2 \
+    Music \
+    MusicFX \
+    Provision \
+    SystemUI \
+    EasterEgg \
+    WallpaperCropper
+endif
+
 PRODUCT_PACKAGES += \
     clatd \
     clatd.conf \
