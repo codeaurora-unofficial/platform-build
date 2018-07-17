@@ -19,4 +19,15 @@
 
 TARGET_USES_QCOM_BSP_ATEL := true
 
+ifneq ($(strip $(TARGET_USES_IOTCC_HEADLESS)),true)
+PRODUCT_PACKAGES := \
+    CarrierConfig \
+    CarrierDefaultApp \
+    Dialer \
+    CallLogBackup \
+    CellBroadcastReceiver \
+    EmergencyInfo \
+    rild
+endif
+
 PRODUCT_COPY_FILES := \

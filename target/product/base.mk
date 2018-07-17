@@ -135,7 +135,7 @@ PRODUCT_PACKAGES += \
     wm
 
 
-ifneq ($(TARGET_PRODUCT), qcs605)
+ifneq ($(strip $(TARGET_USES_IOTCC_HEADLESS)),true)
 PRODUCT_PACKAGES += \
     mediadrmserver \
     mediaextractor

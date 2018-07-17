@@ -40,6 +40,20 @@ PRODUCT_PACKAGES := \
 	EasterEgg \
 	WidgetPreview
 
+ifneq ($(strip $(TARGET_USES_IOTCC_HEADLESS)),true)
+PRODUCT_PACKAGES += \
+        CellBroadcastReceiver \
+        Dialer \
+        Gallery2 \
+        Launcher3 \
+        LiveWallpapersPicker \
+        Mms \
+        Music \
+        Protips \
+        SystemUI \
+        WallpaperPicker
+endif
+
 # Define the host tools and libs that are parts of the SDK.
 -include sdk/build/product_sdk.mk
 -include development/build/product_sdk.mk

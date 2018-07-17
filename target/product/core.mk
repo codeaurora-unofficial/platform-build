@@ -30,13 +30,52 @@ PRODUCT_PACKAGES += \
     ManagedProvisioning \
     libpac \
     SharedStorageBackup \
-    StorageManager
+    StorageManager \
+
+ifneq ($(strip $(TARGET_USES_IOTCC_HEADLESS)),true)
+PRODUCT_PACKAGES += \
+    BlockedNumberProvider \
+    BookmarkProvider \
+    Browser2 \
+    BuiltInPrintService \
+    Calendar \
+    CalendarProvider \
+    CaptivePortalLogin \
+    Contacts \
+    DeskClock \
+    DocumentsUI \
+    DownloadProviderUi \
+    Email \
+    Exchange2 \
+    ExactCalculator \
+    LatinIME \
+    Launcher2 \
+    MtpDocumentsProvider \
+    PicoTts \
+    PacProcessor \
+    PrintSpooler \
+    PrintRecommendationService \
+    ProxyHandler \
+    QuickSearchBox \
+    Settings \
+    StorageManager \
+    Telecom \
+    TeleService \
+    VpnDialogs \
+    vr \
+    MmsService
+endif
 
 # The set of packages whose code can be loaded by the system server.
 PRODUCT_SYSTEM_SERVER_APPS += \
     FusedLocation \
-    KeyChain
+    KeyChain \
 
+ifneq ($(strip $(TARGET_USES_IOTCC_HEADLESS)),true)
+PRODUCT_SYSTEM_SERVER_APPS += \
+    InputDevices \
+    Telecom
+endif
 # The set of packages we want to force 'speed' compilation on.
 PRODUCT_DEXPREOPT_SPEED_APPS += \
 

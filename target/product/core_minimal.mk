@@ -29,7 +29,6 @@ PRODUCT_PACKAGES += \
     CtsShimPrivPrebuilt \
     ExtShared \
     ExtServices \
-    MediaProvider \
     PackageInstaller \
     SettingsProvider \
     Shell \
@@ -80,7 +79,19 @@ PRODUCT_PACKAGES += \
     screencap \
     sensorservice \
     uiautomator \
-    uncrypt
+    uncrypt \
+
+ifneq ($(strip $(TARGET_USES_IOTCC_HEADLESS)),true)
+PRODUCT_PACKAGES += \
+    MediaProvider \
+    DownloadProvider \
+    HTMLViewer \
+    WallpaperBackup \
+    telephony-common \
+    voip-common \
+    webview \
+    webview_zygote
+endif
 
 # Wifi modules
 PRODUCT_PACKAGES += \
