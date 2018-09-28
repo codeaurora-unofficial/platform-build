@@ -473,7 +473,7 @@ def WriteFullOTAPackage(input_zip, output_zip, fota):
 
   Item.GetMetadata(input_zip)
   Item.Get("system").SetPermissions(script)
-  Item.Get("userdata").SetPermissions(script)
+  #Item.Get("userdata").SetPermissions(script)
   
   common.CheckSize(boot_img.data, "boot.img", OPTIONS.info_dict)
   common.ZipWriteStr(output_zip, "boot.img", boot_img.data)
