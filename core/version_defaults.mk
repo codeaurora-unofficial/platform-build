@@ -28,7 +28,7 @@
 #     PLATFORM_SECURITY_PATCH
 #
 
-# Look for an optional file containing overrides of the defaults,
+# Look for an  optional file containing overrides of the defaults,
 # but don't cry if we don't find it.  We could just use -include, but
 # the build.prop target also wants INTERNAL_BUILD_ID_MAKEFILE to be set
 # if the file exists.
@@ -181,7 +181,7 @@ ifndef PLATFORM_SECURITY_PATCH
     #  It must be of the form "YYYY-MM-DD" on production devices.
     #  It must match one of the Android Security Patch Level strings of the Public Security Bulletins.
     #  If there is no $PLATFORM_SECURITY_PATCH set, keep it empty.
-      PLATFORM_SECURITY_PATCH := 2018-07-05
+      PLATFORM_SECURITY_PATCH := 2018-09-05
 endif
 
 ifndef PLATFORM_BASE_OS
