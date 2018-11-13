@@ -585,7 +585,13 @@ function lunch()
         local choices=($(TARGET_BUILD_APPS= LUNCH_MENU_CHOICES="${LUNCH_MENU_CHOICES[@]}" get_build_var COMMON_LUNCH_CHOICES))
         if [ $answer -le ${#choices[@]} ]
         then
-            selection=${choices[$(($answer-1))]}
+            # array in zsh starts from 1 instead of 0.
+            if [ -n "$ZSH_VERSION" ]
+            then
+                selection=${choices[$(($answer))]}
+            else
+                selection=${choices[$(($answer-1))]}
+            fi
         fi
     else
         selection=$answer
@@ -1595,19 +1601,30 @@ function make()
         return 1
     fi
 
-    _wrap_build $(get_make_command hidl-gen) hidl-gen ALLOW_MISSING_DEPENDENCIES=true
-    RET=$?
-    if [ $RET -ne 0 ]; then
-        echo -n "${color_failed}#### hidl-gen compilation failed, check above errors"
-        echo " ####${color_reset}"
-        return $RET
+    if [ -f $ANDROID_BUILD_TOP/$QTI_BUILDTOOLS_DIR/build/update-vendor-hal-makefiles.sh ]; then
+        vendor_hal_script=$ANDROID_BUILD_TOP/$QTI_BUILDTOOLS_DIR/build/update-vendor-hal-makefiles.sh
+        source $vendor_hal_script --check
+        regen_needed=$?
+    else
+        vendor_hal_script=$ANDROID_BUILD_TOP/device/qcom/common/vendor_hal_makefile_generator.sh
+        regen_needed=1
     fi
-    source $ANDROID_BUILD_TOP/device/qcom/common/vendor_hal_makefile_generator.sh
-    RET=$?
-    if [ $RET -ne 0 ]; then
-        echo -n "${color_failed}#### HAL file .bp generation failed dure to incpomaptible HAL files , please check above error log"
-        echo " ####${color_reset}"
-        return $RET
+
+    if [ $regen_needed -eq 1 ]; then
+        _wrap_build $(get_make_command hidl-gen) hidl-gen ALLOW_MISSING_DEPENDENCIES=true
+        RET=$?
+        if [ $RET -ne 0 ]; then
+            echo -n "${color_failed}#### hidl-gen compilation failed, check above errors"
+            echo " ####${color_reset}"
+            return $RET
+        fi
+        source $vendor_hal_script
+        RET=$?
+        if [ $RET -ne 0 ]; then
+            echo -n "${color_failed}#### HAL file .bp generation failed dure to incpomaptible HAL files , please check above error log"
+            echo " ####${color_reset}"
+            return $RET
+        fi
     fi
     _wrap_build $(get_make_command "$@") "$@"
 }
@@ -1667,6 +1684,25 @@ function validate_current_shell() {
         *)
             echo -e "WARNING: Only bash and zsh are supported.\nUse of other shell would lead to erroneous results."
             ;;
+    esac
+}
+
+function acloud()
+{
+    # Let's use the built version over the prebuilt.
+    local built_acloud=${ANDROID_HOST_OUT}/bin/acloud
+    if [ -f $built_acloud ]; then
+        $built_acloud "$@"
+        return $?
+    fi
+
+    local host_os_arch=$(get_build_var HOST_PREBUILT_TAG)
+    case $host_os_arch in
+        linux-x86) "$(gettop)"/prebuilts/asuite/acloud/linux-x86/acloud "$@"
+        ;;
+    *)
+        echo "acloud is not supported on your host arch: $host_os_arch"
+        ;;
     esac
 }
 

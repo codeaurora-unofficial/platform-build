@@ -82,6 +82,11 @@ AVB_PARTITIONS = ('boot', 'recovery', 'system', 'vendor', 'product',
                   'product_services', 'dtbo', 'odm')
 
 
+# Partitions that should have their care_map added to META/care_map.pb
+PARTITIONS_WITH_CARE_MAP = ('system', 'vendor', 'product', 'product_services',
+                            'odm')
+
+
 class ErrorCode(object):
   """Define error_codes for failures that happen during the actual
   update package installation.
@@ -116,15 +121,26 @@ class ExternalError(RuntimeError):
 
 
 def Run(args, verbose=None, **kwargs):
-  """Create and return a subprocess.Popen object.
+  """Creates and returns a subprocess.Popen object.
 
-  Caller can specify if the command line should be printed. The global
-  OPTIONS.verbose will be used if not specified.
+  Args:
+    args: The command represented as a list of strings.
+    verbose: Whether the commands should be shown (default to OPTIONS.verbose
+        if unspecified).
+    kwargs: Any additional args to be passed to subprocess.Popen(), such as env,
+        stdin, etc. stdout and stderr will default to subprocess.PIPE and
+        subprocess.STDOUT respectively unless caller specifies any of them.
+
+  Returns:
+    A subprocess.Popen object.
   """
   if verbose is None:
     verbose = OPTIONS.verbose
+  if 'stdout' not in kwargs and 'stderr' not in kwargs:
+    kwargs['stdout'] = subprocess.PIPE
+    kwargs['stderr'] = subprocess.STDOUT
   if verbose:
-    print("  running: ", " ".join(args))
+    print("  Running: \"{}\"".format(" ".join(args)))
   return subprocess.Popen(args, **kwargs)
 
 
@@ -149,9 +165,41 @@ def CloseInheritedPipes():
       pass
 
 
-def LoadInfoDict(input_file, input_dir=None):
-  """Read and parse the META/misc_info.txt key/value pairs from the
-  input target files and return a dict."""
+def LoadInfoDict(input_file, repacking=False):
+  """Loads the key/value pairs from the given input target_files.
+
+  It reads `META/misc_info.txt` file in the target_files input, does sanity
+  checks and returns the parsed key/value pairs for to the given build. It's
+  usually called early when working on input target_files files, e.g. when
+  generating OTAs, or signing builds. Note that the function may be called
+  against an old target_files file (i.e. from past dessert releases). So the
+  property parsing needs to be backward compatible.
+
+  In a `META/misc_info.txt`, a few properties are stored as links to the files
+  in the PRODUCT_OUT directory. It works fine with the build system. However,
+  they are no longer available when (re)generating images from target_files zip.
+  When `repacking` is True, redirect these properties to the actual files in the
+  unzipped directory.
+
+  Args:
+    input_file: The input target_files file, which could be an open
+        zipfile.ZipFile instance, or a str for the dir that contains the files
+        unzipped from a target_files file.
+    repacking: Whether it's trying repack an target_files file after loading the
+        info dict (default: False). If so, it will rewrite a few loaded
+        properties (e.g. selinux_fc, root_dir) to point to the actual files in
+        target_files file. When doing repacking, `input_file` must be a dir.
+
+  Returns:
+    A dict that contains the parsed key/value pairs.
+
+  Raises:
+    AssertionError: On invalid input arguments.
+    ValueError: On malformed input values.
+  """
+  if repacking:
+    assert isinstance(input_file, str), \
+        "input_file must be a path str when doing repacking"
 
   def read_helper(fn):
     if isinstance(input_file, zipfile.ZipFile):
@@ -168,44 +216,33 @@ def LoadInfoDict(input_file, input_dir=None):
   try:
     d = LoadDictionaryFromLines(read_helper("META/misc_info.txt").split("\n"))
   except KeyError:
-    raise ValueError("can't find META/misc_info.txt in input target-files")
+    raise ValueError("Failed to find META/misc_info.txt in input target-files")
 
-  assert "recovery_api_version" in d
-  assert "fstab_version" in d
+  if "recovery_api_version" not in d:
+    raise ValueError("Failed to find 'recovery_api_version'")
+  if "fstab_version" not in d:
+    raise ValueError("Failed to find 'fstab_version'")
 
-  # A few properties are stored as links to the files in the out/ directory.
-  # It works fine with the build system. However, they are no longer available
-  # when (re)generating from target_files zip. If input_dir is not None, we
-  # are doing repacking. Redirect those properties to the actual files in the
-  # unzipped directory.
-  if input_dir is not None:
-    # We carry a copy of file_contexts.bin under META/. If not available,
-    # search BOOT/RAMDISK/. Note that sometimes we may need a different file
-    # to build images than the one running on device, such as when enabling
-    # system_root_image. In that case, we must have the one for image
-    # generation copied to META/.
+  if repacking:
+    # We carry a copy of file_contexts.bin under META/. If not available, search
+    # BOOT/RAMDISK/. Note that sometimes we may need a different file to build
+    # images than the one running on device, in that case, we must have the one
+    # for image generation copied to META/.
     fc_basename = os.path.basename(d.get("selinux_fc", "file_contexts"))
-    fc_config = os.path.join(input_dir, "META", fc_basename)
-    if d.get("system_root_image") == "true":
-      assert os.path.exists(fc_config)
-    if not os.path.exists(fc_config):
-      fc_config = os.path.join(input_dir, "BOOT", "RAMDISK", fc_basename)
-      if not os.path.exists(fc_config):
-        fc_config = None
+    fc_config = os.path.join(input_file, "META", fc_basename)
+    assert os.path.exists(fc_config)
 
-    if fc_config:
-      d["selinux_fc"] = fc_config
+    d["selinux_fc"] = fc_config
 
-    # Similarly we need to redirect "root_dir" and "root_fs_config".
-    if d.get("system_root_image") == "true":
-      d["root_dir"] = os.path.join(input_dir, "ROOT")
-      d["root_fs_config"] = os.path.join(
-          input_dir, "META", "root_filesystem_config.txt")
+    # Similarly we need to redirect "root_dir", and "root_fs_config".
+    d["root_dir"] = os.path.join(input_file, "ROOT")
+    d["root_fs_config"] = os.path.join(
+        input_file, "META", "root_filesystem_config.txt")
 
     # Redirect {system,vendor}_base_fs_file.
     if "system_base_fs_file" in d:
       basename = os.path.basename(d["system_base_fs_file"])
-      system_base_fs_file = os.path.join(input_dir, "META", basename)
+      system_base_fs_file = os.path.join(input_file, "META", basename)
       if os.path.exists(system_base_fs_file):
         d["system_base_fs_file"] = system_base_fs_file
       else:
@@ -215,7 +252,7 @@ def LoadInfoDict(input_file, input_dir=None):
 
     if "vendor_base_fs_file" in d:
       basename = os.path.basename(d["vendor_base_fs_file"])
-      vendor_base_fs_file = os.path.join(input_dir, "META", basename)
+      vendor_base_fs_file = os.path.join(input_file, "META", basename)
       if os.path.exists(vendor_base_fs_file):
         d["vendor_base_fs_file"] = vendor_base_fs_file
       else:
@@ -237,20 +274,44 @@ def LoadInfoDict(input_file, input_dir=None):
   makeint("boot_size")
   makeint("fstab_version")
 
+  # We changed recovery.fstab path in Q, from ../RAMDISK/etc/recovery.fstab to
+  # ../RAMDISK/system/etc/recovery.fstab. LoadInfoDict() has to handle both
+  # cases, since it may load the info_dict from an old build (e.g. when
+  # generating incremental OTAs from that build).
   system_root_image = d.get("system_root_image") == "true"
   if d.get("no_recovery") != "true":
     recovery_fstab_path = "RECOVERY/RAMDISK/system/etc/recovery.fstab"
+    if isinstance(input_file, zipfile.ZipFile):
+      if recovery_fstab_path not in input_file.namelist():
+        recovery_fstab_path = "RECOVERY/RAMDISK/etc/recovery.fstab"
+    else:
+      path = os.path.join(input_file, *recovery_fstab_path.split("/"))
+      if not os.path.exists(path):
+        recovery_fstab_path = "RECOVERY/RAMDISK/etc/recovery.fstab"
     d["fstab"] = LoadRecoveryFSTab(
         read_helper, d["fstab_version"], recovery_fstab_path, system_root_image)
+
   elif d.get("recovery_as_boot") == "true":
     recovery_fstab_path = "BOOT/RAMDISK/system/etc/recovery.fstab"
+    if isinstance(input_file, zipfile.ZipFile):
+      if recovery_fstab_path not in input_file.namelist():
+        recovery_fstab_path = "BOOT/RAMDISK/etc/recovery.fstab"
+    else:
+      path = os.path.join(input_file, *recovery_fstab_path.split("/"))
+      if not os.path.exists(path):
+        recovery_fstab_path = "BOOT/RAMDISK/etc/recovery.fstab"
     d["fstab"] = LoadRecoveryFSTab(
         read_helper, d["fstab_version"], recovery_fstab_path, system_root_image)
+
   else:
     d["fstab"] = None
 
-  d["build.prop"] = LoadBuildProp(read_helper, 'SYSTEM/build.prop')
-  d["vendor.build.prop"] = LoadBuildProp(read_helper, 'VENDOR/build.prop')
+  # Tries to load the build props for all partitions with care_map, including
+  # system and vendor.
+  for partition in PARTITIONS_WITH_CARE_MAP:
+    d["{}.build.prop".format(partition)] = LoadBuildProp(
+        read_helper, "{}/build.prop".format(partition.upper()))
+  d["build.prop"] = d["system.build.prop"]
 
   # Set up the salt (based on fingerprint or thumbprint) that will be used when
   # adding AVB footer.
@@ -367,7 +428,7 @@ def AppendAVBSigningArgs(cmd, partition):
     cmd.extend(["--key", key_path, "--algorithm", algorithm])
   avb_salt = OPTIONS.info_dict.get("avb_salt")
   # make_vbmeta_image doesn't like "--salt" (and it's not needed).
-  if avb_salt and partition != "vbmeta":
+  if avb_salt and not partition.startswith("vbmeta"):
     cmd.extend(["--salt", avb_salt])
 
 
@@ -393,8 +454,7 @@ def GetAvbChainedPartitionArg(partition, info_dict, key=None):
   avbtool = os.getenv('AVBTOOL') or info_dict["avb_avbtool"]
   pubkey_path = MakeTempFile(prefix="avb-", suffix=".pubkey")
   proc = Run(
-      [avbtool, "extract_public_key", "--key", key, "--output", pubkey_path],
-      stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+      [avbtool, "extract_public_key", "--key", key, "--output", pubkey_path])
   stdoutdata, _ = proc.communicate()
   assert proc.returncode == 0, \
       "Failed to extract pubkey for {}:\n{}".format(
@@ -501,9 +561,10 @@ def _BuildBootableImage(sourcedir, fs_config_file, info_dict=None,
     fn = os.path.join(sourcedir, "recovery_dtbo")
     cmd.extend(["--recovery_dtbo", fn])
 
-  p = Run(cmd, stdout=subprocess.PIPE)
-  p.communicate()
-  assert p.returncode == 0, "mkbootimg of %s image failed" % (partition_name,)
+  proc = Run(cmd)
+  output, _ = proc.communicate()
+  assert proc.returncode == 0, \
+      "Failed to run mkbootimg of {}:\n{}".format(partition_name, output)
 
   if (info_dict.get("boot_signer") == "true" and
       info_dict.get("verity_key")):
@@ -518,9 +579,10 @@ def _BuildBootableImage(sourcedir, fs_config_file, info_dict=None,
     cmd.extend([path, img.name,
                 info_dict["verity_key"] + ".pk8",
                 info_dict["verity_key"] + ".x509.pem", img.name])
-    p = Run(cmd, stdout=subprocess.PIPE)
-    p.communicate()
-    assert p.returncode == 0, "boot_signer of %s image failed" % path
+    proc = Run(cmd)
+    output, _ = proc.communicate()
+    assert proc.returncode == 0, \
+        "Failed to run boot_signer of {} image:\n{}".format(path, output)
 
   # Sign the image if vboot is non-empty.
   elif info_dict.get("vboot"):
@@ -538,9 +600,10 @@ def _BuildBootableImage(sourcedir, fs_config_file, info_dict=None,
            info_dict["vboot_subkey"] + ".vbprivk",
            img_keyblock.name,
            img.name]
-    p = Run(cmd, stdout=subprocess.PIPE)
-    p.communicate()
-    assert p.returncode == 0, "vboot_signer of %s image failed" % path
+    proc = Run(cmd)
+    proc.communicate()
+    assert proc.returncode == 0, \
+        "Failed to run vboot_signer of {} image:\n{}".format(path, output)
 
     # Clean up the temp files.
     img_unsigned.close()
@@ -557,10 +620,11 @@ def _BuildBootableImage(sourcedir, fs_config_file, info_dict=None,
     args = info_dict.get("avb_" + partition_name + "_add_hash_footer_args")
     if args and args.strip():
       cmd.extend(shlex.split(args))
-    p = Run(cmd, stdout=subprocess.PIPE)
-    p.communicate()
-    assert p.returncode == 0, "avbtool add_hash_footer of %s failed" % (
-        partition_name,)
+    proc = Run(cmd)
+    output, _ = proc.communicate()
+    assert proc.returncode == 0, \
+        "Failed to run 'avbtool add_hash_footer' of {}:\n{}".format(
+            partition_name, output)
 
   img.seek(os.SEEK_SET, 0)
   data = img.read()
@@ -632,9 +696,9 @@ def UnzipTemp(filename, pattern=None):
     cmd = ["unzip", "-o", "-q", filename, "-d", dirname]
     if pattern is not None:
       cmd.extend(pattern)
-    p = Run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    stdoutdata, _ = p.communicate()
-    if p.returncode != 0:
+    proc = Run(cmd)
+    stdoutdata, _ = proc.communicate()
+    if proc.returncode != 0:
       raise ExternalError(
           "Failed to unzip input target-files \"{}\":\n{}".format(
               filename, stdoutdata))
@@ -651,7 +715,8 @@ def UnzipTemp(filename, pattern=None):
   return tmp
 
 
-def GetSparseImage(which, tmpdir, input_zip, allow_shared_blocks):
+def GetSparseImage(which, tmpdir, input_zip, allow_shared_blocks,
+                   hashtree_info_generator=None):
   """Returns a SparseImage object suitable for passing to BlockImageDiff.
 
   This function loads the specified sparse image from the given path, and
@@ -664,7 +729,8 @@ def GetSparseImage(which, tmpdir, input_zip, allow_shared_blocks):
     tmpdir: The directory that contains the prebuilt image and block map file.
     input_zip: The target-files ZIP archive.
     allow_shared_blocks: Whether having shared blocks is allowed.
-
+    hashtree_info_generator: If present, generates the hashtree_info for this
+        sparse image.
   Returns:
     A SparseImage object, with file_map info loaded.
   """
@@ -682,8 +748,9 @@ def GetSparseImage(which, tmpdir, input_zip, allow_shared_blocks):
   # unconditionally. Note that they are still part of care_map. (Bug: 20939131)
   clobbered_blocks = "0"
 
-  image = sparse_img.SparseImage(path, mappath, clobbered_blocks,
-                                 allow_shared_blocks=allow_shared_blocks)
+  image = sparse_img.SparseImage(
+      path, mappath, clobbered_blocks, allow_shared_blocks=allow_shared_blocks,
+      hashtree_info_generator=hashtree_info_generator)
 
   # block.map may contain less blocks, because mke2fs may skip allocating blocks
   # if they contain all zeros. We can't reconstruct such a file from its block
@@ -693,15 +760,14 @@ def GetSparseImage(which, tmpdir, input_zip, allow_shared_blocks):
     if not entry.startswith('/'):
       continue
 
-    # "/system/framework/am.jar" => "SYSTEM/framework/am.jar". Note that when
-    # using system_root_image, the filename listed in system.map may contain an
-    # additional leading slash (i.e. "//system/framework/am.jar"). Using lstrip
-    # to get consistent results.
+    # "/system/framework/am.jar" => "SYSTEM/framework/am.jar". Note that the
+    # filename listed in system.map may contain an additional leading slash
+    # (i.e. "//system/framework/am.jar"). Using lstrip to get consistent
+    # results.
     arcname = string.replace(entry, which, which.upper(), 1).lstrip('/')
 
-    # Special handling another case with system_root_image, where files not
-    # under /system (e.g. "/sbin/charger") are packed under ROOT/ in a
-    # target_files.zip.
+    # Special handling another case, where files not under /system
+    # (e.g. "/sbin/charger") are packed under ROOT/ in a target_files.zip.
     if which == 'system' and not arcname.startswith('SYSTEM'):
       arcname = 'ROOT/' + arcname
 
@@ -874,15 +940,14 @@ def SignFile(input_name, output_name, key, password, min_api_level=None,
               key + OPTIONS.private_key_suffix,
               input_name, output_name])
 
-  p = Run(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-          stderr=subprocess.STDOUT)
+  proc = Run(cmd, stdin=subprocess.PIPE)
   if password is not None:
     password += "\n"
-  stdoutdata, _ = p.communicate(password)
-  if p.returncode != 0:
+  stdoutdata, _ = proc.communicate(password)
+  if proc.returncode != 0:
     raise ExternalError(
         "Failed to run signapk.jar: return code {}:\n{}".format(
-            p.returncode, stdoutdata))
+            proc.returncode, stdoutdata))
 
 
 def CheckSize(data, target, info_dict):
@@ -1215,8 +1280,7 @@ class PasswordManager(object):
         first_line = i + 4
     f.close()
 
-    p = Run([self.editor, "+%d" % (first_line,), self.pwfile])
-    _, _ = p.communicate()
+    Run([self.editor, "+%d" % (first_line,), self.pwfile]).communicate()
 
     return self.ReadFile()
 
@@ -1344,10 +1408,10 @@ def ZipDelete(zip_filename, entries):
   if isinstance(entries, basestring):
     entries = [entries]
   cmd = ["zip", "-d", zip_filename] + entries
-  proc = Run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+  proc = Run(cmd)
   stdoutdata, _ = proc.communicate()
-  assert proc.returncode == 0, "Failed to delete %s:\n%s" % (entries,
-                                                             stdoutdata)
+  assert proc.returncode == 0, \
+      "Failed to delete {}:\n{}".format(entries, stdoutdata)
 
 
 def ZipClose(zip_file):
@@ -1808,9 +1872,9 @@ class BlockDifference(object):
                     '--output={}.new.dat.br'.format(self.path),
                     '{}.new.dat'.format(self.path)]
       print("Compressing {}.new.dat with brotli".format(self.partition))
-      p = Run(brotli_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-      stdoutdata, _ = p.communicate()
-      assert p.returncode == 0, \
+      proc = Run(brotli_cmd)
+      stdoutdata, _ = proc.communicate()
+      assert proc.returncode == 0, \
           'Failed to compress {}.new.dat with brotli:\n{}'.format(
               self.partition, stdoutdata)
 

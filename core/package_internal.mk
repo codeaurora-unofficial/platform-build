@@ -413,15 +413,14 @@ else  # LOCAL_USE_AAPT2
     resource_export_package := $(intermediates.COMMON)/package-export.apk
     $(R_file_stamp): $(resource_export_package)
 
-    # add-assets-to-package looks at PRODUCT_AAPT_CONFIG, but this target
+    # create-assets-package looks at PRODUCT_AAPT_CONFIG, but this target
     # can't know anything about PRODUCT.  Clear it out just for this target.
     $(resource_export_package): PRIVATE_PRODUCT_AAPT_CONFIG :=
     $(resource_export_package): PRIVATE_PRODUCT_AAPT_PREF_CONFIG :=
     $(resource_export_package): PRIVATE_RESOURCE_LIST := $(all_res_assets)
     $(resource_export_package): $(all_res_assets) $(full_android_manifest) $(rs_generated_res_zip) $(AAPT)
 	@echo "target Export Resources: $(PRIVATE_MODULE) ($@)"
-	$(create-empty-package)
-	$(add-assets-to-package)
+	$(call create-assets-package,$@)
   endif
 
 endif  # LOCAL_USE_AAPT2
@@ -604,15 +603,13 @@ endif
 endif
 
 ifeq ($(module_run_appcompat),true)
-$(LOCAL_BUILT_MODULE) : $(call intermediates-dir-for,PACKAGING,veridex,HOST)/veridex.zip
+$(LOCAL_BUILT_MODULE) : $(appcompat-files)
 $(LOCAL_BUILT_MODULE): PRIVATE_INSTALLED_MODULE := $(LOCAL_INSTALLED_MODULE)
 endif
 
-$(LOCAL_BUILT_MODULE): PRIVATE_DONT_DELETE_JAR_DIRS := $(LOCAL_DONT_DELETE_JAR_DIRS)
 $(LOCAL_BUILT_MODULE): PRIVATE_RESOURCE_INTERMEDIATES_DIR := $(intermediates.COMMON)/resources
-$(LOCAL_BUILT_MODULE): PRIVATE_FULL_CLASSES_JAR := $(full_classes_jar)
 $(LOCAL_BUILT_MODULE) : $(jni_shared_libraries)
-$(LOCAL_BUILT_MODULE) : $(JAR_ARGS)
+$(LOCAL_BUILT_MODULE) : $(JAR_ARGS) $(SOONG_ZIP) $(MERGE_ZIPS) $(ZIP2ZIP)
 ifeq ($(LOCAL_USE_AAPT2),true)
 $(LOCAL_BUILT_MODULE): PRIVATE_RES_PACKAGE := $(my_res_package)
 $(LOCAL_BUILT_MODULE) : $(my_res_package) $(AAPT2) | $(ACP)
@@ -623,27 +620,33 @@ endif  # LOCAL_USE_AAPT2
 ifdef LOCAL_COMPRESSED_MODULE
 $(LOCAL_BUILT_MODULE) : $(MINIGZIP)
 endif
+ifeq (true, $(LOCAL_UNCOMPRESS_DEX))
+$(LOCAL_BUILT_MODULE) : $(ZIP2ZIP)
+endif
+ifneq ($(BUILD_PLATFORM_ZIP),)
+$(LOCAL_BUILT_MODULE) : .KATI_IMPLICIT_OUTPUTS := $(dir $(LOCAL_BUILT_MODULE))package.dex.apk
+endif
+$(LOCAL_BUILT_MODULE):
 	@echo "target Package: $(PRIVATE_MODULE) ($@)"
+	rm -rf $@.parts
+	mkdir -p $@.parts
 ifeq ($(LOCAL_USE_AAPT2),true)
-	$(call copy-file-to-new-target)
+	cp -f $(PRIVATE_RES_PACKAGE) $@.parts/apk.zip
 else  # ! LOCAL_USE_AAPT2
-	$(if $(PRIVATE_SOURCE_ARCHIVE),\
-	  $(call initialize-package-file,$(PRIVATE_SOURCE_ARCHIVE),$@),\
-	  $(create-empty-package))
-	$(add-assets-to-package)
+	$(call create-assets-package,$@.parts/apk.zip)
 endif  # LOCAL_USE_AAPT2
 ifneq ($(jni_shared_libraries),)
-	$(add-jni-shared-libs-to-package)
+	$(call create-jni-shared-libs-package,$@.parts/jni.zip)
 endif
 ifeq ($(full_classes_jar),)
 # We don't build jar, need to add the Java resources here.
-	$(if $(PRIVATE_EXTRA_JAR_ARGS),$(call add-java-resources-to,$@))
+	$(if $(PRIVATE_EXTRA_JAR_ARGS),$(call create-java-resources-jar,$@.parts/res.zip))
 else  # full_classes_jar
-	$(add-dex-to-package)
-ifeq ($(LOCAL_USE_AAPT2),true)
-	$(call add-jar-resources-to-package,$@,$(PRIVATE_FULL_CLASSES_JAR),$(PRIVATE_RESOURCE_INTERMEDIATES_DIR))
-endif
+	$(call create-dex-jar,$@.parts/dex.zip,$(PRIVATE_DEX_FILE))
+	$(call extract-resources-jar,$@.parts/res.zip,$(PRIVATE_SOURCE_ARCHIVE))
 endif  # full_classes_jar
+	$(MERGE_ZIPS) $@ $@.parts/*.zip
+	rm -rf $@.parts
 ifeq (true, $(LOCAL_UNCOMPRESS_DEX))
 	@# No need to align, sign-package below will do it.
 	$(uncompress-dexs)
@@ -685,10 +688,13 @@ endif
 ## Rule to build the odex file
 ifdef LOCAL_DEX_PREOPT
 $(built_odex): PRIVATE_DEX_FILE := $(built_dex)
+ifeq (true, $(LOCAL_UNCOMPRESS_DEX))
+$(built_odex): $(ZIP2ZIP)
+endif
 # Use pattern rule - we may have multiple built odex files.
 $(built_odex) : $(dir $(LOCAL_BUILT_MODULE))% : $(built_dex)
 	$(hide) mkdir -p $(dir $@) && rm -f $@
-	$(add-dex-to-package)
+	$(call create-dex-jar,$@,$(PRIVATE_DEX_FILE))
 ifeq (true, $(LOCAL_UNCOMPRESS_DEX))
 	$(uncompress-dexs)
 	$(align-package)

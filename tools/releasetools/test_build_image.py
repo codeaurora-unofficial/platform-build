@@ -15,11 +15,15 @@
 #
 
 import filecmp
+import math
 import os.path
+import random
 import unittest
 
 import common
-from build_image import CheckHeadroom, RunCommand, SetUpInDirAndFsConfig
+from build_image import (
+    AVBCalcMinPartitionSize, BLOCK_SIZE, BuildImageError, CheckHeadroom,
+    RunCommand, SetUpInDirAndFsConfig)
 
 
 class BuildImageTest(unittest.TestCase):
@@ -27,6 +31,13 @@ class BuildImageTest(unittest.TestCase):
   # Available: 1000 blocks.
   EXT4FS_OUTPUT = (
       "Created filesystem with 2777/129024 inodes and 515099/516099 blocks")
+
+  def setUp(self):
+    # To test AVBCalcMinPartitionSize(), by using 200MB to 2GB image size.
+    #   -  51200 = 200MB * 1024 * 1024 / 4096
+    #   - 524288 = 2GB * 1024 * 1024 * 1024 / 4096
+    self._image_sizes = [BLOCK_SIZE * random.randint(51200, 524288) + offset
+                         for offset in range(BLOCK_SIZE)]
 
   def tearDown(self):
     common.Cleanup()
@@ -38,7 +49,7 @@ class BuildImageTest(unittest.TestCase):
         'partition_headroom' : '4096000',
         'mount_point' : 'system',
     }
-    self.assertTrue(CheckHeadroom(self.EXT4FS_OUTPUT, prop_dict))
+    CheckHeadroom(self.EXT4FS_OUTPUT, prop_dict)
 
   def test_CheckHeadroom_InsufficientHeadroom(self):
     # Required headroom: 1001 blocks.
@@ -47,7 +58,8 @@ class BuildImageTest(unittest.TestCase):
         'partition_headroom' : '4100096',
         'mount_point' : 'system',
     }
-    self.assertFalse(CheckHeadroom(self.EXT4FS_OUTPUT, prop_dict))
+    self.assertRaises(
+        BuildImageError, CheckHeadroom, self.EXT4FS_OUTPUT, prop_dict)
 
   def test_CheckHeadroom_WrongFsType(self):
     prop_dict = {
@@ -77,7 +89,7 @@ class BuildImageTest(unittest.TestCase):
     """Tests the result parsing from actual call to mke2fs."""
     input_dir = common.MakeTempDir()
     output_image = common.MakeTempFile(suffix='.img')
-    command = ['mkuserimg_mke2fs.sh', input_dir, output_image, 'ext4',
+    command = ['mkuserimg_mke2fs', input_dir, output_image, 'ext4',
                '/system', '409600', '-j', '0']
     ext4fs_output, exit_code = RunCommand(command)
     self.assertEqual(0, exit_code)
@@ -87,24 +99,14 @@ class BuildImageTest(unittest.TestCase):
         'partition_headroom' : '40960',
         'mount_point' : 'system',
     }
-    self.assertTrue(CheckHeadroom(ext4fs_output, prop_dict))
+    CheckHeadroom(ext4fs_output, prop_dict)
 
     prop_dict = {
         'fs_type' : 'ext4',
         'partition_headroom' : '413696',
         'mount_point' : 'system',
     }
-    self.assertFalse(CheckHeadroom(ext4fs_output, prop_dict))
-
-  def test_SetUpInDirAndFsConfig_SystemRootImageFalse(self):
-    prop_dict = {
-        'fs_config': 'fs-config',
-        'mount_point': 'system',
-    }
-    in_dir, fs_config = SetUpInDirAndFsConfig('/path/to/in_dir', prop_dict)
-    self.assertEqual('/path/to/in_dir', in_dir)
-    self.assertEqual('fs-config', fs_config)
-    self.assertEqual('system', prop_dict['mount_point'])
+    self.assertRaises(BuildImageError, CheckHeadroom, ext4fs_output, prop_dict)
 
   def test_SetUpInDirAndFsConfig_SystemRootImageTrue_NonSystem(self):
     prop_dict = {
@@ -124,7 +126,7 @@ class BuildImageTest(unittest.TestCase):
       fs_config_fp.write('fs-config-{}\n'.format(partition))
     return fs_config
 
-  def test_SetUpInDirAndFsConfig_SystemRootImageTrue(self):
+  def test_SetUpInDirAndFsConfig(self):
     root_dir = common.MakeTempDir()
     with open(os.path.join(root_dir, 'init'), 'w') as init_fp:
       init_fp.write('init')
@@ -140,7 +142,6 @@ class BuildImageTest(unittest.TestCase):
         'fs_config': fs_config_system,
         'mount_point': 'system',
         'root_dir': root_dir,
-        'system_root_image': 'true',
     }
     in_dir, fs_config = SetUpInDirAndFsConfig(origin_in, prop_dict)
 
@@ -154,7 +155,7 @@ class BuildImageTest(unittest.TestCase):
     self.assertTrue(filecmp.cmp(fs_config_system, fs_config))
     self.assertEqual('/', prop_dict['mount_point'])
 
-  def test_SetUpInDirAndFsConfig_SystemRootImageTrue_WithRootFsConfig(self):
+  def test_SetUpInDirAndFsConfig_WithRootFsConfig(self):
     root_dir = common.MakeTempDir()
     with open(os.path.join(root_dir, 'init'), 'w') as init_fp:
       init_fp.write('init')
@@ -172,7 +173,6 @@ class BuildImageTest(unittest.TestCase):
         'mount_point': 'system',
         'root_dir': root_dir,
         'root_fs_config': fs_config_root,
-        'system_root_image': 'true',
     }
     in_dir, fs_config = SetUpInDirAndFsConfig(origin_in, prop_dict)
 
@@ -188,3 +188,51 @@ class BuildImageTest(unittest.TestCase):
     self.assertIn('fs-config-system\n', fs_config_data)
     self.assertIn('fs-config-root\n', fs_config_data)
     self.assertEqual('/', prop_dict['mount_point'])
+
+  def test_AVBCalcMinPartitionSize_LinearFooterSize(self):
+    """Tests with footer size which is linear to partition size."""
+    for image_size in self._image_sizes:
+      for ratio in 0.95, 0.56, 0.22:
+        expected_size = common.RoundUpTo4K(int(math.ceil(image_size / ratio)))
+        self.assertEqual(
+            expected_size,
+            AVBCalcMinPartitionSize(image_size, lambda x: int(x * ratio)))
+
+  def test_AVBCalcMinPartitionSize_SlowerGrowthFooterSize(self):
+    """Tests with footer size which grows slower than partition size."""
+
+    def _SizeCalculator(partition_size):
+      """Footer size is the power of 0.95 of partition size."""
+      # Minus footer size to return max image size.
+      return partition_size - int(math.pow(partition_size, 0.95))
+
+    for image_size in self._image_sizes:
+      min_partition_size = AVBCalcMinPartitionSize(image_size, _SizeCalculator)
+      # Checks min_partition_size can accommodate image_size.
+      self.assertGreaterEqual(
+          _SizeCalculator(min_partition_size),
+          image_size)
+      # Checks min_partition_size (round to BLOCK_SIZE) is the minimum.
+      self.assertLess(
+          _SizeCalculator(min_partition_size - BLOCK_SIZE),
+          image_size)
+
+  def test_AVBCalcMinPartitionSize_FasterGrowthFooterSize(self):
+    """Tests with footer size which grows faster than partition size."""
+
+    def _SizeCalculator(partition_size):
+      """Max image size is the power of 0.95 of partition size."""
+      # Max image size grows less than partition size, which means
+      # footer size grows faster than partition size.
+      return int(math.pow(partition_size, 0.95))
+
+    for image_size in self._image_sizes:
+      min_partition_size = AVBCalcMinPartitionSize(image_size, _SizeCalculator)
+      # Checks min_partition_size can accommodate image_size.
+      self.assertGreaterEqual(
+          _SizeCalculator(min_partition_size),
+          image_size)
+      # Checks min_partition_size (round to BLOCK_SIZE) is the minimum.
+      self.assertLess(
+          _SizeCalculator(min_partition_size - BLOCK_SIZE),
+          image_size)

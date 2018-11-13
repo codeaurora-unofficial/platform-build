@@ -176,6 +176,7 @@ import zipfile
 
 import common
 import edify_generator
+import verity_utils
 
 if sys.hexversion < 0x02070000:
   print("Python 2.7 or newer is required.", file=sys.stderr)
@@ -285,6 +286,17 @@ class BuildInfo(object):
     return self._fingerprint
 
   @property
+  def vendor_fingerprint(self):
+    if "vendor.build.prop" not in self.info_dict:
+      return None
+    vendor_build_prop = self.info_dict["vendor.build.prop"]
+    if "ro.vendor.build.fingerprint" in vendor_build_prop:
+      return vendor_build_prop["ro.vendor.build.fingerprint"]
+    if "ro.vendor.build.thumbprint" in vendor_build_prop:
+      return vendor_build_prop["ro.vendor.build.thumbprint"]
+    return None
+
+  @property
   def oem_props(self):
     return self._oem_props
 
@@ -382,8 +394,7 @@ class PayloadSigner(object):
       signing_key = common.MakeTempFile(prefix="key-", suffix=".key")
       cmd.extend(["-out", signing_key])
 
-      get_signing_key = common.Run(cmd, verbose=False, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
+      get_signing_key = common.Run(cmd, verbose=False)
       stdoutdata, _ = get_signing_key.communicate()
       assert get_signing_key.returncode == 0, \
           "Failed to get signing key: {}".format(stdoutdata)
@@ -399,7 +410,7 @@ class PayloadSigner(object):
     """Signs the given input file. Returns the output filename."""
     out_file = common.MakeTempFile(prefix="signed-", suffix=".bin")
     cmd = [self.signer] + self.signer_args + ['-in', in_file, '-out', out_file]
-    signing = common.Run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    signing = common.Run(cmd)
     stdoutdata, _ = signing.communicate()
     assert signing.returncode == 0, \
         "Failed to sign the input file: {}".format(stdoutdata)
@@ -706,11 +717,14 @@ def AddCompatibilityArchiveIfTrebleEnabled(target_zip, output_zip, target_info,
   target_fp = target_info.fingerprint
   system_updated = source_fp != target_fp
 
-  source_fp_vendor = source_info.GetVendorBuildProp(
-      "ro.vendor.build.fingerprint")
-  target_fp_vendor = target_info.GetVendorBuildProp(
-      "ro.vendor.build.fingerprint")
-  vendor_updated = source_fp_vendor != target_fp_vendor
+  source_fp_vendor = source_info.vendor_fingerprint
+  target_fp_vendor = target_info.vendor_fingerprint
+  # vendor build fingerprints could be possibly blacklisted at build time. For
+  # such a case, we consider the vendor images being changed.
+  if source_fp_vendor is None or target_fp_vendor is None:
+    vendor_updated = True
+  else:
+    vendor_updated = source_fp_vendor != target_fp_vendor
 
   AddCompatibilityArchive(system_updated, vendor_updated)
 
@@ -1096,7 +1110,9 @@ class PropertyFiles(object):
     def ComputeEntryOffsetSize(name):
       """Computes the zip entry offset and size."""
       info = zip_file.getinfo(name)
-      offset = info.header_offset + len(info.FileHeader())
+      offset = info.header_offset
+      offset += zipfile.sizeFileHeader
+      offset += len(info.extra) + len(info.filename)
       size = info.file_size
       return '%s:%d:%d' % (os.path.basename(name), offset, size)
 
@@ -1151,7 +1167,8 @@ class StreamingPropertyFiles(PropertyFiles):
         'payload_properties.txt',
     )
     self.optional = (
-        # care_map.txt is available only if dm-verity is enabled.
+        # care_map is available only if dm-verity is enabled.
+        'care_map.pb',
         'care_map.txt',
         # compatibility.zip is available only if target supports Treble.
         'compatibility.zip',
@@ -1220,7 +1237,9 @@ class AbOtaPropertyFiles(StreamingPropertyFiles):
     payload, till the end of 'medatada_signature_message'.
     """
     payload_info = input_zip.getinfo('payload.bin')
-    payload_offset = payload_info.header_offset + len(payload_info.FileHeader())
+    payload_offset = payload_info.header_offset
+    payload_offset += zipfile.sizeFileHeader
+    payload_offset += len(payload_info.extra) + len(payload_info.filename)
     payload_size = payload_info.file_size
 
     with input_zip.open('payload.bin', 'r') as payload_fp:
@@ -1392,8 +1411,12 @@ def WriteBlockIncrementalOTAPackage(target_zip, source_zip, output_file):
                          target_info.get('ext4_share_dup_blocks') == "true")
   system_src = common.GetSparseImage("system", OPTIONS.source_tmp, source_zip,
                                      allow_shared_blocks)
+
+  hashtree_info_generator = verity_utils.CreateHashtreeInfoGenerator(
+      "system", 4096, target_info)
   system_tgt = common.GetSparseImage("system", OPTIONS.target_tmp, target_zip,
-                                     allow_shared_blocks)
+                                     allow_shared_blocks,
+                                     hashtree_info_generator)
 
   blockimgdiff_version = max(
       int(i) for i in target_info.get("blockimgdiff_versions", "1").split(","))
@@ -1420,8 +1443,11 @@ def WriteBlockIncrementalOTAPackage(target_zip, source_zip, output_file):
       raise RuntimeError("can't generate incremental that adds /vendor")
     vendor_src = common.GetSparseImage("vendor", OPTIONS.source_tmp, source_zip,
                                        allow_shared_blocks)
-    vendor_tgt = common.GetSparseImage("vendor", OPTIONS.target_tmp, target_zip,
-                                       allow_shared_blocks)
+    hashtree_info_generator = verity_utils.CreateHashtreeInfoGenerator(
+        "vendor", 4096, target_info)
+    vendor_tgt = common.GetSparseImage(
+        "vendor", OPTIONS.target_tmp, target_zip, allow_shared_blocks,
+        hashtree_info_generator)
 
     # Check first block of vendor partition for remount R/W only if
     # disk type is ext4
@@ -1519,18 +1545,14 @@ else if get_stage("%(bcb_dev)s") != "3/3" then
       print("boot      target: %d  source: %d  diff: %d" % (
           target_boot.size, source_boot.size, len(d)))
 
-      common.ZipWriteStr(output_zip, "patch/boot.img.p", d)
+      common.ZipWriteStr(output_zip, "boot.img.p", d)
 
-      # TODO(b/110106408): Remove after properly handling the SHA-1 embedded in
-      # the filename argument in updater code. Prior to that, explicitly list
-      # the SHA-1 of the source image, in case the updater tries to find a
-      # matching backup from /cache. Similarly for the call to
-      # script.ApplyPatch() below.
-      script.PatchCheck("%s:%s:%d:%s:%d:%s" %
-                        (boot_type, boot_device,
-                         source_boot.size, source_boot.sha1,
-                         target_boot.size, target_boot.sha1),
-                        source_boot.sha1)
+      script.PatchPartitionCheck(
+          "{}:{}:{}:{}".format(
+              boot_type, boot_device, target_boot.size, target_boot.sha1),
+          "{}:{}:{}:{}".format(
+              boot_type, boot_device, source_boot.size, source_boot.sha1))
+
       size.append(target_boot.size)
 
   if size:
@@ -1586,13 +1608,12 @@ else
         print("boot image changed; including patch.")
         script.Print("Patching boot image...")
         script.ShowProgress(0.1, 10)
-        script.ApplyPatch("%s:%s:%d:%s:%d:%s"
-                          % (boot_type, boot_device,
-                             source_boot.size, source_boot.sha1,
-                             target_boot.size, target_boot.sha1),
-                          "-",
-                          target_boot.size, target_boot.sha1,
-                          source_boot.sha1, "patch/boot.img.p")
+        script.PatchPartition(
+            '{}:{}:{}:{}'.format(
+                boot_type, boot_device, target_boot.size, target_boot.sha1),
+            '{}:{}:{}:{}'.format(
+                boot_type, boot_device, source_boot.size, source_boot.sha1),
+            'boot.img.p')
     else:
       print("boot image unchanged; skipping.")
 
@@ -1773,13 +1794,16 @@ def WriteABOTAPackageWithBrilloScript(target_file, output_file,
   target_zip = zipfile.ZipFile(target_file, "r")
   if (target_info.get("verity") == "true" or
       target_info.get("avb_enable") == "true"):
-    care_map_path = "META/care_map.txt"
-    namelist = target_zip.namelist()
-    if care_map_path in namelist:
-      care_map_data = target_zip.read(care_map_path)
-      # In order to support streaming, care_map.txt needs to be packed as
+    care_map_list = [x for x in ["care_map.pb", "care_map.txt"] if
+                     "META/" + x in target_zip.namelist()]
+
+    # Adds care_map if either the protobuf format or the plain text one exists.
+    if care_map_list:
+      care_map_name = care_map_list[0]
+      care_map_data = target_zip.read("META/" + care_map_name)
+      # In order to support streaming, care_map needs to be packed as
       # ZIP_STORED.
-      common.ZipWriteStr(output_zip, "care_map.txt", care_map_data,
+      common.ZipWriteStr(output_zip, care_map_name, care_map_data,
                          compress_type=zipfile.ZIP_STORED)
     else:
       print("Warning: cannot find care map file in target_file package")

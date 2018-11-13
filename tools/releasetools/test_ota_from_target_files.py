@@ -17,7 +17,6 @@
 import copy
 import os
 import os.path
-import subprocess
 import unittest
 import zipfile
 
@@ -254,6 +253,23 @@ class BuildInfoTest(unittest.TestCase):
                          'ro.vendor.build.fingerprint'))
     self.assertRaises(common.ExternalError, target_info.GetVendorBuildProp,
                       'ro.build.nonexistent')
+
+  def test_vendor_fingerprint(self):
+    target_info = BuildInfo(self.TEST_INFO_DICT, None)
+    self.assertEqual('vendor-build-fingerprint',
+                     target_info.vendor_fingerprint)
+
+  def test_vendor_fingerprint_blacklisted(self):
+    target_info_dict = copy.deepcopy(self.TEST_INFO_DICT_USES_OEM_PROPS)
+    del target_info_dict['vendor.build.prop']['ro.vendor.build.fingerprint']
+    target_info = BuildInfo(target_info_dict, self.TEST_OEM_DICTS)
+    self.assertIsNone(target_info.vendor_fingerprint)
+
+  def test_vendor_fingerprint_without_vendor_build_prop(self):
+    target_info_dict = copy.deepcopy(self.TEST_INFO_DICT_USES_OEM_PROPS)
+    del target_info_dict['vendor.build.prop']
+    target_info = BuildInfo(target_info_dict, self.TEST_OEM_DICTS)
+    self.assertIsNone(target_info.vendor_fingerprint)
 
   def test_WriteMountOemScript(self):
     target_info = BuildInfo(self.TEST_INFO_DICT_USES_OEM_PROPS,
@@ -872,6 +888,7 @@ class StreamingPropertyFilesTest(PropertyFilesTest):
         property_files.required)
     self.assertEqual(
         (
+            'care_map.pb',
             'care_map.txt',
             'compatibility.zip',
         ),
@@ -967,6 +984,7 @@ class AbOtaPropertyFilesTest(PropertyFilesTest):
         property_files.required)
     self.assertEqual(
         (
+            'care_map.pb',
             'care_map.txt',
             'compatibility.zip',
         ),
@@ -1005,11 +1023,11 @@ class AbOtaPropertyFilesTest(PropertyFilesTest):
            '--signature_size', str(self.SIGNATURE_SIZE),
            '--metadata_hash_file', metadata_sig_file,
            '--payload_hash_file', payload_sig_file]
-    proc = common.Run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    proc = common.Run(cmd)
     stdoutdata, _ = proc.communicate()
     self.assertEqual(
         0, proc.returncode,
-        'Failed to run brillo_update_payload: {}'.format(stdoutdata))
+        'Failed to run brillo_update_payload:\n{}'.format(stdoutdata))
 
     signed_metadata_sig_file = payload_signer.Sign(metadata_sig_file)
 

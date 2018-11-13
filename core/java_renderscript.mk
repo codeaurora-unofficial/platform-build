@@ -107,7 +107,7 @@ renderscript_intermediate := $(intermediates)/renderscript
 # Prevent these from showing up on the device
 # One exception is librsjni.so, which is needed for
 # both native path and compat path.
-rs_jni_lib := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/librsjni.so
+rs_jni_lib := $(call intermediates-dir-for,SHARED_LIBRARIES,librsjni.so)/librsjni.so
 LOCAL_JNI_SHARED_LIBRARIES += librsjni
 
 ifneq (,$(TARGET_BUILD_APPS)$(FORCE_BUILD_RS_COMPAT))
@@ -118,13 +118,13 @@ rs_compatibility_jni_libs := $(addprefix \
 
 $(rs_generated_src_jar): .KATI_IMPLICIT_OUTPUTS += $(rs_generated_bc)
 
-rs_support_lib := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/libRSSupport.so
+rs_support_lib := $(call intermediates-dir-for,SHARED_LIBRARIES,libRSSupport)/libRSSupport.so
 LOCAL_JNI_SHARED_LIBRARIES += libRSSupport
 
 rs_support_io_lib :=
 # check if the target api level support USAGE_IO
 ifeq ($(filter $(RSCOMPAT_NO_USAGEIO_API_LEVELS),$(renderscript_target_api)),)
-rs_support_io_lib := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/libRSSupportIO.so
+rs_support_io_lib := $(call intermediates-dir-for,SHARED_LIBRARIES,libRSSupportIO)/libRSSupportIO.so
 LOCAL_JNI_SHARED_LIBRARIES += libRSSupportIO
 endif
 
@@ -138,7 +138,7 @@ endif
 $(rs_compatibility_jni_libs): $(RS_PREBUILT_CLCORE) \
     $(rs_support_lib) $(rs_support_io_lib) $(rs_jni_lib) $(rs_compiler_rt)
 $(rs_compatibility_jni_libs): $(BCC_COMPAT)
-$(rs_compatibility_jni_libs): PRIVATE_CXX := $(CXX_WRAPPER) $(TARGET_CXX)
+$(rs_compatibility_jni_libs): PRIVATE_CXX := $(CXX_WRAPPER) $(CLANG_CXX)
 $(rs_compatibility_jni_libs): PRIVATE_SDK_VERSION := $(my_min_sdk_version)
 $(rs_compatibility_jni_libs): $(renderscript_intermediate)/librs.%.so: \
     $(renderscript_intermediate.bc_folder)%.bc \
