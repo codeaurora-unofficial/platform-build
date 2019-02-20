@@ -25,7 +25,6 @@ PRODUCT_PACKAGES += \
     BlockedNumberProvider \
     BookmarkProvider \
     Browser2 \
-    BuiltInPrintService \
     Calendar \
     CalendarProvider \
     CaptivePortalLogin \
@@ -34,8 +33,6 @@ PRODUCT_PACKAGES += \
     DeskClock \
     DocumentsUI \
     DownloadProviderUi \
-    Email \
-    Exchange2 \
     ExactCalculator \
     ExternalStorageProvider \
     FusedLocation \
@@ -49,8 +46,6 @@ PRODUCT_PACKAGES += \
     PicoTts \
     PacProcessor \
     libpac \
-    PrintSpooler \
-    PrintRecommendationService \
     ProxyHandler \
     QuickSearchBox \
     Settings \
@@ -61,7 +56,14 @@ PRODUCT_PACKAGES += \
     VpnDialogs \
     vr \
     MmsService
-
+ifneq ($(TARGET_SUPPORTS_WEARABLES),true)
+PRODUCT_PACKAGES += \
+    PrintSpooler \
+    Exchange2 \
+    Email \
+    BuiltInPrintService \
+    PrintRecommendationService
+endif
 # The set of packages whose code can be loaded by the system server.
 PRODUCT_SYSTEM_SERVER_APPS += \
     FusedLocation \
