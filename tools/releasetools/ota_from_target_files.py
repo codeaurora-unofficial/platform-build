@@ -635,6 +635,27 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
       script.UnpackPackageDir("recovery", "/system")
     script.UnpackPackageDir("system", "/system")
 
+    # For file-based Full-OTA, /dev is formatted and then regular files are
+    # populated in the same. But LE targets may use 'makedevs' utility to
+    # populate /dev at compile-time. So OTA-upgrade should also populate the
+    # appropriate special files in /dev rather than regular ones.
+    # Generate the commands in updater-script to run 'makedevs' using the device_table
+    # that is packed in META/.
+    device_table_path = os.path.join(OPTIONS.input_tmp, "META", "device_table.txt")
+    if os.path.exists(device_table_path):
+      # delete everything in /system/dev and create /system/dev
+      script.AppendExtra('delete_recursive("/system/dev");')
+      script.AppendExtra('run_program("/bin/mkdir", "/system/dev");')
+      # pack the device_table into update package
+      device_table_data = input_zip.read("META/device_table.txt");
+      common.ZipWriteStr(output_zip, "device_table.txt", device_table_data)
+      # extract the packed device_table to /tmp
+      script.AppendExtra('package_extract_file("device_table.txt",'
+                         '"/tmp/device_table.txt");')
+      # run 'makedevs' using the device_table, with rootdir as '/system'
+      script.AppendExtra('run_program("/sbin/makedevs", "-d",'
+                         '"/tmp/device_table.txt", "/system");')
+
     symlinks = CopyPartitionFiles(system_items, input_zip, output_zip)
     script.MakeSymlinks(symlinks)
 
