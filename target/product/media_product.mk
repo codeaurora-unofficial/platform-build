@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2017 The Android Open-Source Project
+# Copyright (C) 2019 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,12 @@
 # limitations under the License.
 #
 
-# PRODUCT_PROPERTY_OVERRIDES cannot be used here because sysprops will be at
-# /vendor/[build|default].prop when build split is on. In order to have sysprops
-# on the generic system image, place them in build/make/target/board/
-# treble_system.prop.
+# This makefile contains the product partition contents for
+# media-capable devices (non-wearables). Only add something here
+# if it definitely doesn't belong on wearables. Otherwise, choose
+# base_vendor.mk.
+$(call inherit-product, $(SRC_TARGET_DIR)/product/base_product.mk)
 
-include build/make/target/product/treble_common.mk
+# /product packages
+PRODUCT_PACKAGES += \
+    webview \

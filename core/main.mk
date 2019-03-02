@@ -80,7 +80,7 @@ endif
 ifeq ($(strip $(HAS_BUILD_NUMBER)),false)
   # BUILD_NUMBER has a timestamp in it, which means that
   # it will change every time.  Pick a stable value.
-  FILE_NAME_TAG := eng.$(USER)
+  FILE_NAME_TAG := eng.$(BUILD_USERNAME)
 else
   FILE_NAME_TAG := $(file <$(BUILD_NUMBER_FILE))
 endif
@@ -244,11 +244,13 @@ else
 ADDITIONAL_DEFAULT_PROPERTIES += ro.actionable_compatible_property.enabled=${PRODUCT_COMPATIBLE_PROPERTY}
 endif
 
-# TODO(b/119286600): remove ro.logical_partitions
-ADDITIONAL_PRODUCT_PROPERTIES += \
-    ro.boot.logical_partitions=$(PRODUCT_USE_DYNAMIC_PARTITIONS) \
-    ro.boot.dynamic_partitions=$(PRODUCT_USE_DYNAMIC_PARTITIONS) \
-    ro.boot.dynamic_partitions_retrofit=$(PRODUCT_RETROFIT_DYNAMIC_PARTITIONS)
+ifeq ($(PRODUCT_USE_DYNAMIC_PARTITIONS),true)
+ADDITIONAL_PRODUCT_PROPERTIES += ro.boot.dynamic_partitions=true
+endif
+
+ifeq ($(PRODUCT_RETROFIT_DYNAMIC_PARTITIONS),true)
+ADDITIONAL_PRODUCT_PROPERTIES += ro.boot.dynamic_partitions_retrofit=true
+endif
 
 # -----------------------------------------------------------------
 ###
@@ -378,6 +380,17 @@ BUILD_WITHOUT_PV := true
 
 ADDITIONAL_BUILD_PROPERTIES += net.bt.name=Android
 
+# QCV: initialize property - used to detect framework type
+ifeq ($(TARGET_FWK_SUPPORTS_FULL_VALUEADDS), true)
+  ADDITIONAL_BUILD_PROPERTIES += \
+        ro.vendor.qti.va_aosp.support=1
+  $(warning "Compile using modified AOSP tree supporting full vendor value-adds")
+else
+  ADDITIONAL_BUILD_PROPERTIES += \
+        ro.vendor.qti.va_aosp.support=0
+  $(warning "Compile using pure AOSP tree")
+endif
+
 # ------------------------------------------------------------
 # Define a function that, given a list of module tags, returns
 # non-empty if that module should be installed in /system.
@@ -408,7 +421,9 @@ endif
 # Typical build; include any Android.mk files we can find.
 #
 
-
+# Before we go and include all of the module makefiles, strip values for easier
+# processing.
+$(call strip-product-vars)
 # Before we go and include all of the module makefiles, mark the PRODUCT_*
 # and ADDITIONAL*PROPERTIES values readonly so that they won't be modified.
 $(call readonly-product-vars)
@@ -782,9 +797,43 @@ ifdef HOST_CROSS_OS
 $(call resolve-shared-libs-depes,HOST_CROSS_,,true)
 endif
 
+# Pass the shared libraries dependencies to prebuilt ELF file check.
+define add-elf-file-check-shared-lib
+$(1): PRIVATE_SHARED_LIBRARY_FILES += $(2)
+$(1): $(2)
+endef
+
+define resolve-shared-libs-for-elf-file-check
+$(foreach m,$($(if $(2),$($(1)2ND_ARCH_VAR_PREFIX))$(1)DEPENDENCIES_ON_SHARED_LIBRARIES),\
+  $(eval p := $(subst :,$(space),$(m)))\
+  $(eval mod := $(firstword $(p)))\
+  \
+  $(eval deps := $(subst $(comma),$(space),$(lastword $(p))))\
+  $(if $(2),$(eval deps := $(addsuffix $($(1)2ND_ARCH_MODULE_SUFFIX),$(deps))))\
+  $(eval root := $(1)OUT$(if $(call streq,$(1),TARGET_),_ROOT))\
+  $(eval deps := $(filter $($(root))/%$($(1)SHLIB_SUFFIX),$(call module-built-files,$(deps))))\
+  \
+  $(eval r := $(firstword $(filter \
+    $($(if $(2),$($(1)2ND_ARCH_VAR_PREFIX))TARGET_OUT_INTERMEDIATES)/EXECUTABLES/%\
+    $($(if $(2),$($(1)2ND_ARCH_VAR_PREFIX))TARGET_OUT_INTERMEDIATES)/NATIVE_TESTS/%\
+    $($(if $(2),$($(1)2ND_ARCH_VAR_PREFIX))TARGET_OUT_INTERMEDIATES)/SHARED_LIBRARIES/%,\
+    $(call module-built-files,$(mod)))))\
+  \
+  $(if $(r),\
+    $(eval stamp := $(dir $(r))check_elf_files.timestamp)\
+    $(eval $(call add-elf-file-check-shared-lib,$(stamp),$(deps)))\
+  ))
+endef
+
+$(call resolve-shared-libs-for-elf-file-check,TARGET_)
+ifdef TARGET_2ND_ARCH
+$(call resolve-shared-libs-for-elf-file-check,TARGET_,true)
+endif
+
 m :=
 r :=
 p :=
+stamp :=
 deps :=
 add-required-deps :=
 
@@ -1003,6 +1052,14 @@ define resolve-product-relative-paths
           $(foreach p,$(1),$(call append-path,$(PRODUCT_OUT),$(p)$(2)))))))
 endef
 
+# Returns modules included automatically as a result of certain BoardConfig
+# variables being set.
+define auto-included-modules
+  $(if $(BOARD_VNDK_VERSION),vndk_package) \
+  $(if $(DEVICE_MANIFEST_FILE),device_manifest.xml) \
+
+endef
+
 # Lists most of the files a particular product installs, including:
 # - PRODUCT_PACKAGES, and their LOCAL_REQUIRED_MODULES
 # - PRODUCT_COPY_FILES
@@ -1026,7 +1083,7 @@ define product-installed-files
     $(if $(filter debug,$(tags_to_install)),$(PRODUCTS.$(_mk).PRODUCT_PACKAGES_DEBUG)) \
     $(if $(filter tests,$(tags_to_install)),$(PRODUCTS.$(_mk).PRODUCT_PACKAGES_TESTS)) \
     $(if $(filter asan,$(tags_to_install)),$(PRODUCTS.$(_mk).PRODUCT_PACKAGES_DEBUG_ASAN)) \
-    $(if $(BOARD_VNDK_VERSION),vndk_package) \
+    $(call auto-included-modules) \
   ) \
   $(eval ### Filter out the overridden packages and executables before doing expansion) \
   $(eval _pif_overrides := $(call module-overrides,$(_pif_modules))) \
@@ -1081,10 +1138,18 @@ ifdef FULL_BUILD
   # Verify the artifact path requirements made by included products.
   is_asan := $(if $(filter address,$(SANITIZE_TARGET)),true)
   ifneq (true,$(or $(is_asan),$(DISABLE_ARTIFACT_PATH_REQUIREMENTS)))
-  # Fakes don't get installed, and host files are irrelevant.
-  static_whitelist_patterns := $(TARGET_OUT_FAKE)/% $(HOST_OUT)/%
+  # Fakes don't get installed, host files are irrelevant, and NDK stubs aren't installed to device.
+  static_whitelist_patterns := $(TARGET_OUT_FAKE)/% $(HOST_OUT)/% $(SOONG_OUT_DIR)/ndk/%
   # RROs become REQUIRED by the source module, but are always placed on the vendor partition.
   static_whitelist_patterns += %__auto_generated_rro.apk
+  # Auto-included targets are not considered
+  static_whitelist_patterns += $(call module-installed-files,$(call auto-included-modules))
+  # $(PRODUCT_OUT)/apex is where shared libraries in APEXes get installed.
+  # The path can be considered as a fake path, as the shared libraries
+  # are installed there just to have symbols files for them under
+  # $(PRODUCT_OUT)/symbols/apex for debugging purpose. The /apex directory
+  # is never compiled into a filesystem image.
+  static_whitelist_patterns += $(PRODUCT_OUT)/apex/%
   ifeq (true,$(BOARD_USES_SYSTEM_OTHER_ODEX))
     # Allow system_other odex space optimization.
     static_whitelist_patterns += \
@@ -1092,6 +1157,13 @@ ifdef FULL_BUILD
       $(TARGET_OUT_SYSTEM_OTHER)/%.vdex \
       $(TARGET_OUT_SYSTEM_OTHER)/%.art
   endif
+
+CERTIFICATE_VIOLATION_MODULES_FILENAME := $(PRODUCT_OUT)/certificate_violation_modules.txt
+$(CERTIFICATE_VIOLATION_MODULES_FILENAME):
+	rm -f $@
+	$(foreach m,$(sort $(CERTIFICATE_VIOLATION_MODULES)), echo $(m) >> $@;)
+$(call dist-for-goals,droidcore,$(CERTIFICATE_VIOLATION_MODULES_FILENAME))
+
   all_offending_files :=
   $(foreach makefile,$(ARTIFACT_PATH_REQUIREMENT_PRODUCTS),\
     $(eval requirements := $(PRODUCTS.$(makefile).ARTIFACT_PATH_REQUIREMENTS)) \
@@ -1294,8 +1366,8 @@ auxiliary: $(INSTALLED_AUX_TARGETS)
 
 # Build files and then package it into the rom formats
 .PHONY: droidcore
-droidcore: files \
-    systemimage \
+droidcore: $(filter $(HOST_OUT_ROOT)/%,$(modules_to_install)) \
+    $(INSTALLED_SYSTEMIMAGE_TARGET) \
     $(INSTALLED_RAMDISK_TARGET) \
     $(INSTALLED_BOOTIMAGE_TARGET) \
     $(INSTALLED_RECOVERYIMAGE_TARGET) \
@@ -1324,6 +1396,45 @@ droidcore: files \
     $(INSTALLED_FILES_JSON_RAMDISK) \
     $(INSTALLED_FILES_FILE_ROOT) \
     $(INSTALLED_FILES_JSON_ROOT) \
+    $(INSTALLED_FILES_FILE_RECOVERY) \
+    $(INSTALLED_FILES_JSON_RECOVERY) \
+    $(INSTALLED_ANDROID_INFO_TXT_TARGET) \
+    soong_docs
+
+.PHONY: droidcore_system
+droidcore_system: \
+    $(INSTALLED_SYSTEMIMAGE_TARGET) \
+    $(INSTALLED_PRODUCTIMAGE_TARGET) \
+    $(INSTALLED_SYSTEMOTHERIMAGE_TARGET) \
+    $(INSTALLED_FILES_FILE) \
+    $(INSTALLED_FILES_JSON) \
+    $(INSTALLED_FILES_FILE_SYSTEMOTHER) \
+    $(INSTALLED_FILES_JSON_SYSTEMOTHER) \
+    $(INSTALLED_FILES_FILE_PRODUCT_SERVICES) \
+    $(INSTALLED_FILES_JSON_PRODUCT_SERVICES) \
+    $(INSTALLED_FILES_FILE_PRODUCT) \
+    $(INSTALLED_FILES_JSON_PRODUCT) \
+    $(INSTALLED_FILES_FILE_ROOT) \
+    $(INSTALLED_FILES_JSON_ROOT)
+
+.PHONY: droidcore_non_system
+droidcore_non_system: \
+    $(INSTALLED_RAMDISK_TARGET) \
+    $(INSTALLED_BOOTIMAGE_TARGET) \
+    $(INSTALLED_VBMETAIMAGE_TARGET) \
+    $(INSTALLED_RECOVERYIMAGE_TARGET) \
+    $(INSTALLED_USERDATAIMAGE_TARGET) \
+    $(INSTALLED_CACHEIMAGE_TARGET) \
+    $(INSTALLED_BPTIMAGE_TARGET) \
+    $(INSTALLED_VENDORIMAGE_TARGET) \
+    $(INSTALLED_ODMIMAGE_TARGET) \
+    $(INSTALLED_SUPERIMAGE_EMPTY_TARGET) \
+    $(INSTALLED_FILES_FILE_VENDOR) \
+    $(INSTALLED_FILES_JSON_VENDOR) \
+    $(INSTALLED_FILES_FILE_ODM) \
+    $(INSTALLED_FILES_JSON_ODM) \
+    $(INSTALLED_FILES_FILE_RAMDISK) \
+    $(INSTALLED_FILES_JSON_RAMDISK) \
     $(INSTALLED_FILES_FILE_RECOVERY) \
     $(INSTALLED_FILES_JSON_RECOVERY) \
     soong_docs
@@ -1391,6 +1502,7 @@ else # TARGET_BUILD_APPS
   $(call dist-for-goals, droidcore, \
     $(INTERNAL_UPDATE_PACKAGE_TARGET) \
     $(INTERNAL_OTA_PACKAGE_TARGET) \
+    $(INTERNAL_OTA_RETROFIT_DYNAMIC_PARTITIONS_PACKAGE_TARGET) \
     $(BUILT_OTATOOLS_PACKAGE) \
     $(SYMBOLS_ZIP) \
     $(COVERAGE_ZIP) \
@@ -1516,6 +1628,9 @@ findbugs: $(INTERNAL_FINDBUGS_HTML_TARGET) $(INTERNAL_FINDBUGS_XML_TARGET)
 .PHONY: findlsdumps
 findlsdumps: $(FIND_LSDUMPS_FILE)
 
+.PHONY: check-elf-files
+check-elf-files:
+
 #xxx scrape this from ALL_MODULE_NAME_TAGS
 .PHONY: modules
 modules:
@@ -1531,7 +1646,7 @@ dump-products:
 .PHONY: dump-files
 dump-files:
 	$(info product_FILES for $(TARGET_DEVICE) ($(INTERNAL_PRODUCT)):)
-	$(foreach p,$(product_FILES),$(info :   $(p)))
+	$(foreach p,$(sort $(product_FILES)),$(info :   $(p)))
 	@echo Successfully dumped product file list
 
 .PHONY: nothing

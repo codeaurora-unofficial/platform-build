@@ -76,25 +76,34 @@ def GetInodeUsage(path):
   cmd = ["find", path, "-print"]
   output = common.RunAndCheckOutput(cmd, verbose=False)
   # increase by > 4% as number of files and directories is not whole picture.
-  return output.count('\n') * 25 // 24
+  inodes = output.count('\n')
+  spare_inodes = inodes * 4 // 100
+  min_spare_inodes = 12
+  if spare_inodes < min_spare_inodes:
+    spare_inodes = min_spare_inodes
+  return inodes + spare_inodes
 
 
-def GetFilesystemCharacteristics(sparse_image_path):
-  """Returns various filesystem characteristics of "sparse_image_path".
+def GetFilesystemCharacteristics(image_path, sparse_image=True):
+  """Returns various filesystem characteristics of "image_path".
 
   Args:
-    sparse_image_path: The file to analyze.
+    image_path: The file to analyze.
+    sparse_image: Image is sparse
 
   Returns:
     The characteristics dictionary.
   """
-  unsparse_image_path = UnsparseImage(sparse_image_path, replace=False)
+  unsparse_image_path = image_path
+  if sparse_image:
+    unsparse_image_path = UnsparseImage(image_path, replace=False)
 
   cmd = ["tune2fs", "-l", unsparse_image_path]
   try:
     output = common.RunAndCheckOutput(cmd, verbose=False)
   finally:
-    os.remove(unsparse_image_path)
+    if sparse_image:
+      os.remove(unsparse_image_path)
   fs_dict = {}
   for line in output.splitlines():
     fields = line.split(":")
@@ -280,6 +289,7 @@ def BuildImageMkfs(in_dir, prop_dict, out_file, target_out, fs_config):
         build_command.extend(["-S", prop_dict["hash_seed"]])
     if "ext4_share_dup_blocks" in prop_dict:
       build_command.append("-c")
+    build_command.extend(["--inode_size", "256"])
     if "selinux_fc" in prop_dict:
       build_command.append(prop_dict["selinux_fc"])
   elif fs_type.startswith("squash"):
@@ -413,7 +423,10 @@ def BuildImage(in_dir, prop_dict, out_file, target_out=None):
           "First Pass based on estimates of %d MB and %s inodes.",
           size // BYTES_IN_MB, prop_dict["extfs_inode_count"])
       BuildImageMkfs(in_dir, prop_dict, out_file, target_out, fs_config)
-      fs_dict = GetFilesystemCharacteristics(out_file)
+      sparse_image = False
+      if "extfs_sparse_flag" in prop_dict:
+        sparse_image = True
+      fs_dict = GetFilesystemCharacteristics(out_file, sparse_image)
       os.remove(out_file)
       block_size = int(fs_dict.get("Block size", "4096"))
       free_size = int(fs_dict.get("Free blocks", "0")) * block_size
@@ -427,6 +440,12 @@ def BuildImage(in_dir, prop_dict, out_file, target_out=None):
       else:
         size -= free_size
         size += reserved_size
+        if reserved_size == 0:
+          # add .3% margin
+          size = size * 1003 // 1000
+        # Use a minimum size, otherwise we will fail to calculate an AVB footer
+        # or fail to construct an ext4 image.
+        size = max(size, 256 * 1024)
         if block_size <= 4096:
           size = common.RoundUpTo4K(size)
         else:
@@ -434,6 +453,12 @@ def BuildImage(in_dir, prop_dict, out_file, target_out=None):
       extfs_inode_count = prop_dict["extfs_inode_count"]
       inodes = int(fs_dict.get("Inode count", extfs_inode_count))
       inodes -= int(fs_dict.get("Free inodes", "0"))
+      # add .2% margin or 1 inode, whichever is greater
+      spare_inodes = inodes * 2 // 1000
+      min_spare_inodes = 1
+      if spare_inodes < min_spare_inodes:
+        spare_inodes = min_spare_inodes
+      inodes += spare_inodes
       prop_dict["extfs_inode_count"] = str(inodes)
       prop_dict["partition_size"] = str(size)
       logger.info(
@@ -544,14 +569,14 @@ def ImagePropFromGlobalDict(glob_dict, mount_point):
   elif mount_point == "system_other":
     # We inherit the selinux policies of /system since we contain some of its
     # files.
-    copy_prop("avb_system_hashtree_enable", "avb_hashtree_enable")
-    copy_prop("avb_system_add_hashtree_footer_args",
+    copy_prop("avb_system_other_hashtree_enable", "avb_hashtree_enable")
+    copy_prop("avb_system_other_add_hashtree_footer_args",
               "avb_add_hashtree_footer_args")
-    copy_prop("avb_system_key_path", "avb_key_path")
-    copy_prop("avb_system_algorithm", "avb_algorithm")
+    copy_prop("avb_system_other_key_path", "avb_key_path")
+    copy_prop("avb_system_other_algorithm", "avb_algorithm")
     copy_prop("fs_type", "fs_type")
     copy_prop("system_fs_type", "fs_type")
-    copy_prop("system_size", "partition_size")
+    copy_prop("system_other_size", "partition_size")
     if not copy_prop("system_journal_size", "journal_size"):
       d["journal_size"] = "0"
     copy_prop("system_verity_block_device", "verity_block_device")
@@ -698,7 +723,7 @@ def GlobalDictFromImageProp(image_prop, mount_point):
   if mount_point == "system":
     copy_prop("partition_size", "system_size")
   elif mount_point == "system_other":
-    copy_prop("partition_size", "system_size")
+    copy_prop("partition_size", "system_other_size")
   elif mount_point == "vendor":
     copy_prop("partition_size", "vendor_size")
   elif mount_point == "odm":

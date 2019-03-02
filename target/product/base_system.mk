@@ -16,9 +16,11 @@
 
 # Base modules and settings for the system partition.
 PRODUCT_PACKAGES += \
+    abb \
     adb \
     adbd \
     am \
+    android.frameworks.bufferhub@1.0-service \
     android.hidl.allocator@1.0-service \
     android.hidl.base-V1.0-java \
     android.hidl.manager-V1.0-java \
@@ -48,10 +50,13 @@ PRODUCT_PACKAGES += \
     bu \
     bugreport \
     bugreportz \
-    cameraserver \
+    cgroups.json \
     charger \
     cmd \
+    com.android.conscrypt \
     com.android.location.provider \
+    com.android.media \
+    com.android.resolv \
     com.android.tzdata \
     ContactsProvider \
     content \
@@ -60,6 +65,8 @@ PRODUCT_PACKAGES += \
     CtsShimPrivPrebuilt \
     debuggerd\
     DefaultContainerService \
+    device_config \
+    dmctl \
     dnsmasq \
     DownloadProvider \
     dpm \
@@ -76,11 +83,11 @@ PRODUCT_PACKAGES += \
     fsck_msdos \
     fs_config_files_system \
     fs_config_dirs_system \
+    gsid \
     heapprofd \
     heapprofd_client \
     gatekeeperd \
     gpuservice \
-    healthd \
     hid \
     hwservicemanager \
     idmap \
@@ -113,20 +120,16 @@ PRODUCT_PACKAGES += \
     libandroid_runtime \
     libandroid_servers \
     libaudioeffect_jni \
-    libaudioflinger \
-    libaudiopolicymanager \
-    libaudiopolicyservice \
-    libaudioutils \
     libbinder \
     libbinder_ndk \
-    libc \
+    libc.bootstrap \
     libcamera2ndk \
     libcamera_client \
     libcameraservice \
     libc_malloc_debug \
     libc_malloc_hooks \
     libcutils \
-    libdl \
+    libdl.bootstrap \
     libdrmframework \
     libdrmframework_jni \
     libEGL \
@@ -146,7 +149,7 @@ PRODUCT_PACKAGES += \
     libjnigraphics \
     libjpeg \
     liblog \
-    libm \
+    libm.bootstrap \
     libmdnssd \
     libmedia \
     libmedia_jni \
@@ -171,8 +174,6 @@ PRODUCT_PACKAGES += \
     libsonic \
     libsonivox \
     libsoundpool \
-    libsoundtrigger \
-    libsoundtriggerservice \
     libspeexresampler \
     libsqlite \
     libstagefright \
@@ -197,10 +198,12 @@ PRODUCT_PACKAGES += \
     locksettings \
     logcat \
     logd \
+    lpdump \
     lshal \
     mdnsd \
     media \
     media_cmd \
+    mediacodec.policy \
     mediadrmserver \
     mediaextractor \
     mediametrics \
@@ -213,6 +216,7 @@ PRODUCT_PACKAGES += \
     mtpd \
     ndc \
     netd \
+    NetworkStack \
     org.apache.http.legacy \
     PackageInstaller \
     perfetto \
@@ -226,6 +230,7 @@ PRODUCT_PACKAGES += \
     racoon \
     recovery-persist \
     resize2fs \
+    rss_hwm_reset \
     run-as \
     schedtest \
     screencap \
@@ -247,6 +252,7 @@ PRODUCT_PACKAGES += \
     storaged \
     surfaceflinger \
     svc \
+    task_profiles.json \
     tc \
     telecom \
     telephony-common \
@@ -259,6 +265,7 @@ PRODUCT_PACKAGES += \
     uncrypt \
     usbd \
     vdc \
+    viewcompiler \
     voip-common \
     vold \
     WallpaperBackup \
@@ -270,7 +277,7 @@ PRODUCT_PACKAGES += \
 # VINTF data for system image
 PRODUCT_PACKAGES += \
     framework_manifest.xml \
-    framework_compatibility_matrix.xml \
+    system_compatibility_matrix.xml \
 
 ifeq ($(TARGET_CORE_JARS),)
 $(error TARGET_CORE_JARS is empty; cannot initialize PRODUCT_BOOT_JARS variable)
@@ -283,16 +290,13 @@ PRODUCT_BOOT_JARS := \
     framework \
     telephony-common \
     voip-common \
-    ims-common
+    ims-common \
+    updatable-media
+PRODUCT_UPDATABLE_BOOT_MODULES := conscrypt updatable-media
+PRODUCT_UPDATABLE_BOOT_LOCATIONS := \
+    /apex/com.android.conscrypt/javalib/conscrypt.jar \
+    /apex/com.android.media/javalib/updatable-media.jar
 
-# Add the compatibility library that is needed when org.apache.http.legacy
-# is removed from the bootclasspath.
-ifeq ($(REMOVE_OAHL_FROM_BCP),true)
-PRODUCT_PACKAGES += framework-oahl-backward-compatibility
-PRODUCT_BOOT_JARS += framework-oahl-backward-compatibility
-else
-PRODUCT_BOOT_JARS += org.apache.http.legacy.impl
-endif
 
 PRODUCT_COPY_FILES += \
     system/core/rootdir/init.usb.rc:root/init.usb.rc \
@@ -306,7 +310,7 @@ ifeq ($(REMOVE_ATB_FROM_BCP),true)
 PRODUCT_PACKAGES += framework-atb-backward-compatibility
 PRODUCT_BOOT_JARS += framework-atb-backward-compatibility
 else
-PRODUCT_BOOT_JARS += android.test.base.impl
+PRODUCT_BOOT_JARS += android.test.base
 endif
 
 PRODUCT_COPY_FILES += system/core/rootdir/init.zygote32.rc:root/init.zygote32.rc
@@ -317,15 +321,23 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += debug.atrace.tags.enableflags=0
 # Packages included only for eng or userdebug builds, previously debug tagged
 PRODUCT_PACKAGES_DEBUG := \
     adb_keys \
-    apex.test.key \
+    arping \
+    gdbserver \
+    init-debug.rc \
     iotop \
+    iw \
     logpersist.start \
-    perfprofd \
+    logtagd.rc \
     procrank \
     showmap \
     sqlite3 \
+    ss \
     strace \
+    su \
     sanitizer-status \
+    tracepath \
+    tracepath6 \
+    traceroute6 \
     unwind_info \
     unwind_reg_info \
     unwind_symbols \

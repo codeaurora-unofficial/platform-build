@@ -13,9 +13,9 @@ BINDER32BIT := true
 endif
 endif
 
-ifeq ($(WRITE_SOONG_VARIABLES),true)
+include $(BUILD_SYSTEM)/dex_preopt_config.mk
 
-include $(BUILD_SYSTEM)/json.mk
+ifeq ($(WRITE_SOONG_VARIABLES),true)
 
 # Create soong.variables with copies of makefile settings.  Runs every build,
 # but only updates soong.variables if it changes
@@ -36,6 +36,7 @@ $(call add_json_csv,  Platform_version_future_codenames, $(PLATFORM_VERSION_FUTU
 
 $(call add_json_bool, Allow_missing_dependencies,        $(ALLOW_MISSING_DEPENDENCIES))
 $(call add_json_bool, Unbundled_build,                   $(TARGET_BUILD_APPS))
+$(call add_json_bool, Unbundled_build_sdks_from_source,  $(UNBUNDLED_BUILD_SDKS_FROM_SOURCE))
 $(call add_json_bool, Pdk,                               $(filter true,$(TARGET_BUILD_PDK)))
 
 $(call add_json_bool, Debuggable,                        $(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
@@ -82,7 +83,11 @@ $(call add_json_bool, Safestack,                         $(filter true,$(USE_SAF
 $(call add_json_bool, EnableCFI,                         $(call invert_bool,$(filter false,$(ENABLE_CFI))))
 $(call add_json_list, CFIExcludePaths,                   $(CFI_EXCLUDE_PATHS) $(PRODUCT_CFI_EXCLUDE_PATHS))
 $(call add_json_list, CFIIncludePaths,                   $(CFI_INCLUDE_PATHS) $(PRODUCT_CFI_INCLUDE_PATHS))
+$(call add_json_bool, EnableXOM,                         $(call invert_bool,$(filter false,$(ENABLE_XOM))))
+$(call add_json_list, XOMExcludePaths,                   $(XOM_EXCLUDE_PATHS) $(PRODUCT_XOM_EXCLUDE_PATHS))
 $(call add_json_list, IntegerOverflowExcludePaths,       $(INTEGER_OVERFLOW_EXCLUDE_PATHS) $(PRODUCT_INTEGER_OVERFLOW_EXCLUDE_PATHS))
+
+$(call add_json_bool, DisableScudo,                      $(filter true,$(PRODUCT_DISABLE_SCUDO)))
 
 $(call add_json_bool, ClangTidy,                         $(filter 1 true,$(WITH_TIDY)))
 $(call add_json_str,  TidyChecks,                        $(WITH_TIDY_CHECKS))
@@ -94,7 +99,6 @@ $(call add_json_list, CoverageExcludePaths,              $(COVERAGE_EXCLUDE_PATH
 $(call add_json_bool, ArtUseReadBarrier,                 $(call invert_bool,$(filter false,$(PRODUCT_ART_USE_READ_BARRIER))))
 $(call add_json_bool, Binder32bit,                       $(BINDER32BIT))
 $(call add_json_str,  BtConfigIncludeDir,                $(BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR))
-$(call add_json_bool, Device_uses_hwc2,                  $(filter true,$(TARGET_USES_HWC2)))
 $(call add_json_bool, Device_support_hwfde,              $(filter true,$(TARGET_HW_DISK_ENCRYPTION)))
 $(call add_json_bool, Device_support_hwfde_perf,         $(filter true,$(TARGET_HW_DISK_ENCRYPTION_PERF)))
 $(call add_json_list, DeviceKernelHeaders,               $(TARGET_PROJECT_SYSTEM_INCLUDES))
@@ -107,16 +111,23 @@ $(call add_json_list, DeviceSystemSdkVersions,           $(BOARD_SYSTEMSDK_VERSI
 $(call add_json_list, Platform_systemsdk_versions,       $(PLATFORM_SYSTEMSDK_VERSIONS))
 $(call add_json_bool, Malloc_not_svelte,                 $(call invert_bool,$(filter true,$(MALLOC_SVELTE))))
 $(call add_json_str,  Override_rs_driver,                $(OVERRIDE_RS_DRIVER))
+
 $(call add_json_bool, UncompressPrivAppDex,              $(call invert_bool,$(filter true,$(DONT_UNCOMPRESS_PRIV_APPS_DEXS))))
 $(call add_json_list, ModulesLoadedByPrivilegedModules,  $(PRODUCT_LOADED_BY_PRIVILEGED_MODULES))
-$(call add_json_bool, DefaultStripDex,                   $(call invert_bool,$(filter nostripping,$(DEX_PREOPT_DEFAULT))))
-$(call add_json_bool, DisableDexPreopt,                  $(filter false,$(WITH_DEXPREOPT)))
+
+$(call add_json_list, BootJars,                          $(PRODUCT_BOOT_JARS))
+$(call add_json_list, PreoptBootJars,                    $(DEXPREOPT_BOOT_JARS_MODULES))
+
+$(call add_json_bool, DisableDexPreopt,                  $(call invert_bool,$(filter true,$(WITH_DEXPREOPT))))
 $(call add_json_list, DisableDexPreoptModules,           $(DEXPREOPT_DISABLED_MODULES))
+$(call add_json_str,  DexPreoptProfileDir,               $(PRODUCT_DEX_PREOPT_PROFILE_DIR))
 
 $(call add_json_bool, Product_is_iot,                    $(filter true,$(PRODUCT_IOT)))
 
 $(call add_json_bool, Treble_linker_namespaces,          $(filter true,$(PRODUCT_TREBLE_LINKER_NAMESPACES)))
 $(call add_json_bool, Enforce_vintf_manifest,            $(filter true,$(PRODUCT_ENFORCE_VINTF_MANIFEST)))
+
+$(call add_json_bool, Check_elf_files,                   $(filter true,$(PRODUCT_CHECK_ELF_FILES)))
 
 $(call add_json_bool, Uml,                               $(filter true,$(TARGET_USER_MODE_LINUX)))
 $(call add_json_bool, Use_lmkd_stats_log,                $(filter true,$(TARGET_LMKD_STATS_LOG)))
@@ -141,6 +152,17 @@ $(call add_json_list, BoardPlatPublicSepolicyDirs,       $(BOARD_PLAT_PUBLIC_SEP
 $(call add_json_list, BoardPlatPrivateSepolicyDirs,      $(BOARD_PLAT_PRIVATE_SEPOLICY_DIR))
 
 $(call add_json_bool, FlattenApex,                       $(filter true,$(TARGET_FLATTEN_APEX)))
+
+$(call add_json_str,  DexpreoptGlobalConfig,             $(DEX_PREOPT_CONFIG))
+
+$(call add_json_list, ManifestPackageNameOverrides,      $(PRODUCT_MANIFEST_PACKAGE_NAME_OVERRIDES))
+
+$(call add_json_bool, EnforceSystemCertificate,          $(ENFORCE_SYSTEM_CERTIFICATE))
+$(call add_json_list, EnforceSystemCertificateWhitelist, $(ENFORCE_SYSTEM_CERTIFICATE_WHITELIST))
+
+$(call add_json_str,  HiddenAPIStubFlags,                $(INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS))
+$(call add_json_str,  HiddenAPIFlags,                    $(INTERNAL_PLATFORM_HIDDENAPI_FLAGS))
+$(call add_json_list, HiddenAPIExtraAppUsageJars,        $(HIDDENAPI_EXTRA_APP_USAGE_JARS))
 
 $(call add_json_map, VendorVars)
 $(foreach namespace,$(SOONG_CONFIG_NAMESPACES),\

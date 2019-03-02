@@ -517,6 +517,30 @@ $(call add-clean-step, rm -f $(OUT_DIR)/build-*-dist*.ninja)
 
 $(call add-clean-step, rm -f $(HOST_OUT)/*ts/host-libprotobuf-java-*.jar)
 
+$(call add-clean-step, find $(OUT_DIR)/target/product/mainline_arm64/system -type f -name "*.*dex" -print0 | xargs -0 rm -f)
+
+# Clean up aidegen
+$(call add-clean-step, rm -f $(HOST_OUT)/bin/aidegen)
+
+# Remove perfprofd
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/system/bin/perfprofd)
+
+# Remove incorrectly created directories in the source tree
+$(call add-clean-step, find system/app system/priv-app system/framework system_other -depth -type d -print0 | xargs -0 rmdir)
+$(call add-clean-step, rm -f .d)
+
+# Remove obsolete apps
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/system/app/*)
+
+# Remove corrupt generated rule due to using toybox's sed
+$(call add-clean-step, rm -rf $(SOONG_OUT_DIR)/.intermediates/system/core/init/generated_stub_builtin_function_map)
+
+# Clean up core JNI libraries moved to runtime apex
+$(call add-clean-step, rm -f $(PRODUCT_OUT)/system/lib*/libjavacore.so)
+$(call add-clean-step, rm -f $(PRODUCT_OUT)/system/lib*/libopenjdk.so)
+$(call add-clean-step, rm -f $(PRODUCT_OUT)/system/lib*/libexpat.so)
+
+
 # ************************************************
 # NEWER CLEAN STEPS MUST BE AT THE END OF THE LIST
 # ************************************************

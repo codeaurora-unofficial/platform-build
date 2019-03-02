@@ -1,5 +1,30 @@
 # Build System Changes for Android.mk Writers
 
+## `LOCAL_MODULE_TAGS := eng debug` deprecation  {#LOCAL_MODULE_TAGS}
+
+`LOCAL_MODULE_TAGS` value `eng` and `debug` are being deprecated. They allowed
+modules to specify that they should always be installed on `-eng`, or `-eng`
+and `-userdebug` builds. This conflicted with the ability for products to
+specify which modules should be installed, effectively making it impossible to
+build a stripped down product configuration that did not include those modules.
+
+For the equivalent functionality, specify the modules in `PRODUCT_PACKAGES_ENG`
+or `PRODUCT_PACKAGES_DEBUG` in the appropriate product makefiles.
+
+Core android packages like `su` got added to the list in
+`build/make/target/product/base_system.mk`, but for device-specific modules
+there are often better base product makefiles to use instead.
+
+## `USER` deprecation  {#USER}
+
+`USER` will soon be `nobody` in many cases due to the addition of a sandbox
+around the Android build. Most of the time you shouldn't need to know the
+identity of the user running the build, but if you do, it's available in the
+make variable `BUILD_USERNAME` for now.
+
+Similarly, the `hostname` tool will also be returning a more consistent value
+of `android-build`. The real value is available as `BUILD_HOSTNAME`.
+
 ## `BUILD_NUMBER` removal from Android.mk  {#BUILD_NUMBER}
 
 `BUILD_NUMBER` should not be used directly in Android.mk files, as it would

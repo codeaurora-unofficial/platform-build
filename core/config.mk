@@ -32,8 +32,12 @@ ifdef KATI_PACKAGE_MK_DIR
   .KATI_READONLY := KATI_PACKAGE_MK_DIR
 endif
 
+# add flag to indicate pure AOSP or not.
+TARGET_FWK_SUPPORTS_FULL_VALUEADDS := true
+
 # Mark variables deprecated/obsolete
 CHANGES_URL := https://android.googlesource.com/platform/build/+/master/Changes.md
+.KATI_READONLY := CHANGES_URL
 $(KATI_obsolete_var PATH,Do not use PATH directly. See $(CHANGES_URL)#PATH)
 $(KATI_obsolete_var PYTHONPATH,Do not use PYTHONPATH directly. See $(CHANGES_URL)#PYTHONPATH)
 $(KATI_obsolete_var OUT,Use OUT_DIR instead. See $(CHANGES_URL)#OUT)
@@ -90,11 +94,10 @@ $(KATI_obsolete_var \
   GLOBAL_CFLAGS_NO_OVERRIDE GLOBAL_CPPFLAGS_NO_OVERRIDE \
   ,GCC support has been removed. Use Clang instead)
 $(KATI_obsolete_var DIST_DIR dist_goal,Use dist-for-goals instead. See $(CHANGES_URL)#dist)
+$(KATI_deprecated_var USER,Use BUILD_USERNAME instead. See $(CHANGES_URL)#USER)
 
 # This is marked as obsolete in envsetup.mk after reading the BoardConfig.mk
 $(KATI_deprecate_export It is a global setting. See $(CHANGES_URL)#export_keyword)
-
-CHANGES_URL :=
 
 # Used to force goals to build.  Only use for conditionally defined goals.
 .PHONY: FORCE
@@ -119,6 +122,8 @@ endif
 include $(BUILD_SYSTEM_COMMON)/math.mk
 
 include $(BUILD_SYSTEM_COMMON)/strings.mk
+
+include $(BUILD_SYSTEM_COMMON)/json.mk
 
 # Various mappings to avoid hard-coding paths all over the place
 include $(BUILD_SYSTEM)/pathmap.mk
@@ -209,11 +214,6 @@ endif
 HIDDENAPI_EXTRA_APP_USAGE_JARS := \
     core-oj-hiddenapi \
 
-# Default to remove the org.apache.http.legacy from bootclasspath
-ifeq ($(REMOVE_OAHL_FROM_BCP),)
-REMOVE_OAHL_FROM_BCP := true
-endif
-
 # ###############################################################
 # Broken build defaults
 # ###############################################################
@@ -221,6 +221,7 @@ BUILD_BROKEN_ANDROIDMK_EXPORTS :=
 BUILD_BROKEN_DUP_COPY_HEADERS :=
 BUILD_BROKEN_DUP_RULES :=
 BUILD_BROKEN_PHONY_TARGETS :=
+BUILD_BROKEN_ENG_DEBUG_TAGS :=
 
 # ###############################################################
 # Include sub-configuration files
@@ -567,6 +568,13 @@ ALLOW_MISSING_DEPENDENCIES := true
 endif
 .KATI_READONLY := ALLOW_MISSING_DEPENDENCIES
 
+TARGET_BUILD_APPS_USE_PREBUILT_SDK :=
+ifdef TARGET_BUILD_APPS
+  ifndef UNBUNDLED_BUILD_SDKS_FROM_SOURCE
+    TARGET_BUILD_APPS_USE_PREBUILT_SDK := true
+  endif
+endif
+
 prebuilt_sdk_tools := prebuilts/sdk/tools
 prebuilt_sdk_tools_bin := $(prebuilt_sdk_tools)/$(HOST_OS)/bin
 
@@ -678,7 +686,7 @@ AVBTOOL := $(HOST_OUT_EXECUTABLES)/avbtool$(HOST_EXECUTABLE_SUFFIX)
 else
 AVBTOOL := $(BOARD_CUSTOM_AVBTOOL)
 endif
-APICHECK := $(HOST_OUT_EXECUTABLES)/apicheck$(HOST_EXECUTABLE_SUFFIX)
+APICHECK := $(HOST_OUT_JAVA_LIBRARIES)/metalava$(COMMON_JAVA_PACKAGE_SUFFIX)
 FS_GET_STATS := $(HOST_OUT_EXECUTABLES)/fs_get_stats$(HOST_EXECUTABLE_SUFFIX)
 MAKE_EXT4FS := $(HOST_OUT_EXECUTABLES)/mke2fs$(HOST_EXECUTABLE_SUFFIX)
 MKEXTUSERIMG := $(HOST_OUT_EXECUTABLES)/mkuserimg_mke2fs
@@ -697,9 +705,13 @@ JARJAR := $(HOST_OUT_JAVA_LIBRARIES)/jarjar.jar
 DATA_BINDING_COMPILER := $(HOST_OUT_JAVA_LIBRARIES)/databinding-compiler.jar
 FAT16COPY := build/make/tools/fat16copy.py
 CHECK_LINK_TYPE := build/make/tools/check_link_type.py
+CHECK_ELF_FILE := build/make/tools/check_elf_file.py
 LPMAKE := $(HOST_OUT_EXECUTABLES)/lpmake$(HOST_EXECUTABLE_SUFFIX)
+BUILD_SUPER_IMAGE := build/make/tools/releasetools/build_super_image.py
 
-PROGUARD := external/proguard/bin/proguard.sh
+PROGUARD_HOME := external/proguard
+PROGUARD := $(PROGUARD_HOME)/bin/proguard.sh
+PROGUARD_DEPS := $(PROGUARD) $(PROGUARD_HOME)/lib/proguard.jar
 JAVATAGS := build/make/tools/java-event-log-tags.py
 MERGETAGS := build/make/tools/merge-event-log-tags.py
 BUILD_IMAGE_SRCS := $(wildcard build/make/tools/releasetools/*.py)
@@ -715,13 +727,13 @@ BRILLO_UPDATE_PAYLOAD := $(HOST_OUT_EXECUTABLES)/brillo_update_payload
 
 DEXDUMP := $(HOST_OUT_EXECUTABLES)/dexdump2$(BUILD_EXECUTABLE_SUFFIX)
 PROFMAN := $(HOST_OUT_EXECUTABLES)/profman
-HIDDENAPI := $(HOST_OUT_EXECUTABLES)/hiddenapi
-CLASS2GREYLIST := $(HOST_OUT_EXECUTABLES)/class2greylist
 
 FINDBUGS_DIR := external/owasp/sanitizer/tools/findbugs/bin
 FINDBUGS := $(FINDBUGS_DIR)/findbugs
 
 JETIFIER := prebuilts/sdk/tools/jetifier/jetifier-standalone/bin/jetifier-standalone
+
+EXTRACT_KERNEL := build/make/tools/extract_kernel.py
 
 COLUMN:= column
 
@@ -745,13 +757,7 @@ else
 MD5SUM:=md5sum
 endif
 
-APICHECK_CLASSPATH_ENTRIES := \
-    $(HOST_OUT_JAVA_LIBRARIES)/apicheck$(COMMON_JAVA_PACKAGE_SUFFIX) \
-    $(HOST_JDK_TOOLS_JAR) \
-    )
-APICHECK_CLASSPATH := $(subst $(space),:,$(strip $(APICHECK_CLASSPATH_ENTRIES)))
-
-APICHECK_COMMAND := $(APICHECK) -JXmx1024m -J"classpath $(APICHECK_CLASSPATH)"
+APICHECK_COMMAND := $(JAVA) -Xmx4g -jar $(APICHECK) --no-banner --compatible-output=yes
 
 # Boolean variable determining if the whitelist for compatible properties is enabled
 PRODUCT_COMPATIBLE_PROPERTY := false
@@ -923,12 +929,7 @@ PLATFORM_SEPOLICY_COMPAT_VERSIONS := \
     PLATFORM_SEPOLICY_VERSION \
     TOT_SEPOLICY_VERSION \
 
-# If true, kernel configuration requirements are present in OTA package (and will be enforced
-# during OTA). Otherwise, kernel configuration requirements are enforced in VTS.
-# Devices that checks the running kernel (instead of the kernel in OTA package) should not
-# set this variable to prevent OTA failures.
-ifndef PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS
-  PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS :=
+ifeq ($(PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS),)
   ifdef PRODUCT_SHIPPING_API_LEVEL
     ifeq (true,$(call math_gt_or_eq,$(PRODUCT_SHIPPING_API_LEVEL),29))
       PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := true
@@ -959,8 +960,6 @@ ifeq ($(PRODUCT_USE_DYNAMIC_PARTITIONS),true)
         $(error PRODUCT_USE_DYNAMIC_PARTITIONS requires $(req) to be true)))
 
     requirements :=
-
-  BOARD_KERNEL_CMDLINE += androidboot.logical_partitions=1
 endif
 
 ifeq ($(PRODUCT_USE_DYNAMIC_PARTITION_SIZE),true)
@@ -1013,6 +1012,7 @@ ifeq ($(PRODUCT_BUILD_SUPER_PARTITION),true)
 #     - BOARD_{GROUP}_PARTITION_PARTITION_LIST: the list of partitions that belongs to this group.
 #       If empty, no partitions belong to this group, and the sum of sizes is effectively 0.
 $(foreach group,$(call to-upper,$(BOARD_SUPER_PARTITION_GROUPS)), \
+    $(eval BOARD_$(group)_SIZE := $(strip $(BOARD_$(group)_SIZE))) \
     $(if $(BOARD_$(group)_SIZE),,$(error BOARD_$(group)_SIZE must not be empty)) \
     $(eval .KATI_READONLY := BOARD_$(group)_SIZE) \
     $(eval BOARD_$(group)_PARTITION_LIST ?=) \
@@ -1020,7 +1020,7 @@ $(foreach group,$(call to-upper,$(BOARD_SUPER_PARTITION_GROUPS)), \
 )
 
 # BOARD_*_PARTITION_LIST: a list of the following tokens
-valid_super_partition_list := system vendor product product_services
+valid_super_partition_list := system vendor product product_services odm
 $(foreach group,$(call to-upper,$(BOARD_SUPER_PARTITION_GROUPS)), \
     $(if $(filter-out $(valid_super_partition_list),$(BOARD_$(group)_PARTITION_LIST)), \
         $(error BOARD_$(group)_PARTITION_LIST contains invalid partition name \
@@ -1039,12 +1039,17 @@ BOARD_SUPER_PARTITION_PARTITION_LIST := \
         $(BOARD_$(group)_PARTITION_LIST))
 .KATI_READONLY := BOARD_SUPER_PARTITION_PARTITION_LIST
 
-ifdef BOARD_SUPER_PARTITION_SIZE
+ifneq ($(BOARD_SUPER_PARTITION_SIZE),)
 ifeq ($(PRODUCT_RETROFIT_DYNAMIC_PARTITIONS),true)
 
 # The metadata device must be specified manually for retrofitting.
-ifndef BOARD_SUPER_PARTITION_METADATA_DEVICE
-$(error Must specify BOARD_SUPER_PARTITION_METADATA_DEVICE if BOARD_SUPER_PARTITION_BLOCK_DEVICES is used.)
+ifeq ($(BOARD_SUPER_PARTITION_METADATA_DEVICE),)
+$(error Must specify BOARD_SUPER_PARTITION_METADATA_DEVICE if PRODUCT_RETROFIT_DYNAMIC_PARTITIONS=true.)
+endif
+
+# The super partition block device list must be specified manually for retrofitting.
+ifeq ($(BOARD_SUPER_PARTITION_BLOCK_DEVICES),)
+$(error Must specify BOARD_SUPER_PARTITION_BLOCK_DEVICES if PRODUCT_RETROFIT_DYNAMIC_PARTITIONS=true.)
 endif
 
 # The metadata device must be included in the super partition block device list.
@@ -1055,30 +1060,52 @@ endif
 # The metadata device must be supplied to init via the kernel command-line.
 BOARD_KERNEL_CMDLINE += androidboot.super_partition=$(BOARD_SUPER_PARTITION_METADATA_DEVICE)
 
-else # PRODUCT_RETROFIT_DYNAMIC_PARTITIONS
+BOARD_BUILD_RETROFIT_DYNAMIC_PARTITIONS_OTA_PACKAGE := true
 
-# These should not be specified on devices launching with dynamic partition support.
-ifdef BOARD_SUPER_PARTITION_BLOCK_DEVICES
-$(error BOARD_SUPER_PARTITION_BLOCK_DEVICES can only be used if PRODUCT_RETROFIT_DYNAMIC_PARTITIONS is true.)
-endif
-ifdef BOARD_SUPER_PARTITION_METADATA_DEVICE
-$(error BOARD_SUPER_PARTITION_METADATA_DEVICE can only be used if PRODUCT_RETROFIT_DYNAMIC_PARTITIONS is true.)
-endif
+# If "vendor" is listed as one of the dynamic partitions but without its image available (e.g. an
+# AOSP target built without vendor image), don't build the retrofit full OTA package. Because we
+# won't be able to build meaningful super_* images for retrofitting purpose.
+ifneq (,$(filter vendor,$(BOARD_SUPER_PARTITION_PARTITION_LIST)))
+ifndef BUILDING_VENDOR_IMAGE
+ifndef BOARD_PREBUILT_VENDORIMAGE
+BOARD_BUILD_RETROFIT_DYNAMIC_PARTITIONS_OTA_PACKAGE :=
+endif # BOARD_PREBUILT_VENDORIMAGE
+endif # BUILDING_VENDOR_IMAGE
+endif # BOARD_SUPER_PARTITION_PARTITION_LIST
+
+else # PRODUCT_RETROFIT_DYNAMIC_PARTITIONS
 
 # For normal devices, we populate BOARD_SUPER_PARTITION_BLOCK_DEVICES so the
 # build can handle both cases consistently.
-BOARD_SUPER_PARTITION_BLOCK_DEVICES := super
+ifeq ($(BOARD_SUPER_PARTITION_METADATA_DEVICE),)
 BOARD_SUPER_PARTITION_METADATA_DEVICE := super
-BOARD_SUPER_PARTITION_SUPER_DEVICE_SIZE := $(BOARD_SUPER_PARTITION_SIZE)
+endif
+
+ifeq ($(BOARD_SUPER_PARTITION_BLOCK_DEVICES),)
+BOARD_SUPER_PARTITION_BLOCK_DEVICES := $(BOARD_SUPER_PARTITION_METADATA_DEVICE)
+endif
+
+# If only one super block device, default to super partition size.
+ifeq ($(word 2,$(BOARD_SUPER_PARTITION_BLOCK_DEVICES)),)
+BOARD_SUPER_PARTITION_$(call to-upper,$(strip $(BOARD_SUPER_PARTITION_BLOCK_DEVICES)))_DEVICE_SIZE ?= \
+    $(BOARD_SUPER_PARTITION_SIZE)
+endif
+
+ifneq ($(BOARD_SUPER_PARTITION_METADATA_DEVICE),super)
+BOARD_KERNEL_CMDLINE += androidboot.super_partition=$(BOARD_SUPER_PARTITION_METADATA_DEVICE)
+endif
+BOARD_BUILD_RETROFIT_DYNAMIC_PARTITIONS_OTA_PACKAGE :=
 
 endif # PRODUCT_RETROFIT_DYNAMIC_PARTITIONS
 endif # BOARD_SUPER_PARTITION_SIZE
 .KATI_READONLY := BOARD_SUPER_PARTITION_BLOCK_DEVICES
 .KATI_READONLY := BOARD_SUPER_PARTITION_METADATA_DEVICE
+.KATI_READONLY := BOARD_BUILD_RETROFIT_DYNAMIC_PARTITIONS_OTA_PACKAGE
 
 $(foreach device,$(call to-upper,$(BOARD_SUPER_PARTITION_BLOCK_DEVICES)), \
+    $(eval BOARD_SUPER_PARTITION_$(device)_DEVICE_SIZE := $(strip $(BOARD_SUPER_PARTITION_$(device)_DEVICE_SIZE))) \
     $(if $(BOARD_SUPER_PARTITION_$(device)_DEVICE_SIZE),, \
-        $(error $(BOARD_SUPER_PARTITION_$(device)_DEVICE_SIZE must not be empty))) \
+        $(error BOARD_SUPER_PARTITION_$(device)_DEVICE_SIZE must not be empty)) \
     $(eval .KATI_READONLY := BOARD_SUPER_PARTITION_$(device)_DEVICE_SIZE))
 
 endif # PRODUCT_BUILD_SUPER_PARTITION
@@ -1200,12 +1227,8 @@ ifndef INTERNAL_PLATFORM_SYSTEM_PRIVATE_DEX_API_FILE
 INTERNAL_PLATFORM_SYSTEM_PRIVATE_DEX_API_FILE := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/system-private-dex.txt
 endif
 
-INTERNAL_PLATFORM_HIDDENAPI_PUBLIC_LIST := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/hiddenapi-public-list.txt
-INTERNAL_PLATFORM_HIDDENAPI_PRIVATE_LIST := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/hiddenapi-private-list.txt
-INTERNAL_PLATFORM_HIDDENAPI_WHITELIST := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/hiddenapi-whitelist.txt
-INTERNAL_PLATFORM_HIDDENAPI_LIGHT_GREYLIST := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/hiddenapi-light-greylist.txt
-INTERNAL_PLATFORM_HIDDENAPI_DARK_GREYLIST := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/hiddenapi-dark-greylist.txt
-INTERNAL_PLATFORM_HIDDENAPI_BLACKLIST := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/hiddenapi-blacklist.txt
+INTERNAL_PLATFORM_HIDDENAPI_FLAGS := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/hiddenapi-flags.csv
+INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/hiddenapi-stub-flags.txt
 INTERNAL_PLATFORM_HIDDENAPI_GREYLIST_METADATA := $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/hiddenapi-greylist.csv
 
 # Missing optional uses-libraries so that the platform doesn't create build rules that depend on

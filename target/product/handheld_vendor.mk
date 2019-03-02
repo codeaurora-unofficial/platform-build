@@ -19,13 +19,23 @@
 # it definitely doesn't belong on other types of devices (if it
 # does, use base_vendor.mk).
 $(call inherit-product, $(SRC_TARGET_DIR)/product/media_vendor.mk)
+
+# /vendor packages
 PRODUCT_PACKAGES += \
+    AccentColorBlackOverlay \
+    AccentColorGreenOverlay \
+    AccentColorPurpleOverlay \
     audio.primary.default \
     DisplayCutoutEmulationCornerOverlay \
     DisplayCutoutEmulationDoubleOverlay \
     DisplayCutoutEmulationTallOverlay \
-    ExperimentNavigationBarFloatingOverlay \
-    ExperimentNavigationBarSlimOverlay \
+    FontNotoSerifSourceOverlay \
+    IconShapeRoundedRectOverlay \
+    IconShapeSquircleOverlay \
+    IconShapeTeardropOverlay \
     local_time.default \
     power.default \
     vibrator.default \
+
+PRODUCT_PACKAGES_DEBUG += \
+    frameworks-base-overlays \

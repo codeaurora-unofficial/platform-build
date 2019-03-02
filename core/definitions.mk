@@ -77,6 +77,9 @@ ALL_FINDBUGS_FILES:=
 # GPL module license files
 ALL_GPL_MODULE_LICENSE_FILES:=
 
+# Packages with certificate violation
+CERTIFICATE_VIOLATION_MODULES :=
+
 # Target and host installed module's dependencies on shared libraries.
 # They are list of "<module_name>:<installed_file>:lib1,lib2...".
 TARGET_DEPENDENCIES_ON_SHARED_LIBRARIES :=
@@ -1023,7 +1026,7 @@ define transform-vts-to-cpp
 @mkdir -p $(dir $@)
 @mkdir -p $(PRIVATE_HEADER_OUTPUT_DIR)
 @echo "Generating C++ from VTS: $(PRIVATE_MODULE) <= $<"
-$(hide) $(VTSC) -d$(basename $@).vts.P $(PRIVATE_VTS_FLAGS) \
+$(hide) $(VTSC) -TODO_b/120496070 $(PRIVATE_VTS_FLAGS) \
     $< $(PRIVATE_HEADER_OUTPUT_DIR) $@
 endef
 
@@ -2376,14 +2379,11 @@ endef
 define run-appcompat
 $(hide) \
   echo "appcompat.sh output:" >> $(PRODUCT_OUT)/appcompat/$(PRIVATE_MODULE).log && \
-  PACKAGING=$(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING art/tools/veridex/appcompat.sh --dex-file=$@ 2>&1 >> $(PRODUCT_OUT)/appcompat/$(PRIVATE_MODULE).log
+  PACKAGING=$(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING ANDROID_LOG_TAGS="*:e" art/tools/veridex/appcompat.sh --dex-file=$@ 2>&1 >> $(PRODUCT_OUT)/appcompat/$(PRIVATE_MODULE).log
 endef
 appcompat-files = \
   art/tools/veridex/appcompat.sh \
-  $(INTERNAL_PLATFORM_HIDDENAPI_WHITELIST) \
-  $(INTERNAL_PLATFORM_HIDDENAPI_LIGHT_GREYLIST) \
-  $(INTERNAL_PLATFORM_HIDDENAPI_DARK_GREYLIST) \
-  $(INTERNAL_PLATFORM_HIDDENAPI_BLACKLIST) \
+  $(INTERNAL_PLATFORM_HIDDENAPI_FLAGS) \
   $(HOST_OUT_EXECUTABLES)/veridex \
   $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/core_dex_intermediates/classes.dex \
   $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/oahl_dex_intermediates/classes.dex
@@ -2677,20 +2677,16 @@ endef
 # Java semantics of the result dex bytecode. Use at own risk.
 ifneq ($(UNSAFE_DISABLE_HIDDENAPI_FLAGS),true)
 define hiddenapi-copy-dex-files
-$(2): $(1) $(HIDDENAPI) $(INTERNAL_PLATFORM_HIDDENAPI_LIGHT_GREYLIST) \
-      $(INTERNAL_PLATFORM_HIDDENAPI_DARK_GREYLIST) $(INTERNAL_PLATFORM_HIDDENAPI_BLACKLIST)
+$(2): $(1) $(HIDDENAPI) $(INTERNAL_PLATFORM_HIDDENAPI_FLAGS)
 	@rm -rf $(dir $(2))
 	@mkdir -p $(dir $(2))
 	for INPUT_DEX in `find $(dir $(1)) -maxdepth 1 -name "classes*.dex" | sort`; do \
 	    echo "--input-dex=$$$${INPUT_DEX}"; \
 	    echo "--output-dex=$(dir $(2))/`basename $$$${INPUT_DEX}`"; \
-	done | xargs $(HIDDENAPI) encode \
-	    --light-greylist=$(INTERNAL_PLATFORM_HIDDENAPI_LIGHT_GREYLIST) \
-	    --dark-greylist=$(INTERNAL_PLATFORM_HIDDENAPI_DARK_GREYLIST) \
-	    --blacklist=$(INTERNAL_PLATFORM_HIDDENAPI_BLACKLIST)
+	done | xargs $(HIDDENAPI) encode --api-flags=$(INTERNAL_PLATFORM_HIDDENAPI_FLAGS)
 
-$(INTERNAL_PLATFORM_HIDDENAPI_PRIVATE_LIST): $(1)
-$(INTERNAL_PLATFORM_HIDDENAPI_PRIVATE_LIST): PRIVATE_DEX_INPUTS := $$(PRIVATE_DEX_INPUTS) $(1)
+$(INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS): $(1)
+$(INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS): PRIVATE_DEX_INPUTS := $$(PRIVATE_DEX_INPUTS) $(1)
 endef
 else  # UNSAFE_DISABLE_HIDDENAPI_FLAGS
 define hiddenapi-copy-dex-files
@@ -2703,61 +2699,41 @@ endef
 endif  # UNSAFE_DISABLE_HIDDENAPI_FLAGS
 
 # Generate a greylist.txt from a classes.jar
-define hiddenapi-generate-greylist-txt
+define hiddenapi-generate-csv
+ifneq ($(UNSAFE_DISABLE_HIDDENAPI_FLAGS),true)
 ifneq (,$(wildcard frameworks/base))
 # Only generate this target if we're in a tree with frameworks/base present.
-$(3): .KATI_IMPLICIT_OUTPUTS := $(2) $(4)
-# For now, write P & Q blacklist to single file until runtime support is finished
-$(3): $(1) $(CLASS2GREYLIST) $(INTERNAL_PLATFORM_HIDDENAPI_PUBLIC_LIST)
-	$(CLASS2GREYLIST) --public-api-list $(INTERNAL_PLATFORM_HIDDENAPI_PUBLIC_LIST) $(1) \
-	    --write-whitelist $(2) \
-	    --write-greylist none,28:$(3) \
-	    --write-greylist 26:$(4)
+$(2): $(1) $(CLASS2GREYLIST) $(INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS)
+	$(CLASS2GREYLIST) --stub-api-flags $(INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS) $(1) \
+	    --write-flags-csv $(2)
 
-$(5): $(1) $(CLASS2GREYLIST) $(INTERNAL_PLATFORM_HIDDENAPI_PUBLIC_LIST)
-	$(CLASS2GREYLIST) --public-api-list $(INTERNAL_PLATFORM_HIDDENAPI_PUBLIC_LIST) $(1) \
-	    --write-metadata-csv $(5)
+$(3): $(1) $(CLASS2GREYLIST) $(INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS)
+	$(CLASS2GREYLIST) --stub-api-flags $(INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS) $(1) \
+	    --write-metadata-csv $(3)
 
-$(INTERNAL_PLATFORM_HIDDENAPI_WHITELIST): $(2) $(3) $(4)
-$(INTERNAL_PLATFORM_HIDDENAPI_WHITELIST): \
-    PRIVATE_WHITELIST_INPUTS := $$(PRIVATE_WHITELIST_INPUTS) $(2)
-$(INTERNAL_PLATFORM_HIDDENAPI_WHITELIST): \
-    PRIVATE_GREYLIST_INPUTS := $$(PRIVATE_GREYLIST_INPUTS) $(3)
-    PRIVATE_DARKGREYLIST_INPUTS := $$(PRIVATE_DARKGREYLIST_INPUTS) $(4)
-$(INTERNAL_PLATFORM_HIDDENAPI_GREYLIST_METADATA): $(5)
+$(INTERNAL_PLATFORM_HIDDENAPI_FLAGS): $(2)
+$(INTERNAL_PLATFORM_HIDDENAPI_FLAGS): PRIVATE_FLAGS_INPUTS := $$(PRIVATE_FLAGS_INPUTS) $(2)
+
+$(INTERNAL_PLATFORM_HIDDENAPI_GREYLIST_METADATA): $(3)
 $(INTERNAL_PLATFORM_HIDDENAPI_GREYLIST_METADATA): \
-    PRIVATE_METADATA_INPUTS := $$(PRIVATE_METADATA_INPUTS) $(5)
+    PRIVATE_METADATA_INPUTS := $$(PRIVATE_METADATA_INPUTS) $(3)
 
 endif
-endef
-
-# File names for intermediate dex files of `hiddenapi-copy-soong-jar`.
-hiddenapi-soong-input-dex = $(dir $(1))/hiddenapi/dex-input/classes.dex
-hiddenapi-soong-output-dex = $(dir $(1))/hiddenapi/dex-output/classes.dex
-
-# Decompress a JAR with dex files, invoke $(HIDDENAPI) on them and compress again.
-define hiddenapi-copy-soong-jar
-$(call hiddenapi-soong-input-dex,$(2)): $(1)
-	@rm -rf `dirname $$@`
-	@mkdir -p `dirname $$@`
-	unzip -o -q $(1) 'classes*.dex' -d `dirname $$@`
-	find `dirname $$@` -maxdepth 1 -name 'classes*.dex' | xargs touch
-
-$(call hiddenapi-copy-dex-files,\
-    $(call hiddenapi-soong-input-dex,$(2)),\
-    $(call hiddenapi-soong-output-dex,$(2)))
-
-$(2): OUTPUT_DIR := $(dir $(call hiddenapi-soong-output-dex,$(2)))
-$(2): OUTPUT_JAR := $(dir $(call hiddenapi-soong-output-dex,$(2)))classes.jar
-$(2): $(1) $(call hiddenapi-soong-output-dex,$(2)) | $(SOONG_ZIP) $(MERGE_ZIPS)
-	$(SOONG_ZIP) -o $${OUTPUT_JAR} -C $${OUTPUT_DIR} -f "$${OUTPUT_DIR}/classes*.dex"
-	$(MERGE_ZIPS) -D -zipToNotStrip $${OUTPUT_JAR} -stripFile "classes*.dex" $(2) $${OUTPUT_JAR} $(1)
+endif  # UNSAFE_DISABLE_HIDDENAPI_FLAGS
 endef
 
 
 ###########################################################
 ## Commands to call R8
 ###########################################################
+
+# Use --debug flag for eng builds by default
+ifeq (eng,$(TARGET_BUILD_VARIANT))
+R8_DEBUG_MODE := --debug
+else
+R8_DEBUG_MODE :=
+endif
+
 define transform-jar-to-dex-r8
 @echo R8: $@
 $(hide) rm -f $(PRIVATE_PROGUARD_DICTIONARY)
@@ -2765,6 +2741,7 @@ $(hide) $(R8_COMPAT_PROGUARD) -injars '$<' \
     --min-api $(PRIVATE_MIN_SDK_VERSION) \
     --no-data-resources \
     --force-proguard-compatibility --output $(subst classes.dex,,$@) \
+    $(R8_DEBUG_MODE) \
     $(PRIVATE_PROGUARD_FLAGS) \
     $(addprefix -injars , $(PRIVATE_EXTRA_INPUT_JAR)) \
     $(PRIVATE_DX_FLAGS)
@@ -2856,17 +2833,18 @@ endef
 #  $(5): New LOCAL_CERTIFICATE value.
 #  $(6): New LOCAL_INSTRUMENTATION_FOR value.
 #  $(7): New LOCAL_MANIFEST_INSTRUMENTATION_FOR value.
+#  $(8): New LOCAL_COMPATIBILITY_SUITE value.
 #
 # Note that LOCAL_PACKAGE_OVERRIDES is NOT cleared in
 # clear_vars.mk.
 ###########################################################
 define inherit-package
-  $(eval $(call inherit-package-internal,$(1),$(2),$(3),$(4),$(5),$(6),$(7)))
+  $(eval $(call inherit-package-internal,$(1),$(2),$(3),$(4),$(5),$(6),$(7),$(8)))
 endef
 
 define inherit-package-internal
   LOCAL_PACKAGE_OVERRIDES \
-      := $(strip $(1))||$(strip $(2))||$(strip $(3))||$(strip $(4))||&&$(strip $(5))||&&$(strip $(6))||&&$(strip $(7)) $(LOCAL_PACKAGE_OVERRIDES)
+      := $(strip $(1))||$(strip $(2))||$(strip $(3))||$(strip $(4))||&&$(strip $(5))||&&$(strip $(6))||&&$(strip $(7))||&&$(strip $(8)) $(LOCAL_PACKAGE_OVERRIDES)
   include $(1)
   LOCAL_PACKAGE_OVERRIDES \
       := $(wordlist 1,$(words $(LOCAL_PACKAGE_OVERRIDES)), $(LOCAL_PACKAGE_OVERRIDES))
@@ -2891,6 +2869,7 @@ define set-inherited-package-variables-internal
     $(call keep-or-override,LOCAL_CERTIFICATE,$(patsubst &&%,%,$(word 5,$(_o)))) \
     $(call keep-or-override,LOCAL_INSTRUMENTATION_FOR,$(patsubst &&%,%,$(word 6,$(_o)))) \
     $(call keep-or-override,LOCAL_MANIFEST_INSTRUMENTATION_FOR,$(patsubst &&%,%,$(word 7,$(_o)))) \
+    $(call keep-or-override,LOCAL_COMPATIBILITY_SUITE,$(patsubst &&%,%,$(word 8,$(_o)))) \
     $(eval LOCAL_OVERRIDES_PACKAGES := $(sort $(LOCAL_OVERRIDES_PACKAGES) $(word 2,$(_o)))) \
     true \
   ,)
@@ -2915,7 +2894,7 @@ endef
 define check-api
 $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/$(strip $(1))-timestamp: $(2) $(3) $(4) $(APICHECK) $(9)
 	@echo "Checking API:" $(1)
-	$(hide) ( $(APICHECK_COMMAND) $(6) $(2) $(3) $(4) $(5) || ( $(7) ; exit 38 ) )
+	$(hide) ( $(APICHECK_COMMAND) --check-api-files $(6) $(2) $(3) $(4) $(5) || ( $(7) ; exit 38 ) )
 	$(hide) mkdir -p $$(dir $$@)
 	$(hide) touch $$@
 $(8): $(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING/$(strip $(1))-timestamp
