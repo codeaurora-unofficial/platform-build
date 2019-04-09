@@ -73,7 +73,7 @@ PRODUCT_PACKAGES += \
     dpm \
     dumpstate \
     dumpsys \
-    DynamicAndroidInstallationService \
+    DynamicSystemInstallationService \
     e2fsck \
     ExtServices \
     ExtShared \
@@ -213,7 +213,6 @@ PRODUCT_PACKAGES += \
     media_profiles_V1_0.dtd \
     MediaProvider \
     mediaserver \
-    mediaswcodec \
     mke2fs \
     monkey \
     mtpd \
@@ -281,6 +280,43 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     framework_manifest.xml \
     system_compatibility_matrix.xml \
+
+# Host tools to install
+PRODUCT_HOST_PACKAGES += \
+    BugReport \
+    adb \
+    adbd \
+    atest \
+    bcc \
+    bit \
+    e2fsck \
+    fastboot \
+    flags_health_check \
+    icu-data_host_runtime_apex \
+    idmap2 \
+    incident_report \
+    ld.mc \
+    lpdump \
+    mdnsd \
+    minigzip \
+    mke2fs \
+    resize2fs \
+    selinux_policy_system \
+    sgdisk \
+    shell_and_utilities_system \
+    sqlite3 \
+    tinyplay \
+    tune2fs \
+    tzdatacheck \
+    unwind_info \
+    unwind_reg_info \
+    unwind_symbols \
+    viewcompiler \
+    tzdata_host \
+    tzdata_host_runtime_apex \
+    tzlookup.xml_host_runtime_apex \
+    tz_version_host \
+    tz_version_host_runtime_apex \
 
 ifeq ($(TARGET_CORE_JARS),)
 $(error TARGET_CORE_JARS is empty; cannot initialize PRODUCT_BOOT_JARS variable)
