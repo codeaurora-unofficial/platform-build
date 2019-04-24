@@ -651,6 +651,18 @@ endef
 
 ###########################################################
 ## Convert a list of short modules names (e.g., "framework", "Browser")
+## into the list of files that are built *for the target* for those modules.
+## NOTE: this won't return reliable results until after all
+## sub-makefiles have been included.
+## $(1): target list
+###########################################################
+
+define module-target-built-files
+$(foreach module,$(1),$(ALL_MODULES.$(module).TARGET_BUILT))
+endef
+
+###########################################################
+## Convert a list of short modules names (e.g., "framework", "Browser")
 ## into the list of files that should be used when linking
 ## against that module as a public API.
 ## TODO: Allow this for more than JAVA_LIBRARIES modules
@@ -2201,13 +2213,37 @@ define codename-or-sdk-to-sdk
 $(if $(filter $(1),$(PLATFORM_VERSION_CODENAME)),10000,$(1))
 endef
 
+# Uses LOCAL_SDK_VERSION and PLATFORM_SDK_VERSION to determine a compileSdkVersion
+# in the form of a number or a codename (28 or P)
+define module-sdk-version
+$(strip \
+  $(if $(filter-out current system_current test_current core_current,$(LOCAL_SDK_VERSION)), \
+    $(call get-numeric-sdk-version,$(LOCAL_SDK_VERSION)), \
+    $(PLATFORM_SDK_VERSION)))
+endef
+
+# Uses LOCAL_SDK_VERSION and DEFAULT_APP_TARGET_SDK to determine
+# a targetSdkVersion in the form of a number or a codename (28 or P).
+define module-target-sdk-version
+$(strip \
+  $(if $(filter-out current system_current test_current core_current,$(LOCAL_SDK_VERSION)), \
+    $(call get-numeric-sdk-version,$(LOCAL_SDK_VERSION)), \
+    $(DEFAULT_APP_TARGET_SDK)))
+endef
+
+# Uses LOCAL_MIN_SDK_VERSION, LOCAL_SDK_VERSION and DEFAULT_APP_TARGET_SDK to determine
+# a minSdkVersion in the form of a number or a codename (28 or P).
+define module-min-sdk-version
+$(if $(LOCAL_MIN_SDK_VERSION),$(LOCAL_MIN_SDK_VERSION),$(call module-target-sdk-version))
+endef
+
 
 define transform-classes.jar-to-dex
 @echo "target Dex: $(PRIVATE_MODULE)"
 @mkdir -p $(dir $@)
 $(hide) rm -f $(dir $@)classes*.dex $(dir $@)d8_input.jar
 $(hide) $(ZIP2ZIP) -j -i $< -o $(dir $@)d8_input.jar "**/*.class"
-$(hide) $(DX_COMMAND) \
+$(hide) $(DX_COMMAND) $(DEX_FLAGS) \
     --output $(dir $@) \
     $(addprefix --lib ,$(PRIVATE_D8_LIBS)) \
     --min-api $(PRIVATE_MIN_SDK_VERSION) \
@@ -2257,24 +2293,15 @@ $(hide) cp $(3) $(dir $(1))lib/$(2)
 
 endef
 
-# For apps_only build, don't uncompress/page-align the jni libraries,
-# because the apk may be run on older platforms that don't support loading jni directly from apk.
-ifdef TARGET_BUILD_APPS
-JNI_COMPRESS_FLAGS :=
-ZIPALIGN_PAGE_ALIGN_FLAGS :=
-else
-JNI_COMPRESS_FLAGS := -L 0
-ZIPALIGN_PAGE_ALIGN_FLAGS := -p
-endif
-
 # $(1): the package file
+# $(2): if true, uncompress jni libs
 define create-jni-shared-libs-package
 rm -rf $(dir $(1))lib
 mkdir -p $(addprefix $(dir $(1))lib/,$(PRIVATE_JNI_SHARED_LIBRARIES_ABI))
 $(foreach abi,$(PRIVATE_JNI_SHARED_LIBRARIES_ABI),\
   $(call _add-jni-shared-libs-to-package-per-abi,$(1),$(abi),\
     $(patsubst $(abi):%,%,$(filter $(abi):%,$(PRIVATE_JNI_SHARED_LIBRARIES)))))
-$(SOONG_ZIP) $(JNI_COMPRESS_FLAGS) -o $(1) -C $(dir $(1)) -D $(dir $(1))lib
+$(SOONG_ZIP) $(if $(2),-L 0) -o $(1) -C $(dir $(1)) -D $(dir $(1))lib
 rm -rf $(dir $(1))lib
 endef
 
@@ -2342,7 +2369,7 @@ $(hide) if ! $(ZIPALIGN) -c $(ZIPALIGN_PAGE_ALIGN_FLAGS) 4 $@ >/dev/null ; then 
   mv $@ $@.unaligned; \
   $(ZIPALIGN) \
     -f \
-    $(ZIPALIGN_PAGE_ALIGN_FLAGS) \
+    -p \
     4 \
     $@.unaligned $@.aligned; \
   mv $@.aligned $@; \
@@ -2379,7 +2406,7 @@ endef
 define run-appcompat
 $(hide) \
   echo "appcompat.sh output:" >> $(PRODUCT_OUT)/appcompat/$(PRIVATE_MODULE).log && \
-  PACKAGING=$(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING ANDROID_LOG_TAGS="*:e" art/tools/veridex/appcompat.sh --dex-file=$@ 2>&1 >> $(PRODUCT_OUT)/appcompat/$(PRIVATE_MODULE).log
+  PACKAGING=$(TARGET_OUT_COMMON_INTERMEDIATES)/PACKAGING ANDROID_LOG_TAGS="*:e" art/tools/veridex/appcompat.sh --dex-file=$@ --api-flags=$(INTERNAL_PLATFORM_HIDDENAPI_FLAGS) 2>&1 >> $(PRODUCT_OUT)/appcompat/$(PRIVATE_MODULE).log
 endef
 appcompat-files = \
   art/tools/veridex/appcompat.sh \
@@ -2469,14 +2496,36 @@ $(2): $(1) $(ZIPALIGN) $(ZIP2ZIP)
 	$$(align-package)
 endef
 
+# Create copy pair for compatibility suite
+# Filter out $(LOCAL_INSTALLED_MODULE) to prevent overriding target
+# $(1): source path
+# $(2): destination path
+# The format of copy pair is src:dst
+define compat-copy-pair
+$(if $(filter-out $(2), $(LOCAL_INSTALLED_MODULE)), $(1):$(2))
+endef
+
+# Create copy pair for $(1) $(2)
+# If $(2) is substring of $(3) do nothing.
+# $(1): source path
+# $(2): destination path
+# $(3): filter-out target
+# The format of copy pair is src:dst
+define filter-copy-pair
+$(if $(findstring $(2), $(3)),,$(1):$(2))
+endef
+
 # Copies many files.
 # $(1): The files to copy.  Each entry is a ':' separated src:dst pair
+# $(2): An optional directory to prepend to the destination
 # Evaluates to the list of the dst files (ie suitable for a dependency list)
 define copy-many-files
 $(foreach f, $(1), $(strip \
     $(eval _cmf_tuple := $(subst :, ,$(f))) \
     $(eval _cmf_src := $(word 1,$(_cmf_tuple))) \
     $(eval _cmf_dest := $(word 2,$(_cmf_tuple))) \
+    $(if $(strip $(2)), \
+      $(eval _cmf_dest := $(patsubst %/,%,$(strip $(2)))/$(patsubst /%,%,$(_cmf_dest)))) \
     $(if $(filter-out $(_cmf_src), $(_cmf_dest)), \
       $(eval $(call copy-one-file,$(_cmf_src),$(_cmf_dest)))) \
     $(_cmf_dest)))
@@ -2670,58 +2719,6 @@ done \
 fi
 endef
 
-# Copy dex files, invoking $(HIDDENAPI) on them in the process.
-# Also make the source dex file an input of the hiddenapi singleton rule in dex_preopt.mk.
-# Users can set UNSAFE_DISABLE_HIDDENAPI_FLAGS=true to skip this step. This is
-# meant to speed up local incremental builds. Note that skipping this step changes
-# Java semantics of the result dex bytecode. Use at own risk.
-ifneq ($(UNSAFE_DISABLE_HIDDENAPI_FLAGS),true)
-define hiddenapi-copy-dex-files
-$(2): $(1) $(HIDDENAPI) $(INTERNAL_PLATFORM_HIDDENAPI_FLAGS)
-	@rm -rf $(dir $(2))
-	@mkdir -p $(dir $(2))
-	for INPUT_DEX in `find $(dir $(1)) -maxdepth 1 -name "classes*.dex" | sort`; do \
-	    echo "--input-dex=$$$${INPUT_DEX}"; \
-	    echo "--output-dex=$(dir $(2))/`basename $$$${INPUT_DEX}`"; \
-	done | xargs $(HIDDENAPI) encode --api-flags=$(INTERNAL_PLATFORM_HIDDENAPI_FLAGS)
-
-$(INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS): $(1)
-$(INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS): PRIVATE_DEX_INPUTS := $$(PRIVATE_DEX_INPUTS) $(1)
-endef
-else  # UNSAFE_DISABLE_HIDDENAPI_FLAGS
-define hiddenapi-copy-dex-files
-$(2): $(1)
-	echo "WARNING: skipping hiddenapi post-processing for $(1)" 1>&2
-	@rm -rf $(dir $(2))
-	@mkdir -p $(dir $(2))
-	find $(dir $(1)) -maxdepth 1 -name "classes*.dex" | xargs -I{} cp -f {} $(dir $(2))/
-endef
-endif  # UNSAFE_DISABLE_HIDDENAPI_FLAGS
-
-# Generate a greylist.txt from a classes.jar
-define hiddenapi-generate-csv
-ifneq ($(UNSAFE_DISABLE_HIDDENAPI_FLAGS),true)
-ifneq (,$(wildcard frameworks/base))
-# Only generate this target if we're in a tree with frameworks/base present.
-$(2): $(1) $(CLASS2GREYLIST) $(INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS)
-	$(CLASS2GREYLIST) --stub-api-flags $(INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS) $(1) \
-	    --write-flags-csv $(2)
-
-$(3): $(1) $(CLASS2GREYLIST) $(INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS)
-	$(CLASS2GREYLIST) --stub-api-flags $(INTERNAL_PLATFORM_HIDDENAPI_STUB_FLAGS) $(1) \
-	    --write-metadata-csv $(3)
-
-$(INTERNAL_PLATFORM_HIDDENAPI_FLAGS): $(2)
-$(INTERNAL_PLATFORM_HIDDENAPI_FLAGS): PRIVATE_FLAGS_INPUTS := $$(PRIVATE_FLAGS_INPUTS) $(2)
-
-$(INTERNAL_PLATFORM_HIDDENAPI_GREYLIST_METADATA): $(3)
-$(INTERNAL_PLATFORM_HIDDENAPI_GREYLIST_METADATA): \
-    PRIVATE_METADATA_INPUTS := $$(PRIVATE_METADATA_INPUTS) $(3)
-
-endif
-endif  # UNSAFE_DISABLE_HIDDENAPI_FLAGS
-endef
-
 
 ###########################################################
 ## Commands to call R8
@@ -2737,7 +2734,8 @@ endif
 define transform-jar-to-dex-r8
 @echo R8: $@
 $(hide) rm -f $(PRIVATE_PROGUARD_DICTIONARY)
-$(hide) $(R8_COMPAT_PROGUARD) -injars '$<' \
+$(hide) $(R8_COMPAT_PROGUARD) $(DEX_FLAGS) \
+    -injars '$<' \
     --min-api $(PRIVATE_MIN_SDK_VERSION) \
     --no-data-resources \
     --force-proguard-compatibility --output $(subst classes.dex,,$@) \
@@ -3320,10 +3318,12 @@ include $(BUILD_SYSTEM)/distdir.mk
 #  $(4): Whether LOCAL_EXPORT_PACKAGE_RESOURCES is set or
 #        not for the source module.
 #  $(5): Resource overlay list.
+#  $(6): Target partition
 ###########################################################
 define append_enforce_rro_sources
   $(eval ENFORCE_RRO_SOURCES += \
-      $(strip $(1))||$(strip $(2))||$(strip $(3))||$(strip $(4))||$(call normalize-path-list, $(strip $(5))))
+      $(strip $(1))||$(strip $(2))||$(strip $(3))||$(strip $(4))||$(call normalize-path-list, $(strip $(5)))||$(strip $(6)) \
+  )
 endef
 
 ###########################################################
@@ -3338,9 +3338,9 @@ $(foreach source,$(ENFORCE_RRO_SOURCES), \
   $(eval enforce_rro_source_manifest_package_info := $(word 3,$(_o))) \
   $(eval enforce_rro_use_res_lib := $(word 4,$(_o))) \
   $(eval enforce_rro_source_overlays := $(subst :, ,$(word 5,$(_o)))) \
-  $(eval enforce_rro_module := $(enforce_rro_source_module)__auto_generated_rro) \
+  $(eval enforce_rro_partition := $(word 6,$(_o))) \
   $(eval include $(BUILD_SYSTEM)/generate_enforce_rro.mk) \
-  $(eval ALL_MODULES.$(enforce_rro_source_module).REQUIRED += $(enforce_rro_module)) \
+  $(eval ALL_MODULES.$$(enforce_rro_source_module).REQUIRED += $$(LOCAL_PACKAGE_NAME)) \
 )
 endef
 
@@ -3407,3 +3407,19 @@ $(KATI_obsolete_var \
   initialize-package-file \
   add-jni-shared-libs-to-package,\
   These functions have been removed)
+
+###########################################################
+## Verify the variants of a VNDK library are identical
+##
+## $(1): Path to the core variant shared library file.
+## $(2): Path to the vendor variant shared library file.
+## $(3): TOOLS_PREFIX
+###########################################################
+LIBRARY_IDENTITY_CHECK_SCRIPT := build/make/tools/check_identical_lib.sh
+define verify-vndk-libs-identical
+@echo "Checking VNDK vendor variant: $(2)"
+$(hide) CLANG_BIN="$(LLVM_PREBUILTS_PATH)" \
+	CROSS_COMPILE="$(strip $(3))" \
+	XZ="$(XZ)" \
+	$(LIBRARY_IDENTITY_CHECK_SCRIPT) $(SOONG_STRIP_PATH) $(1) $(2)
+endef

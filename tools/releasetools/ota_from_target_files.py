@@ -71,6 +71,13 @@ Common options that apply to both of non-A/B and A/B OTAs
       partitions but the target build does. For A/B, when this flag is set,
       --skip_postinstall is implied.
 
+  --skip_compatibility_check
+      Skip adding the compatibility package to the generated OTA package.
+
+  --output_metadata_path
+      Write a copy of the metadata to a separate file. Therefore, users can
+      read the post build fingerprint without extracting the OTA package.
+
 Non-A/B OTA specific options
 
   -b  (--binary) <file>
@@ -221,13 +228,16 @@ OPTIONS.extracted_input = None
 OPTIONS.key_passwords = []
 OPTIONS.skip_postinstall = False
 OPTIONS.retrofit_dynamic_partitions = False
+OPTIONS.skip_compatibility_check = False
+OPTIONS.output_metadata_path = None
 
 
 METADATA_NAME = 'META-INF/com/android/metadata'
 POSTINSTALL_CONFIG = 'META/postinstall_config.txt'
 DYNAMIC_PARTITION_INFO = 'META/dynamic_partitions_info.txt'
-UNZIP_PATTERN = ['IMAGES/*', 'META/*']
-SUPER_SPLIT_PATTERN = ['OTA/super_*.img']
+AB_PARTITIONS = 'META/ab_partitions.txt'
+UNZIP_PATTERN = ['IMAGES/*', 'META/*', 'RADIO/*']
+RETROFIT_DAP_UNZIP_PATTERN = ['OTA/super_*.img', AB_PARTITIONS]
 
 
 class BuildInfo(object):
@@ -258,6 +268,12 @@ class BuildInfo(object):
         on OEM properties if applicable.
     device: The device name, which could come from OEM dicts if applicable.
   """
+
+  _RO_PRODUCT_RESOLVE_PROPS = ["ro.product.brand", "ro.product.device",
+                               "ro.product.manufacturer", "ro.product.model",
+                               "ro.product.name"]
+  _RO_PRODUCT_PROPS_DEFAULT_SOURCE_ORDER = ["product", "product_services",
+                                            "odm", "vendor", "system"]
 
   def __init__(self, info_dict, oem_dicts):
     """Initializes a BuildInfo instance with the given dicts.
@@ -325,10 +341,42 @@ class BuildInfo(object):
 
   def GetBuildProp(self, prop):
     """Returns the inquired build property."""
+    if prop in BuildInfo._RO_PRODUCT_RESOLVE_PROPS:
+      return self._ResolveRoProductBuildProp(prop)
+
     try:
       return self.info_dict.get("build.prop", {})[prop]
     except KeyError:
       raise common.ExternalError("couldn't find %s in build.prop" % (prop,))
+
+  def _ResolveRoProductBuildProp(self, prop):
+    """Resolves the inquired ro.product.* build property"""
+    prop_val = self.info_dict.get("build.prop", {}).get(prop)
+    if prop_val:
+      return prop_val
+
+    source_order_val = self.info_dict.get("build.prop", {}).get(
+      "ro.product.property_source_order")
+    if source_order_val:
+      source_order = source_order_val.split(",")
+    else:
+      source_order = BuildInfo._RO_PRODUCT_PROPS_DEFAULT_SOURCE_ORDER
+
+    # Check that all sources in ro.product.property_source_order are valid
+    if any([x not in BuildInfo._RO_PRODUCT_PROPS_DEFAULT_SOURCE_ORDER
+            for x in source_order]):
+      raise common.ExternalError(
+        "Invalid ro.product.property_source_order '{}'".format(source_order))
+
+    for source in source_order:
+      source_prop = prop.replace("ro.product", "ro.product.{}".format(source),
+                                 1)
+      prop_val = self.info_dict.get("{}.build.prop".format(source), {}).get(
+        source_prop)
+      if prop_val:
+        return prop_val
+
+    raise common.ExternalError("couldn't resolve {}".format(prop))
 
   def GetVendorBuildProp(self, prop):
     """Returns the inquired vendor build property."""
@@ -345,7 +393,18 @@ class BuildInfo(object):
 
   def CalculateFingerprint(self):
     if self.oem_props is None:
-      return self.GetBuildProp("ro.build.fingerprint")
+      try:
+        return self.GetBuildProp("ro.build.fingerprint")
+      except common.ExternalError:
+        return "{}/{}/{}:{}/{}/{}:{}/{}".format(
+          self.GetBuildProp("ro.product.brand"),
+          self.GetBuildProp("ro.product.name"),
+          self.GetBuildProp("ro.product.device"),
+          self.GetBuildProp("ro.build.version.release"),
+          self.GetBuildProp("ro.build.id"),
+          self.GetBuildProp("ro.build.version.incremental"),
+          self.GetBuildProp("ro.build.type"),
+          self.GetBuildProp("ro.build.tags"))
     return "%s/%s/%s:%s" % (
         self.GetOemProperty("ro.product.brand"),
         self.GetOemProperty("ro.product.name"),
@@ -701,6 +760,11 @@ def AddCompatibilityArchiveIfTrebleEnabled(target_zip, output_zip, target_info,
   if not HasTrebleEnabled(target_zip, target_info):
     return
 
+  # Skip adding the compatibility package as a workaround for b/114240221. The
+  # compatibility will always fail on devices without qualified kernels.
+  if OPTIONS.skip_compatibility_check:
+    return
+
   # Full OTA carries the info for system/vendor both.
   if source_info is None:
     AddCompatibilityArchive(True, True)
@@ -920,10 +984,22 @@ endif;
   FinalizeMetadata(metadata, staging_file, output_file, needed_property_files)
 
 
-def WriteMetadata(metadata, output_zip):
+def WriteMetadata(metadata, output):
+  """Writes the metadata to the zip archive or a file.
+
+  Args:
+    metadata: The metadata dict for the package.
+    output: A ZipFile object or a string of the output file path.
+  """
+
   value = "".join(["%s=%s\n" % kv for kv in sorted(metadata.iteritems())])
-  common.ZipWriteStr(output_zip, METADATA_NAME, value,
-                     compress_type=zipfile.ZIP_STORED)
+  if isinstance(output, zipfile.ZipFile):
+    common.ZipWriteStr(output, METADATA_NAME, value,
+                       compress_type=zipfile.ZIP_STORED)
+    return
+
+  with open(output, 'w') as f:
+    f.write(value)
 
 
 def HandleDowngradeMetadata(metadata, target_info, source_info):
@@ -984,6 +1060,9 @@ def GetPackageMetadata(target_info, source_info=None):
 
   if OPTIONS.wipe_user_data:
     metadata['ota-wipe'] = 'yes'
+
+  if OPTIONS.retrofit_dynamic_partitions:
+    metadata['ota-retrofit-dynamic-partitions'] = 'yes'
 
   is_incremental = source_info is not None
   if is_incremental:
@@ -1367,6 +1446,11 @@ def FinalizeMetadata(metadata, input_file, output_file, needed_property_files):
     for property_files in needed_property_files:
       property_files.Verify(output_zip, metadata[property_files.name].strip())
 
+  # If requested, dump the metadata to a separate file.
+  output_metadata_path = OPTIONS.output_metadata_path
+  if output_metadata_path:
+    WriteMetadata(metadata, output_metadata_path)
+
 
 def WriteBlockIncrementalOTAPackage(target_zip, source_zip, output_file):
   target_info = BuildInfo(OPTIONS.target_info_dict, OPTIONS.oem_dicts)
@@ -1718,12 +1802,7 @@ def GetTargetFilesZipForSecondaryImages(input_file, skip_postinstall=False):
     infolist = input_zip.infolist()
     namelist = input_zip.namelist()
 
-  # Additionally unzip 'RADIO/*' if exists.
-  unzip_pattern = UNZIP_PATTERN[:]
-  if any([entry.startswith('RADIO/') for entry in namelist]):
-    unzip_pattern.append('RADIO/*')
-  input_tmp = common.UnzipTemp(input_file, unzip_pattern)
-
+  input_tmp = common.UnzipTemp(input_file, UNZIP_PATTERN)
   for info in infolist:
     unzipped_file = os.path.join(input_tmp, *info.filename.split('/'))
     if info.filename == 'IMAGES/system_other.img':
@@ -1772,7 +1851,8 @@ def GetTargetFilesZipWithoutPostinstallConfig(input_file):
 
 
 def GetTargetFilesZipForRetrofitDynamicPartitions(input_file,
-                                                  super_block_devices):
+                                                  super_block_devices,
+                                                  dynamic_partition_list):
   """Returns a target-files.zip for retrofitting dynamic partitions.
 
   This allows brillo_update_payload to generate an OTA based on the exact
@@ -1781,6 +1861,7 @@ def GetTargetFilesZipForRetrofitDynamicPartitions(input_file,
   Args:
     input_file: The input target-files.zip filename.
     super_block_devices: The list of super block devices
+    dynamic_partition_list: The list of dynamic partitions
 
   Returns:
     The filename of target-files.zip with *.img replaced with super_*.img for
@@ -1797,8 +1878,34 @@ def GetTargetFilesZipForRetrofitDynamicPartitions(input_file,
   with zipfile.ZipFile(input_file, 'r') as input_zip:
     namelist = input_zip.namelist()
 
+  input_tmp = common.UnzipTemp(input_file, RETROFIT_DAP_UNZIP_PATTERN)
+
+  # Remove partitions from META/ab_partitions.txt that is in
+  # dynamic_partition_list but not in super_block_devices so that
+  # brillo_update_payload won't generate update for those logical partitions.
+  ab_partitions_file = os.path.join(input_tmp, *AB_PARTITIONS.split('/'))
+  with open(ab_partitions_file) as f:
+    ab_partitions_lines = f.readlines()
+    ab_partitions = [line.strip() for line in ab_partitions_lines]
+  # Assert that all super_block_devices are in ab_partitions
+  super_device_not_updated = [partition for partition in super_block_devices
+                              if partition not in ab_partitions]
+  assert not super_device_not_updated, \
+      "{} is in super_block_devices but not in {}".format(
+          super_device_not_updated, AB_PARTITIONS)
+  # ab_partitions -= (dynamic_partition_list - super_block_devices)
+  new_ab_partitions = common.MakeTempFile(prefix="ab_partitions", suffix=".txt")
+  with open(new_ab_partitions, 'w') as f:
+    for partition in ab_partitions:
+      if (partition in dynamic_partition_list and
+          partition not in super_block_devices):
+          logger.info("Dropping %s from ab_partitions.txt", partition)
+          continue
+      f.write(partition + "\n")
+  to_delete = [AB_PARTITIONS]
+
   # Always skip postinstall for a retrofit update.
-  to_delete = [POSTINSTALL_CONFIG]
+  to_delete += [POSTINSTALL_CONFIG]
 
   # Delete dynamic_partitions_info.txt so that brillo_update_payload thinks this
   # is a regular update on devices without dynamic partitions support.
@@ -1810,7 +1917,6 @@ def GetTargetFilesZipForRetrofitDynamicPartitions(input_file,
 
   common.ZipDelete(target_file, to_delete)
 
-  input_tmp = common.UnzipTemp(input_file, SUPER_SPLIT_PATTERN)
   target_zip = zipfile.ZipFile(target_file, 'a', allowZip64=True)
 
   # Write super_{foo}.img as {foo}.img.
@@ -1819,6 +1925,9 @@ def GetTargetFilesZipForRetrofitDynamicPartitions(input_file,
           'Missing {} in {}; {} cannot be written'.format(src, input_file, dst)
     unzipped_file = os.path.join(input_tmp, *src.split('/'))
     common.ZipWrite(target_zip, unzipped_file, arcname=dst)
+
+  # Write new ab_partitions.txt file
+  common.ZipWrite(target_zip, new_ab_partitions, arcname=AB_PARTITIONS)
 
   common.ZipClose(target_zip)
 
@@ -1848,7 +1957,8 @@ def WriteABOTAPackageWithBrilloScript(target_file, output_file,
 
   if OPTIONS.retrofit_dynamic_partitions:
     target_file = GetTargetFilesZipForRetrofitDynamicPartitions(
-        target_file, target_info.get("super_block_devices").strip().split())
+        target_file, target_info.get("super_block_devices").strip().split(),
+        target_info.get("dynamic_partition_list").strip().split())
   elif OPTIONS.skip_postinstall:
     target_file = GetTargetFilesZipWithoutPostinstallConfig(target_file)
 
@@ -1983,6 +2093,10 @@ def main(argv):
       OPTIONS.skip_postinstall = True
     elif o == "--retrofit_dynamic_partitions":
       OPTIONS.retrofit_dynamic_partitions = True
+    elif o == "--skip_compatibility_check":
+      OPTIONS.skip_compatibility_check = True
+    elif o == "--output_metadata_path":
+      OPTIONS.output_metadata_path = a
     else:
       return False
     return True
@@ -2014,6 +2128,8 @@ def main(argv):
                                  "extracted_input_target_files=",
                                  "skip_postinstall",
                                  "retrofit_dynamic_partitions",
+                                 "skip_compatibility_check",
+                                 "output_metadata_path=",
                              ], extra_option_handler=option_handler)
 
   if len(args) != 2:

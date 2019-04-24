@@ -87,7 +87,7 @@ resource_export_stamp := $(intermediates.COMMON)/src/R.stamp
 $(resource_export_package): PRIVATE_STAMP := $(resource_export_stamp)
 $(resource_export_package): .KATI_IMPLICIT_OUTPUTS := $(resource_export_stamp)
 $(resource_export_package): $(LOCAL_SOONG_RESOURCE_EXPORT_PACKAGE)
-	@echo "Copy: $$@"
+	@echo "Copy: $@"
 	$(copy-file-to-target)
 	touch $(PRIVATE_STAMP)
 $(call add-dependency,$(LOCAL_BUILT_MODULE),$(resource_export_package))
@@ -159,13 +159,26 @@ my_common := COMMON
 include $(BUILD_SYSTEM)/link_type.mk
 endif # !LOCAL_IS_HOST_MODULE
 
-ifdef LOCAL_SOONG_RRO_DIRS
+ifdef LOCAL_SOONG_DEVICE_RRO_DIRS
   $(call append_enforce_rro_sources, \
       $(my_register_name), \
       false, \
       $(LOCAL_FULL_MANIFEST_FILE), \
       $(if $(LOCAL_EXPORT_PACKAGE_RESOURCES),true,false), \
-      $(LOCAL_SOONG_RRO_DIRS))
+      $(LOCAL_SOONG_DEVICE_RRO_DIRS), \
+      vendor \
+  )
+endif
+
+ifdef LOCAL_SOONG_PRODUCT_RRO_DIRS
+  $(call append_enforce_rro_sources, \
+      $(my_register_name), \
+      false, \
+      $(LOCAL_FULL_MANIFEST_FILE), \
+      $(if $(LOCAL_EXPORT_PACKAGE_RESOURCES),true,false), \
+      $(LOCAL_SOONG_PRODUCT_RRO_DIRS), \
+      product \
+  )
 endif
 
 SOONG_ALREADY_CONV := $(SOONG_ALREADY_CONV) $(LOCAL_MODULE)

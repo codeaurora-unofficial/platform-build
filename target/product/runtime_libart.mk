@@ -33,17 +33,14 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     ext \
 
-# Libcore ICU. TODO: Try to figure out if/why we need them explicitly.
+# Libcore ICU. TODO(b/124218500): Remove them explicitly when the bug is resolved.
 PRODUCT_PACKAGES += \
     libicui18n \
     libicuuc \
 
-# ART.
-PRODUCT_PACKAGES += art-runtime
-# ART/dex helpers.
-PRODUCT_PACKAGES += art-tools
 # Android Runtime APEX module.
 PRODUCT_PACKAGES += com.android.runtime
+PRODUCT_HOST_PACKAGES += com.android.runtime
 
 # Certificates.
 PRODUCT_PACKAGES += \

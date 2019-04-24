@@ -19,8 +19,6 @@ full_classes_jar := $(intermediates.COMMON)/classes.jar
 full_classes_pre_proguard_jar := $(intermediates.COMMON)/classes-pre-proguard.jar
 full_classes_header_jar := $(intermediates.COMMON)/classes-header.jar
 common_javalib.jar := $(intermediates.COMMON)/javalib.jar
-hiddenapi_flags_csv := $(intermediates.COMMON)/hiddenapi/flags.csv
-hiddenapi_metadata_csv := $(intermediates.COMMON)/hiddenapi/greylist.csv
 
 ifdef LOCAL_SOONG_AAR
   LOCAL_ADDITIONAL_CHECKED_MODULE += $(LOCAL_SOONG_AAR)
@@ -96,6 +94,8 @@ ifdef LOCAL_SOONG_DEX_JAR
         ALL_MODULES.$(my_register_name).INSTALLED += $(installed_odex)
         # Make sure to install the .odex and .vdex when you run "make <module_name>"
        $(my_all_targets): $(installed_odex)
+       # Copy $(LOCAL_BUILT_MODULE) and its dependencies when installing boot.art
+       $(DEFAULT_DEX_PREOPT_INSTALLED_IMAGE): $(LOCAL_BUILT_MODULE)
       endif
     endif # is_boot_jar
 
