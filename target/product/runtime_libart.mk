@@ -33,11 +33,6 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     ext \
 
-# Libcore ICU. TODO(b/124218500): Remove them explicitly when the bug is resolved.
-PRODUCT_PACKAGES += \
-    libicui18n \
-    libicuuc \
-
 # Android Runtime APEX module.
 PRODUCT_PACKAGES += com.android.runtime
 PRODUCT_HOST_PACKAGES += com.android.runtime
@@ -96,3 +91,5 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
 # Disable iorapd by default
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
     ro.iorapd.enable=false
+
+PRODUCT_USES_ART := true
