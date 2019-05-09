@@ -243,14 +243,6 @@ else
 ADDITIONAL_DEFAULT_PROPERTIES += ro.actionable_compatible_property.enabled=${PRODUCT_COMPATIBLE_PROPERTY}
 endif
 
-ifeq ($(PRODUCT_USE_DYNAMIC_PARTITIONS),true)
-ADDITIONAL_PRODUCT_PROPERTIES += ro.boot.dynamic_partitions=true
-endif
-
-ifeq ($(PRODUCT_RETROFIT_DYNAMIC_PARTITIONS),true)
-ADDITIONAL_PRODUCT_PROPERTIES += ro.boot.dynamic_partitions_retrofit=true
-endif
-
 # Add the system server compiler filter if they are specified for the product.
 ifneq (,$(PRODUCT_SYSTEM_SERVER_COMPILER_FILTER))
 ADDITIONAL_PRODUCT_PROPERTIES += dalvik.vm.systemservercompilerfilter=$(PRODUCT_SYSTEM_SERVER_COMPILER_FILTER)
@@ -1429,6 +1421,9 @@ endif
 .PHONY: ramdisk
 ramdisk: $(INSTALLED_RAMDISK_TARGET)
 
+.PHONY: ramdisk_debug
+ramdisk_debug: $(INSTALLED_DEBUG_RAMDISK_TARGET)
+
 .PHONY: systemtarball
 systemtarball: $(INSTALLED_SYSTEMTARBALL_TARGET)
 
@@ -1466,14 +1461,14 @@ odmimage: $(INSTALLED_ODMIMAGE_TARGET)
 .PHONY: systemotherimage
 systemotherimage: $(INSTALLED_SYSTEMOTHERIMAGE_TARGET)
 
-.PHONY: superimage
-superimage: $(INSTALLED_SUPERIMAGE_TARGET)
-
 .PHONY: superimage_empty
 superimage_empty: $(INSTALLED_SUPERIMAGE_EMPTY_TARGET)
 
 .PHONY: bootimage
 bootimage: $(INSTALLED_BOOTIMAGE_TARGET)
+
+.PHONY: bootimage_debug
+bootimage_debug: $(INSTALLED_DEBUG_BOOTIMAGE_TARGET)
 
 .PHONY: vbmetaimage
 vbmetaimage: $(INSTALLED_VBMETAIMAGE_TARGET)
@@ -1487,6 +1482,8 @@ droidcore: $(filter $(HOST_OUT_ROOT)/%,$(modules_to_install)) \
     $(INSTALLED_SYSTEMIMAGE_TARGET) \
     $(INSTALLED_RAMDISK_TARGET) \
     $(INSTALLED_BOOTIMAGE_TARGET) \
+    $(INSTALLED_DEBUG_RAMDISK_TARGET) \
+    $(INSTALLED_DEBUG_BOOTIMAGE_TARGET) \
     $(INSTALLED_RECOVERYIMAGE_TARGET) \
     $(INSTALLED_VBMETAIMAGE_TARGET) \
     $(INSTALLED_USERDATAIMAGE_TARGET) \
@@ -1511,6 +1508,8 @@ droidcore: $(filter $(HOST_OUT_ROOT)/%,$(modules_to_install)) \
     $(INSTALLED_FILES_JSON_SYSTEMOTHER) \
     $(INSTALLED_FILES_FILE_RAMDISK) \
     $(INSTALLED_FILES_JSON_RAMDISK) \
+    $(INSTALLED_FILES_FILE_DEBUG_RAMDISK) \
+    $(INSTALLED_FILES_JSON_DEBUG_RAMDISK) \
     $(INSTALLED_FILES_FILE_ROOT) \
     $(INSTALLED_FILES_JSON_ROOT) \
     $(INSTALLED_FILES_FILE_RECOVERY) \
@@ -1631,6 +1630,10 @@ else # TARGET_BUILD_APPS
     $(call dist-for-goals, droidcore, \
       $(INSTALLED_FILES_FILE_RAMDISK) \
       $(INSTALLED_FILES_JSON_RAMDISK) \
+      $(INSTALLED_FILES_FILE_DEBUG_RAMDISK) \
+      $(INSTALLED_FILES_JSON_DEBUG_RAMDISK) \
+      $(INSTALLED_DEBUG_RAMDISK_TARGET) \
+      $(INSTALLED_DEBUG_BOOTIMAGE_TARGET) \
     )
   endif
 

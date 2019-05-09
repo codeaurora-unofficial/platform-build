@@ -237,6 +237,12 @@ TARGET_COPY_OUT_RAMDISK := $(TARGET_COPY_OUT_ROOT)
 endif
 
 ###########################################
+# Now we can substitute with the real value of TARGET_COPY_OUT_DEBUG_RAMDISK
+ifeq ($(BOARD_USES_RECOVERY_AS_BOOT),true)
+TARGET_COPY_OUT_DEBUG_RAMDISK := debug_ramdisk/first_stage_ramdisk
+endif
+
+###########################################
 # Configure whether we're building the system image
 BUILDING_SYSTEM_IMAGE := true
 ifeq ($(PRODUCT_BUILD_SYSTEM_IMAGE),)
@@ -490,6 +496,14 @@ ifdef BOARD_VNDK_VERSION
   TARGET_VENDOR_TEST_SUFFIX := /vendor
 else
   TARGET_VENDOR_TEST_SUFFIX :=
+endif
+
+###########################################
+# APEXes are by default flattened, i.e. non-updatable.
+# It can be unflattened (and updatable) by inheriting from
+# updatable_apex.mk
+ifeq (,$(TARGET_FLATTEN_APEX))
+TARGET_FLATTEN_APEX := true
 endif
 
 ifeq (,$(TARGET_BUILD_APPS))
