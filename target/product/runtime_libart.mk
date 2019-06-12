@@ -54,7 +54,7 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
     dalvik.vm.dexopt.secondary=true \
     dalvik.vm.appimageformat=lz4
 
-PRODUCT_PROPERTY_OVERRIDES += \
+PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
     ro.dalvik.vm.native.bridge=0
 
 # Different dexopt types for different package update/install times.
@@ -82,6 +82,10 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
 # Enable resolution of startup const strings.
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
     dalvik.vm.dex2oat-resolve-startup-strings=true
+
+# Specify default block size of 512K to enable parallel image decompression.
+PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
+    dalvik.vm.dex2oat-max-image-block-size=524288
 
 # Enable minidebuginfo generation unless overridden.
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \

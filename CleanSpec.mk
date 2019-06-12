@@ -626,6 +626,19 @@ $(call add-clean-step, find $(PRODUCT_OUT) -type f -name "generated_*_image_info
 $(call add-clean-step, rm -rf $(PRODUCT_OUT)/system/lib*/libicu*)
 
 $(call add-clean-step, rm -rf $(PRODUCT_OUT)/target/common/obj/framework.aidl)
+
+# Clean up adb_debug.propr
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/system/etc/adb_debug.prop)
+
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/system/lib*/libjavacrypto.so)
+
+# Clean up old location of soft OMX plugins
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/system/lib*/libstagefright_soft*)
+
+# Move odm build.prop to /odm/etc/.
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/odm/build.prop)
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/vendor/odm/build.prop)
+
 # ************************************************
 # NEWER CLEAN STEPS MUST BE AT THE END OF THE LIST
 # ************************************************
