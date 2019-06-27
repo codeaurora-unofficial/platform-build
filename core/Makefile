@@ -1611,6 +1611,7 @@ define build-systemimage-target
 	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_machine_talos.ko $(PRODUCT_OUT)/earlyrootfs/vendor/lib/modules ;\
 	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_apr.ko $(PRODUCT_OUT)/earlyrootfs/vendor/lib/modules ;\
 	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_q6_notifier.ko $(PRODUCT_OUT)/earlyrootfs/vendor/lib/modules ;\
+	cp -r $(PRODUCT_OUT)/vendor/bin/audio_chime $(PRODUCT_OUT)/earlyrootfs/usr/sbin/ ;\
 	cp -r $(PRODUCT_OUT)/system/bin/* $(PRODUCT_OUT)/earlyrootfs/system/bin ;\
 	$(MKEXTUSERIMG) $(PRODUCT_OUT)/earlyrootfs $(PRODUCT_OUT)/earlyrootfs.img ext4 earlyrootfs $(BOARD_EARLY_IMAGE_PARTITION_SIZE) ;\
   fi;
