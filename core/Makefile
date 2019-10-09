@@ -612,6 +612,10 @@ systemimage:
 
 # -----------------------------------------------------------------
 
+.PHONY: earlyrootfsimage
+earlyrootfsimage:
+
+# -----------------------------------------------------------------
 .PHONY: event-log-tags
 
 # Produce an event logs tag file for everything we know about, in order
@@ -1092,7 +1096,9 @@ define generate-userimage-prop-dictionary
 $(hide) echo "ext_mkuserimg=$(notdir $(MKEXTUSERIMG))" >> $(1)
 $(if $(INTERNAL_USERIMAGES_EXT_VARIANT),$(hide) echo "fs_type=$(INTERNAL_USERIMAGES_EXT_VARIANT)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_PARTITION_SIZE),$(hide) echo "system_size=$(BOARD_SYSTEMIMAGE_PARTITION_SIZE)" >> $(1))
+$(if $(BOARD_EARLY_IMAGE_PARTITION_SIZE),$(hide) echo "earlyrootfs_size=$(BOARD_EARLY_IMAGE_PARTITION_SIZE)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "system_fs_type=$(BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
+$(if $(BOARD_EARLYROOTFSIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "earlyrootfs_fs_type=$(BOARD_EARLYROOTFSIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_EXTFS_INODE_COUNT),$(hide) echo "system_extfs_inode_count=$(BOARD_SYSTEMIMAGE_EXTFS_INODE_COUNT)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_EXTFS_RSV_PCT),$(hide) echo "system_extfs_rsv_pct=$(BOARD_SYSTEMIMAGE_EXTFS_RSV_PCT)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_JOURNAL_SIZE),$(hide) echo "system_journal_size=$(BOARD_SYSTEMIMAGE_JOURNAL_SIZE)" >> $(1))
@@ -1521,6 +1527,9 @@ $(call dist-for-goals, sdk win_sdk sdk_addon, $(INSTALLED_FILES_FILE))
 systemimage_intermediates := \
     $(call intermediates-dir-for,PACKAGING,systemimage)
 BUILT_SYSTEMIMAGE := $(systemimage_intermediates)/system.img
+earlyrootfsimage_intermediates := $(call intermediates-dir-for,PACKAGING,earlyrootfsimage)
+BUILT_EARLYROOTFSIMAGE := $(PRODUCT_OUT)/earlyrootfs.img
+EARLYROOTFS_PARTITION := earlyrootfs
 
 # Create symlink /system/vendor to /vendor if necessary.
 ifdef BOARD_USES_VENDORIMAGE
@@ -1573,6 +1582,8 @@ define build-systemimage-target
            fi; \
            mkdir -p $(DIST_DIR); cp $(INSTALLED_FILES_FILE) $(DIST_DIR)/installed-files-rescued.txt; \
            exit 1 )
+  mkdir -p $(dir $(1)) $(earlyrootfsimage_intermediates) && rm -rf $(earlyrootfsimage_intermediates)/earlyrootfs_image_info.txt
+  $(call generate-userimage-prop-dictionary, $(earlyrootfsimage_intermediates)/earlyrootfs_image_info.txt, skip_fsck=true)
   if [ "$(BOARD_SUPPORTS_EARLY_INIT)" == "true" ]; then \
 	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.audio.common@4.0.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.audio.effect@4.0.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
@@ -1613,8 +1624,9 @@ define build-systemimage-target
 	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_q6_notifier.ko $(PRODUCT_OUT)/earlyrootfs/vendor/lib/modules ;\
 	cp -r $(PRODUCT_OUT)/vendor/bin/audio_chime $(PRODUCT_OUT)/earlyrootfs/usr/sbin/ ;\
 	cp -r $(PRODUCT_OUT)/system/bin/* $(PRODUCT_OUT)/earlyrootfs/system/bin ;\
-	$(MKEXTUSERIMG) $(PRODUCT_OUT)/earlyrootfs $(PRODUCT_OUT)/earlyrootfs.img ext4 earlyrootfs $(BOARD_EARLY_IMAGE_PARTITION_SIZE) ;\
+        cp -r $(PRODUCT_OUT)/system/etc/selinux/* $(PRODUCT_OUT)/earlyrootfs/system/etc/selinux/ ;\
   fi;
+  build/make/tools/releasetools/build_image.py $(PRODUCT_OUT)/earlyrootfs $(earlyrootfsimage_intermediates)/earlyrootfs_image_info.txt $(BUILT_EARLYROOTFSIMAGE) $(PRODUCT_OUT)
 endef
 
 $(BUILT_SYSTEMIMAGE): $(FULL_SYSTEMIMAGE_DEPS) $(INSTALLED_FILES_FILE) $(BUILD_IMAGE_SRCS)
@@ -1657,6 +1669,8 @@ $(INSTALLED_SYSTEMIMAGE): $(BUILT_SYSTEMIMAGE) $(RECOVERY_FROM_BOOT_PATCH)
 	$(hide) $(call assert-max-image-size,$@ $(RECOVERY_FROM_BOOT_PATCH),$(BOARD_SYSTEMIMAGE_PARTITION_SIZE))
 
 systemimage: $(INSTALLED_SYSTEMIMAGE)
+
+earlyrootfsimage: $(INSTALLED_SYSTEMIMAGE)
 
 .PHONY: systemimage-nodeps snod
 systemimage-nodeps snod: $(filter-out systemimage-nodeps snod,$(MAKECMDGOALS)) \
@@ -2054,6 +2068,7 @@ define build-vendorimage-target
 	ln -sf /early_services/vendor/firmware_mnt/verinfo $(TARGET_OUT_FIRMWARE)/verinfo; \
 	cp -r $(PRODUCT_OUT)/vendor/lib64/libadsp_default_listener.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/vendor/lib64/libadsprpc.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
+        cp -r $(PRODUCT_OUT)/vendor/etc/selinux/* $(PRODUCT_OUT)/earlyrootfs/vendor/etc/selinux/ ;\
   fi;
   @mkdir -p $(vendorimage_intermediates) && rm -rf $(vendorimage_intermediates)/vendor_image_info.txt
   $(call generate-userimage-prop-dictionary, $(vendorimage_intermediates)/vendor_image_info.txt, skip_fsck=true)

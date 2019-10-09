@@ -826,6 +826,9 @@ def ImagePropFromGlobalDict(glob_dict, mount_point):
     copy_prop("oem_extfs_inode_count", "extfs_inode_count")
     if not copy_prop("oem_extfs_rsv_pct", "extfs_rsv_pct"):
       d["extfs_rsv_pct"] = "0"
+  elif mount_point == "earlyrootfs":
+    copy_prop("earlyrootfs_fs_type", "fs_type")
+    copy_prop("earlyrootfs_size", "partition_size")
   d["partition_name"] = mount_point
   return d
 
@@ -876,6 +879,8 @@ def main(argv):
       mount_point = "oem"
     elif image_filename == "product.img":
       mount_point = "product"
+    elif image_filename == "earlyrootfs.img":
+      mount_point = "earlyrootfs"
     else:
       print("error: unknown image file name ", image_filename, file=sys.stderr)
       sys.exit(1)
