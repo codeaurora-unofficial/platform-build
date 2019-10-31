@@ -612,8 +612,8 @@ systemimage:
 
 # -----------------------------------------------------------------
 
-.PHONY: earlyrootfsimage
-earlyrootfsimage:
+.PHONY: early_servicesimage
+early_servicesimage:
 
 # -----------------------------------------------------------------
 .PHONY: event-log-tags
@@ -1096,17 +1096,24 @@ define generate-userimage-prop-dictionary
 $(hide) echo "ext_mkuserimg=$(notdir $(MKEXTUSERIMG))" >> $(1)
 $(if $(INTERNAL_USERIMAGES_EXT_VARIANT),$(hide) echo "fs_type=$(INTERNAL_USERIMAGES_EXT_VARIANT)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_PARTITION_SIZE),$(hide) echo "system_size=$(BOARD_SYSTEMIMAGE_PARTITION_SIZE)" >> $(1))
-$(if $(BOARD_EARLY_IMAGE_PARTITION_SIZE),$(hide) echo "earlyrootfs_size=$(BOARD_EARLY_IMAGE_PARTITION_SIZE)" >> $(1))
+$(if $(BOARD_EARLY_IMAGE_PARTITION_SIZE),$(hide) echo "early_services_size=$(BOARD_EARLY_IMAGE_PARTITION_SIZE)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "system_fs_type=$(BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
-$(if $(BOARD_EARLYROOTFSIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "earlyrootfs_fs_type=$(BOARD_EARLYROOTFSIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
+$(if $(BOARD_EARLY_SERVICESIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "early_services_fs_type=$(BOARD_EARLY_SERVICESIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_EXTFS_INODE_COUNT),$(hide) echo "system_extfs_inode_count=$(BOARD_SYSTEMIMAGE_EXTFS_INODE_COUNT)" >> $(1))
+$(if $(BOARD_EARLY_SERVICESIMAGE_EXTFS_INODE_COUNT),$(hide) echo "early_services_extfs_inode_count=$(BOARD_EARLY_SERVICESIMAGE_EXTFS_INODE_COUNT)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_EXTFS_RSV_PCT),$(hide) echo "system_extfs_rsv_pct=$(BOARD_SYSTEMIMAGE_EXTFS_RSV_PCT)" >> $(1))
+$(if $(BOARD_EARLY_SERVICESMIMAGE_EXTFS_RSV_PCT),$(hide) echo "early_services_extfs_rsv_pct=$(BOARD_EARLY_SERVICESIMAGE_EXTFS_RSV_PCT)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_JOURNAL_SIZE),$(hide) echo "system_journal_size=$(BOARD_SYSTEMIMAGE_JOURNAL_SIZE)" >> $(1))
+$(if $(BOARD_EARLY_SERVICESIMAGE_JOURNAL_SIZE),$(hide) echo "early_services_journal_size=$(BOARD_EARLY_SERVICESIMAGE_JOURNAL_SIZE)" >> $(1))
 $(if $(BOARD_EXT4_SHARE_DUP_BLOCKS),$(hide) echo "ext4_share_dup_blocks=$(BOARD_EXT4_SHARE_DUP_BLOCKS)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_SQUASHFS_COMPRESSOR),$(hide) echo "system_squashfs_compressor=$(BOARD_SYSTEMIMAGE_SQUASHFS_COMPRESSOR)" >> $(1))
+$(if $(BOARD_EARLY_SERVICESIMAGE_SQUASHFS_COMPRESSOR),$(hide) echo "early_services_squashfs_compressor=$(BOARD_EARLY_SERVICESIMAGE_SQUASHFS_COMPRESSOR)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_SQUASHFS_COMPRESSOR_OPT),$(hide) echo "system_squashfs_compressor_opt=$(BOARD_SYSTEMIMAGE_SQUASHFS_COMPRESSOR_OPT)" >> $(1))
+$(if $(BOARD_EARLY_SERVICESIMAGE_SQUASHFS_COMPRESSOR_OPT),$(hide) echo "early_services_squashfs_compressor_opt=$(BOARD_EARLY_SERVICESIMAGE_SQUASHFS_COMPRESSOR_OPT)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_SQUASHFS_BLOCK_SIZE),$(hide) echo "system_squashfs_block_size=$(BOARD_SYSTEMIMAGE_SQUASHFS_BLOCK_SIZE)" >> $(1))
+$(if $(BOARD_EARLY_SERVICESIMAGE_SQUASHFS_BLOCK_SIZE),$(hide) echo "early_services_squashfs_block_size=$(BOARD_EARLY_SERVICESIMAGE_SQUASHFS_BLOCK_SIZE)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_SQUASHFS_DISABLE_4K_ALIGN),$(hide) echo "system_squashfs_disable_4k_align=$(BOARD_SYSTEMIMAGE_SQUASHFS_DISABLE_4K_ALIGN)" >> $(1))
+$(if $(BOARD_EARLY_SERVICESIMAGE_SQUASHFS_DISABLE_4K_ALIGN),$(hide) echo "early_services_squashfs_disable_4k_align=$(BOARD_EARLY_SERVICESIMAGE_SQUASHFS_DISABLE_4K_ALIGN)" >> $(1))
 $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SYSTEM_BASE_FS_PATH),$(hide) echo "system_base_fs_file=$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SYSTEM_BASE_FS_PATH)" >> $(1))
 $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SYSTEM_HEADROOM),$(hide) echo "system_headroom=$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SYSTEM_HEADROOM)" >> $(1))
 $(if $(BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "userdata_fs_type=$(BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
@@ -1151,6 +1158,7 @@ $(if $(filter eng, $(TARGET_BUILD_VARIANT)),$(hide) echo "verity_disable=true" >
 $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SYSTEM_VERITY_PARTITION),$(hide) echo "system_verity_block_device=$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SYSTEM_VERITY_PARTITION)" >> $(1))
 $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VENDOR_VERITY_PARTITION),$(hide) echo "vendor_verity_block_device=$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VENDOR_VERITY_PARTITION)" >> $(1))
 $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_PRODUCT_VERITY_PARTITION),$(hide) echo "product_verity_block_device=$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_PRODUCT_VERITY_PARTITION)" >> $(1))
+$(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_EARLY_SERVICES_VERITY_PARTITION),$(hide) echo "early_services_verity_block_device=$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_EARLY_SERVICES_VERITY_PARTITION)" >> $(1))
 $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VBOOT),$(hide) echo "vboot=$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VBOOT)" >> $(1))
 $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VBOOT),$(hide) echo "vboot_key=$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VBOOT_SIGNING_KEY)" >> $(1))
 $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VBOOT),$(hide) echo "vboot_subkey=$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VBOOT_SIGNING_SUBKEY)" >> $(1))
@@ -1178,6 +1186,13 @@ $(if $(BOARD_AVB_ENABLE),\
         $(hide) echo "avb_product_key_path=$(BOARD_AVB_PRODUCT_KEY_PATH)" >> $(1)
         $(hide) echo "avb_product_algorithm=$(BOARD_AVB_PRODUCT_ALGORITHM)" >> $(1)
         $(hide) echo "avb_product_rollback_index_location=$(BOARD_AVB_PRODUCT_ROLLBACK_INDEX_LOCATION)" >> $(1)))
+$(if $(BOARD_AVB_ENABLE),$(hide) echo "avb_early_services_hashtree_enable=$(BOARD_AVB_ENABLE)" >> $(1))
+$(if $(BOARD_AVB_ENABLE),$(hide) echo "avb_early_services_add_hashtree_footer_args=$(BOARD_AVB_EARLY_SERVICES_ADD_HASHTREE_FOOTER_ARGS)" >> $(1))
+$(if $(BOARD_AVB_ENABLE),\
+    $(if $(BOARD_AVB_EARLY_SERVICES_KEY_PATH),\
+        $(hide) echo "avb_vendor_key_path=$(BOARD_AVB_EARLY_SERVICES_KEY_PATH)" >> $(1)
+        $(hide) echo "avb_vendor_algorithm=$(BOARD_AVB_EARLY_SERVICES_ALGORITHM)" >> $(1)
+        $(hide) echo "avb_vendor_rollback_index_location=$(BOARD_AVB_EARLY_SERVICES_ROLLBACK_INDEX_LOCATION)" >> $(1)))
 $(if $(filter true,$(BOARD_USES_RECOVERY_AS_BOOT)),\
     $(hide) echo "recovery_as_boot=true" >> $(1))
 $(if $(filter true,$(BOARD_BUILD_SYSTEM_ROOT_IMAGE)),\
@@ -1527,9 +1542,9 @@ $(call dist-for-goals, sdk win_sdk sdk_addon, $(INSTALLED_FILES_FILE))
 systemimage_intermediates := \
     $(call intermediates-dir-for,PACKAGING,systemimage)
 BUILT_SYSTEMIMAGE := $(systemimage_intermediates)/system.img
-earlyrootfsimage_intermediates := $(call intermediates-dir-for,PACKAGING,earlyrootfsimage)
-BUILT_EARLYROOTFSIMAGE := $(PRODUCT_OUT)/earlyrootfs.img
-EARLYROOTFS_PARTITION := earlyrootfs
+early_servicesimage_intermediates := $(call intermediates-dir-for,PACKAGING,early_servicesimage)
+BUILT_EARLY_SERVICESIMAGE:= $(PRODUCT_OUT)/early_services.img
+EARLY_SERVICES_PARTITION := early_services
 
 # Create symlink /system/vendor to /vendor if necessary.
 ifdef BOARD_USES_VENDORIMAGE
@@ -1582,52 +1597,51 @@ define build-systemimage-target
            fi; \
            mkdir -p $(DIST_DIR); cp $(INSTALLED_FILES_FILE) $(DIST_DIR)/installed-files-rescued.txt; \
            exit 1 )
-  mkdir -p $(dir $(1)) $(earlyrootfsimage_intermediates) && rm -rf $(earlyrootfsimage_intermediates)/earlyrootfs_image_info.txt
-  $(call generate-userimage-prop-dictionary, $(earlyrootfsimage_intermediates)/earlyrootfs_image_info.txt, skip_fsck=true)
+  mkdir -p $(dir $(1)) $(early_servicesimage_intermediates) && rm -rf $(early_servicesimage_intermediates)/early_services_image_info.txt
+  $(call generate-userimage-prop-dictionary, $(early_servicesimage_intermediates)/early_services_image_info.txt, skip_fsck=true)
   if [ "$(BOARD_SUPPORTS_EARLY_INIT)" == "true" ]; then \
-	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.audio.common@4.0.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.audio.effect@4.0.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.audio@4.0.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libbacktrace.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libbase.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libbinder.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libdexfile.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libhidlbase.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libhidltransport.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libhwbinder.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/liblzma.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libtinyalsa.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libunwind.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libunwindstack.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libutilscallstack.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libc.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libc++.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libcrypto.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libcutils.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libutils.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libdl.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/liblog.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libm.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libpackagelistparser.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libpcre2.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libselinux.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libz.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libvndksupport.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_adsp_loader.ko $(PRODUCT_OUT)/earlyrootfs/vendor/lib/modules ;\
-	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_q6.ko $(PRODUCT_OUT)/earlyrootfs/vendor/lib/modules ;\
-	cp -r $(PRODUCT_OUT)/vendor/lib/modules/modules.dep $(PRODUCT_OUT)/earlyrootfs/vendor/lib/modules ;\
-	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_native.ko $(PRODUCT_OUT)/earlyrootfs/vendor/lib/modules ;\
-	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_platform.ko $(PRODUCT_OUT)/earlyrootfs/vendor/lib/modules ;\
-	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_stub.ko $(PRODUCT_OUT)/earlyrootfs/vendor/lib/modules ;\
-	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_machine_talos.ko $(PRODUCT_OUT)/earlyrootfs/vendor/lib/modules ;\
-	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_apr.ko $(PRODUCT_OUT)/earlyrootfs/vendor/lib/modules ;\
-	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_q6_notifier.ko $(PRODUCT_OUT)/earlyrootfs/vendor/lib/modules ;\
-	cp -r $(PRODUCT_OUT)/vendor/bin/audio_chime $(PRODUCT_OUT)/earlyrootfs/usr/sbin/ ;\
-	cp -r $(PRODUCT_OUT)/system/bin/* $(PRODUCT_OUT)/earlyrootfs/system/bin ;\
-        cp -r $(PRODUCT_OUT)/system/etc/selinux/* $(PRODUCT_OUT)/earlyrootfs/system/etc/selinux/ ;\
-	cp -r $(PRODUCT_OUT)/vendor/lib64/libdrm.so $(PRODUCT_OUT)/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.audio.common@4.0.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.audio.effect@4.0.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.audio@4.0.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libbacktrace.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libbase.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libbinder.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libdexfile.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libhidlbase.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libhidltransport.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libhwbinder.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/liblzma.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libtinyalsa.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libunwind.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libunwindstack.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libutilscallstack.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libc.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libc++.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libcrypto.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libcutils.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libutils.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libdl.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/liblog.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libm.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libpackagelistparser.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libpcre2.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libselinux.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libz.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libvndksupport.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_adsp_loader.ko $(PRODUCT_OUT)/early_services/vendor/lib/modules ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_q6.ko $(PRODUCT_OUT)/early_services/vendor/lib/modules ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib/modules/modules.dep $(PRODUCT_OUT)/early_services/vendor/lib/modules ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_native.ko $(PRODUCT_OUT)/early_services/vendor/lib/modules ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_platform.ko $(PRODUCT_OUT)/early_services/vendor/lib/modules ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_stub.ko $(PRODUCT_OUT)/early_services/vendor/lib/modules ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_machine_talos.ko $(PRODUCT_OUT)/early_services/vendor/lib/modules ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_apr.ko $(PRODUCT_OUT)/early_services/vendor/lib/modules ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib/modules/audio_q6_notifier.ko $(PRODUCT_OUT)/early_services/vendor/lib/modules ;\
+	cp -r $(PRODUCT_OUT)/vendor/bin/audio_chime $(PRODUCT_OUT)/early_services/usr/sbin/ ;\
+	cp -r $(PRODUCT_OUT)/system/bin/* $(PRODUCT_OUT)/early_services/system/bin ;\
+        cp -r $(PRODUCT_OUT)/system/etc/selinux/* $(PRODUCT_OUT)/early_services/system/etc/selinux/ ;\
   fi;
-  build/make/tools/releasetools/build_image.py $(PRODUCT_OUT)/earlyrootfs $(earlyrootfsimage_intermediates)/earlyrootfs_image_info.txt $(BUILT_EARLYROOTFSIMAGE) $(PRODUCT_OUT)
+  build/make/tools/releasetools/build_image.py $(PRODUCT_OUT)/early_services $(early_servicesimage_intermediates)/early_services_image_info.txt $(BUILT_EARLY_SERVICESIMAGE) $(PRODUCT_OUT)
 endef
 
 $(BUILT_SYSTEMIMAGE): $(FULL_SYSTEMIMAGE_DEPS) $(INSTALLED_FILES_FILE) $(BUILD_IMAGE_SRCS)
@@ -1671,7 +1685,7 @@ $(INSTALLED_SYSTEMIMAGE): $(BUILT_SYSTEMIMAGE) $(RECOVERY_FROM_BOOT_PATCH)
 
 systemimage: $(INSTALLED_SYSTEMIMAGE)
 
-earlyrootfsimage: $(INSTALLED_SYSTEMIMAGE)
+early_servicesimage: $(INSTALLED_SYSTEMIMAGE)
 
 .PHONY: systemimage-nodeps snod
 systemimage-nodeps snod: $(filter-out systemimage-nodeps snod,$(MAKECMDGOALS)) \
@@ -2067,9 +2081,9 @@ define build-vendorimage-target
   if [ "$(BOARD_SUPPORTS_EARLY_INIT)" == "true" ]; then \
 	ln -sf /early_services/vendor/firmware_mnt/image $(TARGET_OUT_FIRMWARE)/image; \
 	ln -sf /early_services/vendor/firmware_mnt/verinfo $(TARGET_OUT_FIRMWARE)/verinfo; \
-	cp -r $(PRODUCT_OUT)/vendor/lib64/libadsp_default_listener.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/vendor/lib64/libadsprpc.so $(PRODUCT_OUT)/earlyrootfs/system/lib64 ;\
-        cp -r $(PRODUCT_OUT)/vendor/etc/selinux/* $(PRODUCT_OUT)/earlyrootfs/vendor/etc/selinux/ ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib64/libadsp_default_listener.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib64/libadsprpc.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+        cp -r $(PRODUCT_OUT)/vendor/etc/selinux/* $(PRODUCT_OUT)/early_services/vendor/etc/selinux/ ;\
   fi;
   @mkdir -p $(vendorimage_intermediates) && rm -rf $(vendorimage_intermediates)/vendor_image_info.txt
   $(call generate-userimage-prop-dictionary, $(vendorimage_intermediates)/vendor_image_info.txt, skip_fsck=true)
@@ -2191,6 +2205,7 @@ SYSTEM_FOOTER_ARGS := BOARD_AVB_SYSTEM_ADD_HASHTREE_FOOTER_ARGS
 VENDOR_FOOTER_ARGS := BOARD_AVB_VENDOR_ADD_HASHTREE_FOOTER_ARGS
 RECOVERY_FOOTER_ARGS := BOARD_AVB_RECOVERY_ADD_HASH_FOOTER_ARGS
 PRODUCT_FOOTER_ARGS := BOARD_AVB_PRODUCT_ADD_HASHTREE_FOOTER_ARGS
+EARLY_SERVICES_FOOTER_ARGS:=BOARD_AVB_EARLY_SERVICES_ADD_HASHTREE_FOOTER_ARGS
 
 # Check and set required build variables for a chain partition.
 # $(1): the partition to enable AVB chain, e.g., BOOT or SYSTEM.
@@ -2232,6 +2247,13 @@ $(eval $(call check-and-set-avb-chain-args,SYSTEM))
 else
 INTERNAL_AVB_MAKE_VBMETA_IMAGE_ARGS += \
     --include_descriptors_from_image $(INSTALLED_SYSTEMIMAGE)
+endif
+
+ifdef BOARD_AVB_EARLY_SERVICES_KEY_PATH
+$(eval $(call check-and-set-avb-chain-args,EARLY_SERVICES))
+else
+INTERNAL_AVB_MAKE_VBMETA_IMAGE_ARGS += \
+    --include_descriptors_from_image $(BUILT_EARLY_SERVICESIMAGE)
 endif
 
 ifdef INSTALLED_VENDORIMAGE_TARGET
@@ -2281,6 +2303,9 @@ BOARD_AVB_MAKE_VBMETA_IMAGE_ARGS += --padding_size 4096
 ifeq ($(BOARD_BUILD_SYSTEM_ROOT_IMAGE),true)
 BOARD_AVB_SYSTEM_ADD_HASHTREE_FOOTER_ARGS += --setup_as_rootfs_from_kernel
 endif
+ifeq ($(BOARD_SUPPORTS_EARLY_INIT),true)
+BOARD_AVB_EARLY_SERVICES_ADD_HASHTREE_FOOTER_ARGS += --setup_as_rootfs_from_kernel
+endif
 
 ifdef BOARD_AVB_ROLLBACK_INDEX
 BOARD_AVB_MAKE_VBMETA_IMAGE_ARGS += --rollback_index $(BOARD_AVB_ROLLBACK_INDEX)
@@ -2314,6 +2339,9 @@ define extract-avb-chain-public-keys
   $(if $(BOARD_AVB_RECOVERY_KEY_PATH),\
     $(hide) $(AVBTOOL) extract_public_key --key $(BOARD_AVB_RECOVERY_KEY_PATH) \
       --output $(1)/recovery.avbpubkey)
+  $(if $(BOARD_AVB_EARLY_SERVICES_KEY_PATH),\
+    $(hide) $(AVBTOOL) extract_public_key --key $(BOARD_AVB_EARLY_SERVICES_KEY_PATH) \
+      --output $(1)/early_services.avbpubkey)
 endef
 
 define build-vbmetaimage-target

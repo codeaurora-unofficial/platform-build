@@ -826,9 +826,26 @@ def ImagePropFromGlobalDict(glob_dict, mount_point):
     copy_prop("oem_extfs_inode_count", "extfs_inode_count")
     if not copy_prop("oem_extfs_rsv_pct", "extfs_rsv_pct"):
       d["extfs_rsv_pct"] = "0"
-  elif mount_point == "earlyrootfs":
-    copy_prop("earlyrootfs_fs_type", "fs_type")
-    copy_prop("earlyrootfs_size", "partition_size")
+  elif mount_point == "early_services":
+    copy_prop("avb_early_services_hashtree_enable", "avb_hashtree_enable")
+    copy_prop("avb_early_services_add_hashtree_footer_args",
+              "avb_add_hashtree_footer_args")
+    copy_prop("avb_early_services_key_path", "avb_key_path")
+    copy_prop("avb_early_services_algorithm", "avb_algorithm")
+    copy_prop("early_services_verity_block_device", "verity_block_device")
+    copy_prop("early_services_fs_type", "fs_type")
+    copy_prop("early_services_size", "partition_size")
+    if not copy_prop("early_services_journal_size", "journal_size"):
+      d["journal_size"] = "0"
+    copy_prop("early_services_verity_block_device", "verity_block_device")
+    copy_prop("ext4_share_dup_blocks", "ext4_share_dup_blocks")
+    copy_prop("early_services_squashfs_compressor", "squashfs_compressor")
+    copy_prop("early_services_squashfs_compressor_opt", "squashfs_compressor_opt")
+    copy_prop("early_services_squashfs_block_size", "squashfs_block_size")
+    copy_prop("early_services_squashfs_disable_4k_align", "squashfs_disable_4k_align")
+    copy_prop("early_services_extfs_inode_count", "extfs_inode_count")
+    if not copy_prop("early_services_extfs_rsv_pct", "extfs_rsv_pct"):
+      d["extfs_rsv_pct"] = "0"
   d["partition_name"] = mount_point
   return d
 
@@ -879,8 +896,8 @@ def main(argv):
       mount_point = "oem"
     elif image_filename == "product.img":
       mount_point = "product"
-    elif image_filename == "earlyrootfs.img":
-      mount_point = "earlyrootfs"
+    elif image_filename == "early_services.img":
+      mount_point = "early_services"
     else:
       print("error: unknown image file name ", image_filename, file=sys.stderr)
       sys.exit(1)
