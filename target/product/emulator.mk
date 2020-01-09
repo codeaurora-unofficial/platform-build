@@ -20,7 +20,6 @@
 
 # Device modules
 PRODUCT_PACKAGES += \
-    vintf \
     CarrierConfig \
 
 # need this for gles libraries to load properly
@@ -50,10 +49,6 @@ $(call inherit-product-if-exists, device/generic/goldfish/vendor.mk)
 #once it is fixed in aosp, remove this block of comment.
 #PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
 #config.disable_location=true
-
-# Enable Perfetto traced
-PRODUCT_SYSTEM_EXT_PROPERTIES += \
-    persist.traced.enable=1
 
 # enable Google-specific location features,
 # like NetworkLocationProvider and LocationCollector

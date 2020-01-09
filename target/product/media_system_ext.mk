@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2017 The Android Open-Source Project
+# Copyright (C) 2019 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@
 # limitations under the License.
 #
 
-include build/make/target/board/BoardConfigGsiCommon.mk
+# This makefile contains the system_ext partition contents for
+# media-capable devices (non-wearables). Only add something here
+# if it definitely doesn't belong on wearables. Otherwise, choose
+# base_system_ext.mk.
+$(call inherit-product, $(SRC_TARGET_DIR)/product/base_system_ext.mk)
 
-TARGET_CPU_ABI := x86
-TARGET_ARCH := x86
-TARGET_ARCH_VARIANT := x86
-
-# Legacy GSI keeps 32 bits binder for 32 bits CPU Arch
-TARGET_USES_64_BIT_BINDER := false
+# /system_ext packages
+PRODUCT_PACKAGES += \
+    vndk_apex_snapshot_package \

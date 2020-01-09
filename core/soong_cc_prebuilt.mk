@@ -31,20 +31,6 @@ else
   $(call pretty-error,Unsupported LOCAL_MODULE_$(my_prefix)ARCH=$(LOCAL_MODULE_$(my_prefix)ARCH))
 endif
 
-skip_module :=
-ifeq ($(TARGET_TRANSLATE_2ND_ARCH),true)
-  ifndef LOCAL_IS_HOST_MODULE
-    ifdef LOCAL_2ND_ARCH_VAR_PREFIX
-      # Only support shared and static libraries and tests for translated arch
-      ifeq ($(filter SHARED_LIBRARIES STATIC_LIBRARIES HEADER_LIBRARIES NATIVE_TESTS,$(LOCAL_MODULE_CLASS)),)
-        skip_module := true
-      endif
-    endif
-  endif
-endif
-
-ifndef skip_module
-
 # Don't install static libraries by default.
 ifndef LOCAL_UNINSTALLABLE_MODULE
   ifeq (STATIC_LIBRARIES,$(LOCAL_MODULE_CLASS))
@@ -134,11 +120,12 @@ ifeq ($(LOCAL_VNDK_DEPEND_ON_CORE_VARIANT),true)
 endif
 
 ifeq ($(LOCAL_VNDK_DEPEND_ON_CORE_VARIANT),true)
+$(LOCAL_BUILT_MODULE): PRIVATE_TOOLS_PREFIX := $($(LOCAL_2ND_ARCH_VAR_PREFIX)$(my_prefix)TOOLS_PREFIX)
 $(LOCAL_BUILT_MODULE): $(LOCAL_PREBUILT_MODULE_FILE) $(LIBRARY_IDENTITY_CHECK_SCRIPT)
 	$(call verify-vndk-libs-identical,\
 		$(PRIVATE_CORE_VARIANT),\
 		$<,\
-		$($(LOCAL_2ND_ARCH_VAR_PREFIX)$(my_prefix)TOOLS_PREFIX))
+		$(PRIVATE_TOOLS_PREFIX))
 	$(copy-file-to-target)
 else
 $(LOCAL_BUILT_MODULE): $(LOCAL_PREBUILT_MODULE_FILE)
@@ -150,7 +137,7 @@ endif
 
 ifndef LOCAL_IS_HOST_MODULE
   ifdef LOCAL_SOONG_UNSTRIPPED_BINARY
-    ifneq ($(LOCAL_VNDK_DEPEND_ON_CORE_VARIANT),true)
+    ifneq ($(LOCAL_UNINSTALLABLE_MODULE),true)
       my_symbol_path := $(if $(LOCAL_SOONG_SYMBOL_PATH),$(LOCAL_SOONG_SYMBOL_PATH),$(my_module_path))
       # Store a copy with symbols for symbolic debugging
       my_unstripped_path := $(TARGET_OUT_UNSTRIPPED)/$(patsubst $(PRODUCT_OUT)/%,%,$(my_symbol_path))
@@ -234,6 +221,8 @@ installed_static_library_notice_file_targets := \
 $(notice_target): | $(installed_static_library_notice_file_targets)
 $(LOCAL_INSTALLED_MODULE): | $(notice_target)
 
-endif # !skip_module
-
-skip_module :=
+# Reinstall shared library dependencies of fuzz targets to /data/fuzz/ (for
+# target) or /data/ (for host).
+ifdef LOCAL_IS_FUZZ_TARGET
+$(LOCAL_INSTALLED_MODULE): $(LOCAL_FUZZ_INSTALLED_SHARED_DEPS)
+endif
