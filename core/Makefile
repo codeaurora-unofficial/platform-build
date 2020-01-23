@@ -1625,6 +1625,7 @@ define build-systemimage-target
 	cp -r $(PRODUCT_OUT)/vendor/bin/audio_chime $(PRODUCT_OUT)/earlyrootfs/usr/sbin/ ;\
 	cp -r $(PRODUCT_OUT)/system/bin/* $(PRODUCT_OUT)/earlyrootfs/system/bin ;\
         cp -r $(PRODUCT_OUT)/system/etc/selinux/* $(PRODUCT_OUT)/earlyrootfs/system/etc/selinux/ ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib64/libdrm.so $(PRODUCT_OUT)/system/lib64 ;\
   fi;
   build/make/tools/releasetools/build_image.py $(PRODUCT_OUT)/earlyrootfs $(earlyrootfsimage_intermediates)/earlyrootfs_image_info.txt $(BUILT_EARLYROOTFSIMAGE) $(PRODUCT_OUT)
 endef
