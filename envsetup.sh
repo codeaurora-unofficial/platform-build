@@ -1756,7 +1756,6 @@ function make()
             return $RET
         fi
     fi
-    source device/qcom/common/vendor_hal_makefile_generator.sh
     _wrap_build $(get_make_command "$@") "$@"
 }
 
