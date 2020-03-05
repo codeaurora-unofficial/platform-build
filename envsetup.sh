@@ -765,8 +765,50 @@ function gettop
     fi
 }
 
+function call_hook
+{
+    if [ "$2" = "-h" ] ||[ "$2" = "clean" ] ||[ "$2" = "--help" ]; then
+        return 0
+    fi
+    local T=$(gettop)
+    local ARGS
+    if [ "$T" ]; then
+        if [ "$1" = "m" ] ||  [ "$1" = "make" ] || [ "$1" = "mma" ] ||  [ "$1" = "mmma" ]; then
+            ARGS=$T
+        elif [ "$1" = "mm" ]; then
+            ARGS=`/bin/pwd`
+        elif [ "$1" = "mmm" ]; then
+            local DIRS=$(echo "${@:2}" | awk -v RS=" " -v ORS=" " '/^[^-].*$/')
+            local prefix=`/bin/pwd`
+            for dir in $DIRS
+            do
+                ARGS+=$prefix"/"$dir" "
+            done
+            echo $ARGS
+        fi
+        if [ -e $T/${QCPATH}/common/restriction_checker/restriction_checker.py ]; then
+            python $T/${QCPATH}/common/restriction_checker/restriction_checker.py $T $ARGS
+        else
+            echo "Restriction Checker not present, skipping.."
+        fi
+        local ret_val=$?
+        if [ $ret_val -ne 0 ]; then
+            echo "Violations detected, aborting build."
+        fi
+        return $ret_val
+    else
+        echo "Couldn't locate the top of the tree.  Try setting TOP."
+        return 1
+    fi
+}
+
 function m()
 {
+    call_hook ${FUNCNAME[0]} $@
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
     local T=$(gettop)
     if [ "$T" ]; then
         _wrap_build $T/build/soong/soong_ui.bash --make-mode $@
@@ -799,6 +841,11 @@ function findmakefile()
 
 function mm()
 {
+    call_hook ${FUNCNAME[0]} $@
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
     local T=$(gettop)
     # If we're sitting in the root of the build tree, just do a
     # normal build.
@@ -845,6 +892,11 @@ function mm()
 
 function mmm()
 {
+    call_hook ${FUNCNAME[0]} $@
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
     local T=$(gettop)
     if [ "$T" ]; then
         local MAKEFILE=
@@ -919,6 +971,11 @@ function mmm()
 
 function mma()
 {
+  call_hook ${FUNCNAME[0]} $@
+  if [ $? -ne 0 ]; then
+      return 1
+  fi
+
   local T=$(gettop)
   if [ -f build/soong/soong_ui.bash ]; then
     _wrap_build $T/build/soong/soong_ui.bash --make-mode $@
@@ -939,6 +996,11 @@ function mma()
 
 function mmma()
 {
+  call_hook ${FUNCNAME[0]} $@
+  if [ $? -ne 0 ]; then
+      return 1
+  fi
+
   local T=$(gettop)
   if [ "$T" ]; then
     local DASH_ARGS=$(echo "$@" | awk -v RS=" " -v ORS=" " '/^-.*$/')
@@ -1664,13 +1726,36 @@ function _wrap_build()
 
 function make()
 {
-    _wrap_build $(get_make_command hidl-gen) hidl-gen ALLOW_MISSING_DEPENDENCIES=true
+    call_hook ${FUNCNAME[0]} $@
     if [ $? -ne 0 ]; then
-        echo -n "${color_failed}#### hidl-gen compilation failed, check above errors"
-        echo " ####${color_reset}"
-        return
+        return 1
     fi
-    source device/qcom/common/vendor_hal_makefile_generator.sh
+
+    if [ -f $ANDROID_BUILD_TOP/$QTI_BUILDTOOLS_DIR/build/update-vendor-hal-makefiles.sh ]; then
+        vendor_hal_script=$ANDROID_BUILD_TOP/$QTI_BUILDTOOLS_DIR/build/update-vendor-hal-makefiles.sh
+        source $vendor_hal_script --check
+        regen_needed=$?
+    else
+        vendor_hal_script=$ANDROID_BUILD_TOP/device/qcom/common/vendor_hal_makefile_generator.sh
+        regen_needed=1
+    fi
+
+    if [ $regen_needed -eq 1 ]; then
+        _wrap_build $(get_make_command hidl-gen) hidl-gen ALLOW_MISSING_DEPENDENCIES=true
+        RET=$?
+        if [ $RET -ne 0 ]; then
+            echo -n "${color_failed}#### hidl-gen compilation failed, check above errors"
+            echo " ####${color_reset}"
+            return $RET
+        fi
+        source $vendor_hal_script
+        RET=$?
+        if [ $RET -ne 0 ]; then
+            echo -n "${color_failed}#### HAL file .bp generation failed dure to incpomaptible HAL files , please check above error log"
+            echo " ####${color_reset}"
+            return $RET
+        fi
+    fi
     _wrap_build $(get_make_command "$@") "$@"
 }
 
