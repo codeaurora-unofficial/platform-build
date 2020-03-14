@@ -75,6 +75,10 @@ $(shell mkdir -p $(EMPTY_DIRECTORY) && rm -rf $(EMPTY_DIRECTORY)/*)
 -include test/suite_harness/tools/cts-instant-tradefed/build/config.mk
 # MTS-specific config.
 -include test/mts/tools/build/config.mk
+# VTS-Core-specific config.
+-include test/vts/tools/vts-core-tradefed/build/config.mk
+# CSUITE-specific config.
+-include test/app_compat/csuite/tools/build/config.mk
 
 # Clean rules
 .PHONY: clean-dex-files
@@ -191,17 +195,7 @@ TARGET_BUILD_JAVA_SUPPORT_LEVEL := platform
 # The pdk (Platform Development Kit) build
 include build/make/core/pdk_config.mk
 
-#
 # -----------------------------------------------------------------
-# Enable dynamic linker warnings for userdebug, eng and non-REL builds
-ifneq ($(TARGET_BUILD_VARIANT),user)
-  ADDITIONAL_BUILD_PROPERTIES += ro.bionic.ld.warning=1
-else
-# Enable it for user builds as long as they are not final.
-ifneq ($(PLATFORM_VERSION_CODENAME),REL)
-  ADDITIONAL_BUILD_PROPERTIES += ro.bionic.ld.warning=1
-endif
-endif
 
 ADDITIONAL_BUILD_PROPERTIES += ro.treble.enabled=${PRODUCT_FULL_TREBLE}
 
@@ -490,7 +484,6 @@ CUSTOM_MODULES := \
 #
 # Resolve the required module name to 32-bit or 64-bit variant.
 # Get a list of corresponding 32-bit module names, if one exists.
-ifneq ($(TARGET_TRANSLATE_2ND_ARCH),true)
 define get-32-bit-modules
 $(sort $(foreach m,$(1),\
   $(if $(ALL_MODULES.$(m)$(TARGET_2ND_ARCH_MODULE_SUFFIX).CLASS),\
@@ -504,15 +497,6 @@ $(sort $(foreach m,$(1),\
     $(m)$(TARGET_2ND_ARCH_MODULE_SUFFIX), \
     $(m))))
 endef
-else  # TARGET_TRANSLATE_2ND_ARCH
-# For binary translation config, by default only install the first arch.
-define get-32-bit-modules
-endef
-
-define get-32-bit-modules-if-we-can
-$(strip $(1))
-endef
-endif  # TARGET_TRANSLATE_2ND_ARCH
 
 # TODO: we can probably check to see if these modules are actually host
 # modules
@@ -985,7 +969,7 @@ $(foreach export,$(EXPORTS_LIST),$(eval $(call add-dependency,$$(EXPORTS.$$(expo
 # Expand a list of modules to the modules that they override (if any)
 # $(1): The list of modules.
 define module-overrides
-$(foreach m,$(1),$(PACKAGES.$(m).OVERRIDES) $(EXECUTABLES.$(m).OVERRIDES) $(SHARED_LIBRARIES.$(m).OVERRIDES))
+$(foreach m,$(1),$(PACKAGES.$(m).OVERRIDES) $(EXECUTABLES.$(m).OVERRIDES) $(SHARED_LIBRARIES.$(m).OVERRIDES) $(ETC.$(m).OVERRIDES))
 endef
 
 ###########################################################
@@ -1060,14 +1044,13 @@ endef
 #   32-bit variant, if it exits. See the select-bitness-of-required-modules definition.
 # $(1): product makefile
 define product-installed-files
-  $(eval _mk := $(strip $(1))) \
   $(eval _pif_modules := \
-    $(PRODUCTS.$(_mk).PRODUCT_PACKAGES) \
-    $(if $(filter eng,$(tags_to_install)),$(PRODUCTS.$(_mk).PRODUCT_PACKAGES_ENG)) \
-    $(if $(filter debug,$(tags_to_install)),$(PRODUCTS.$(_mk).PRODUCT_PACKAGES_DEBUG)) \
-    $(if $(filter tests,$(tags_to_install)),$(PRODUCTS.$(_mk).PRODUCT_PACKAGES_TESTS)) \
-    $(if $(filter asan,$(tags_to_install)),$(PRODUCTS.$(_mk).PRODUCT_PACKAGES_DEBUG_ASAN)) \
-    $(if $(filter java_coverage,$(tags_to_install)),$(PRODUCTS.$(_mk).PRODUCT_PACKAGES_DEBUG_JAVA_COVERAGE)) \
+    $(call get-product-var,$(1),PRODUCT_PACKAGES) \
+    $(if $(filter eng,$(tags_to_install)),$(call get-product-var,$(1),PRODUCT_PACKAGES_ENG)) \
+    $(if $(filter debug,$(tags_to_install)),$(call get-product-var,$(1),PRODUCT_PACKAGES_DEBUG)) \
+    $(if $(filter tests,$(tags_to_install)),$(call get-product-var,$(1),PRODUCT_PACKAGES_TESTS)) \
+    $(if $(filter asan,$(tags_to_install)),$(call get-product-var,$(1),PRODUCT_PACKAGES_DEBUG_ASAN)) \
+    $(if $(filter java_coverage,$(tags_to_install)),$(call get-product-var,$(1),PRODUCT_PACKAGES_DEBUG_JAVA_COVERAGE)) \
     $(call auto-included-modules) \
   ) \
   $(eval ### Filter out the overridden packages and executables before doing expansion) \
@@ -1086,13 +1069,13 @@ define product-installed-files
   $(call expand-required-modules,_pif_modules,$(_pif_modules),$(_pif_overrides)) \
   $(filter-out $(HOST_OUT_ROOT)/%,$(call module-installed-files, $(_pif_modules))) \
   $(call resolve-product-relative-paths,\
-    $(foreach cf,$(PRODUCTS.$(_mk).PRODUCT_COPY_FILES),$(call word-colon,2,$(cf))))
+    $(foreach cf,$(call get-product-var,$(1),PRODUCT_COPY_FILES),$(call word-colon,2,$(cf))))
 endef
 
 # Similar to product-installed-files above, but handles PRODUCT_HOST_PACKAGES instead
 # This does support the :32 / :64 syntax, but does not support module overrides.
 define host-installed-files
-  $(eval _hif_modules := $(PRODUCTS.$(strip $(1)).PRODUCT_HOST_PACKAGES)) \
+  $(eval _hif_modules := $(call get-product-var,$(1),PRODUCT_HOST_PACKAGES)) \
   $(eval ### Resolve the :32 :64 module name) \
   $(eval _hif_modules_32 := $(patsubst %:32,%,$(filter %:32, $(_hif_modules)))) \
   $(eval _hif_modules_64 := $(patsubst %:64,%,$(filter %:64, $(_hif_modules)))) \
@@ -1124,11 +1107,11 @@ $(if $(strip $(1)), \
 endef
 
 # Check that libraries that should only be in APEXes don't end up in the system
-# image. For the Runtime APEX this complements the checks in
+# image. For the ART APEX this complements the checks in
 # art/build/apex/art_apex_test.py.
 # TODO(b/128708192): Implement this restriction in Soong instead.
 
-# Runtime APEX libraries
+# ART APEX (native) libraries
 APEX_MODULE_LIBS := \
   libadbconnection.so \
   libadbconnectiond.so \
@@ -1144,25 +1127,20 @@ APEX_MODULE_LIBS := \
   libartd-dexlayout.so \
   libartd.so \
   libartpalette.so \
-  libc.so \
-  libc_malloc_debug.so \
-  libc_malloc_hooks.so \
   libdexfile.so \
   libdexfile_external.so \
   libdexfiled.so \
   libdexfiled_external.so \
-  libdl.so \
   libdt_fd_forward.so \
   libdt_socket.so \
   libicui18n.so \
   libicuuc.so \
+  libicu_jni.so \
   libjavacore.so \
   libjdwp.so \
-  libm.so \
   libnativebridge.so \
   libnativehelper.so \
   libnativeloader.so \
-  libneuralnetworks.so \
   libnpt.so \
   libopenjdk.so \
   libopenjdkjvm.so \
@@ -1174,16 +1152,46 @@ APEX_MODULE_LIBS := \
   libprofiled.so \
   libsigchain.so \
 
+# Runtime (Bionic) APEX (native) libraries
+APEX_MODULE_LIBS += \
+  libc.so \
+  libc_malloc_debug.so \
+  libc_malloc_hooks.so \
+  libdl.so \
+  libm.so \
+
 # Conscrypt APEX libraries
 APEX_MODULE_LIBS += \
   libjavacrypto.so \
+
+# Android Neural Network API (NNAPI) APEX (native) libraries
+APEX_MODULE_LIBS += \
+  libneuralnetworks.so \
+
+# ART APEX JARs (Java libraries)
+APEX_MODULE_LIBS += \
+  apache-xml.jar \
+  bouncycastle.jar \
+  core-icu4j.jar \
+  core-libart.jar \
+  core-oj.jar \
+  okhttp.jar \
+
+# Conscrypt APEX JARs (Java libraries)
+APEX_MODULE_LIBS += \
+  conscrypt.jar \
 
 # An option to disable the check below, for local use since some build targets
 # still may create these libraries in /system (b/129006418).
 DISABLE_APEX_LIBS_ABSENCE_CHECK ?=
 
+# Allow APEX libraries under:
+# /system/apex, which happens when APEX flattening is enabled.
+# /system/system_ext, which happens with GSI
+APEX_LIBS_ABSENCE_CHECK_EXCLUDE := apex system_ext
+
 # Bionic should not be in /system, except for the bootstrap instance.
-APEX_LIBS_ABSENCE_CHECK_EXCLUDE := lib/bootstrap lib64/bootstrap
+APEX_LIBS_ABSENCE_CHECK_EXCLUDE += lib/bootstrap lib64/bootstrap
 
 # Exclude lib/arm and lib64/arm64 which contain the native bridge proxy libs. They
 # are compiled for the guest architecture and used with an entirely different
@@ -1230,12 +1238,14 @@ else
   # APEX might be misconfigured or something is wrong in the build system.
   # Please reach out to the APEX package owners and/or soong-team@, or
   # android-building@googlegroups.com externally.
+  #
+  # Likewise, we check for the absence of APEX Java libraries (JARs).
   define check-apex-libs-absence
     $(call maybe-print-list-and-error, \
       $(filter $(foreach lib,$(APEX_MODULE_LIBS),%/$(lib)), \
         $(filter-out $(foreach dir,$(APEX_LIBS_ABSENCE_CHECK_EXCLUDE), \
                        $(TARGET_OUT)/$(if $(findstring %,$(dir)),$(dir),$(dir)/%)), \
-          $(filter $(TARGET_OUT)/lib/% $(TARGET_OUT)/lib64/%,$(1)))), \
+          $(filter $(TARGET_OUT),$(1)))), \
       APEX libraries found in product_target_FILES (see comment for check-apex-libs-absence in \
       build/make/core/main.mk for details))
   endef
@@ -1249,11 +1259,13 @@ else
   # try "m installclean && m systemimage" to get a correct system image. For
   # local work you can also disable the check with the
   # DISABLE_APEX_LIBS_ABSENCE_CHECK environment variable.
+  #
+  # Likewise, we check for the absence of APEX Java libraries (JARs).
   define check-apex-libs-absence-on-disk
     $(hide) ( \
       cd $(TARGET_OUT) && \
-      findres=$$(find lib* \
-        $(foreach dir,$(APEX_LIBS_ABSENCE_CHECK_EXCLUDE),-path "$(subst %,*,$(dir))" -prune -o) \
+      findres=$$(find . \
+        $(foreach dir,$(APEX_LIBS_ABSENCE_CHECK_EXCLUDE),-path "./$(subst %,*,$(dir))" -prune -o) \
         -type f \( -false $(foreach lib,$(APEX_MODULE_LIBS),-o -name $(lib)) \) \
         -print) && \
       if [ -n "$$findres" ]; then \
@@ -1305,11 +1317,11 @@ ifdef FULL_BUILD
 
   # Some modules produce only host installed files when building with TARGET_BUILD_APPS
   ifeq ($(TARGET_BUILD_APPS),)
-    _modules := $(foreach m,$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_PACKAGES) \
-                            $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_PACKAGES_DEBUG) \
-                            $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_PACKAGES_DEBUG_ASAN) \
-                            $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_PACKAGES_ENG) \
-                            $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_PACKAGES_TESTS),\
+    _modules := $(foreach m,$(PRODUCT_PACKAGES) \
+                            $(PRODUCT_PACKAGES_DEBUG) \
+                            $(PRODUCT_PACKAGES_DEBUG_ASAN) \
+                            $(PRODUCT_PACKAGES_ENG) \
+                            $(PRODUCT_PACKAGES_TESTS),\
                   $(if $(ALL_MODULES.$(m).INSTALLED),\
                     $(if $(filter-out $(HOST_OUT_ROOT)/%,$(ALL_MODULES.$(m).INSTALLED)),,\
                       $(m))))
@@ -1361,7 +1373,9 @@ $(call dist-for-goals,droidcore,$(CERTIFICATE_VIOLATION_MODULES_FILENAME))
     $(eval whitelist_patterns := $(call resolve-product-relative-paths,$(whitelist))) \
     $(eval files := $(call product-installed-files, $(makefile))) \
     $(eval offending_files := $(filter-out $(path_patterns) $(whitelist_patterns) $(static_whitelist_patterns),$(files))) \
-    $(call maybe-print-list-and-error,$(offending_files),$(makefile) produces files outside its artifact path requirement.) \
+    $(call maybe-print-list-and-error,$(offending_files),\
+      $(makefile) produces files outside its artifact path requirement. \
+      Allowed paths are $(subst $(space),$(comma)$(space),$(addsuffix *,$(requirements)))) \
     $(eval unused_whitelist := $(filter-out $(files),$(whitelist_patterns))) \
     $(call maybe-print-list-and-error,$(unused_whitelist),$(makefile) includes redundant whitelist entries in its artifact path requirement.) \
     $(eval ### Optionally verify that nothing else produces files inside this artifact path requirement.) \
@@ -1494,7 +1508,7 @@ files: $(modules_to_install) \
 # -------------------------------------------------------------------
 
 .PHONY: checkbuild
-checkbuild: $(modules_to_check) droid_targets
+checkbuild: $(modules_to_check) droid_targets check-elf-files
 
 ifeq (true,$(ANDROID_BUILD_EVERYTHING_BY_DEFAULT))
 droid: checkbuild
@@ -1505,6 +1519,9 @@ ramdisk: $(INSTALLED_RAMDISK_TARGET)
 
 .PHONY: ramdisk_debug
 ramdisk_debug: $(INSTALLED_DEBUG_RAMDISK_TARGET)
+
+.PHONY: ramdisk_test_harness
+ramdisk_test_harness: $(INSTALLED_TEST_HARNESS_RAMDISK_TARGET)
 
 .PHONY: userdataimage
 userdataimage: $(INSTALLED_USERDATAIMAGE_TARGET)
@@ -1521,6 +1538,9 @@ bptimage: $(INSTALLED_BPTIMAGE_TARGET)
 
 .PHONY: vendorimage
 vendorimage: $(INSTALLED_VENDORIMAGE_TARGET)
+
+.PHONY: vendorbootimage
+vendorbootimage: $(INSTALLED_VENDOR_BOOTIMAGE_TARGET)
 
 .PHONY: productimage
 productimage: $(INSTALLED_PRODUCTIMAGE_TARGET)
@@ -1543,6 +1563,9 @@ bootimage: $(INSTALLED_BOOTIMAGE_TARGET)
 .PHONY: bootimage_debug
 bootimage_debug: $(INSTALLED_DEBUG_BOOTIMAGE_TARGET)
 
+.PHONY: bootimage_test_harness
+bootimage_test_harness: $(INSTALLED_TEST_HARNESS_BOOTIMAGE_TARGET)
+
 .PHONY: vbmetaimage
 vbmetaimage: $(INSTALLED_VBMETAIMAGE_TARGET)
 
@@ -1564,6 +1587,7 @@ droidcore: $(filter $(HOST_OUT_ROOT)/%,$(modules_to_install)) \
     $(INSTALLED_CACHEIMAGE_TARGET) \
     $(INSTALLED_BPTIMAGE_TARGET) \
     $(INSTALLED_VENDORIMAGE_TARGET) \
+    $(INSTALLED_VENDOR_BOOTIMAGE_TARGET) \
     $(INSTALLED_ODMIMAGE_TARGET) \
     $(INSTALLED_SUPERIMAGE_EMPTY_TARGET) \
     $(INSTALLED_PRODUCTIMAGE_TARGET) \
@@ -1709,6 +1733,10 @@ else # TARGET_BUILD_APPS
       $(INSTALLED_DEBUG_RAMDISK_TARGET) \
       $(INSTALLED_DEBUG_BOOTIMAGE_TARGET) \
     )
+    $(call dist-for-goals, bootimage_test_harness, \
+      $(INSTALLED_TEST_HARNESS_RAMDISK_TARGET) \
+      $(INSTALLED_TEST_HARNESS_BOOTIMAGE_TARGET) \
+    )
   endif
 
   ifeq ($(EMMA_INSTRUMENT),true)
@@ -1717,9 +1745,9 @@ else # TARGET_BUILD_APPS
   endif
 
   # Put XML formatted API files in the dist dir.
-  $(TARGET_OUT_COMMON_INTERMEDIATES)/api.xml: $(call java-lib-header-files,android_stubs_current) $(APICHECK)
-  $(TARGET_OUT_COMMON_INTERMEDIATES)/system-api.xml: $(call java-lib-header-files,android_system_stubs_current) $(APICHECK)
-  $(TARGET_OUT_COMMON_INTERMEDIATES)/test-api.xml: $(call java-lib-header-files,android_test_stubs_current) $(APICHECK)
+  $(TARGET_OUT_COMMON_INTERMEDIATES)/api.xml: $(call java-lib-files,android_stubs_current) $(APICHECK)
+  $(TARGET_OUT_COMMON_INTERMEDIATES)/system-api.xml: $(call java-lib-files,android_system_stubs_current) $(APICHECK)
+  $(TARGET_OUT_COMMON_INTERMEDIATES)/test-api.xml: $(call java-lib-files,android_test_stubs_current) $(APICHECK)
 
   api_xmls := $(addprefix $(TARGET_OUT_COMMON_INTERMEDIATES)/,api.xml system-api.xml test-api.xml)
   $(api_xmls):

@@ -11,14 +11,17 @@ Invoke ". build/envsetup.sh" from your shell to add the following functions to y
 - tapas:      tapas [<App1> <App2> ...] [arm|x86|mips|arm64|x86_64|mips64] [eng|userdebug|user]
 - croot:      Changes directory to the top of the tree, or a subdirectory thereof.
 - m:          Makes from the top of the tree.
-- mm:         Builds all of the modules in the current directory, but not their dependencies.
-- mmm:        Builds all of the modules in the supplied directories, but not their dependencies.
+- mm:         Builds and installs all of the modules in the current directory, and their
+              dependencies.
+- mmm:        Builds and installs all of the modules in the supplied directories, and their
+              dependencies.
               To limit the modules being built use the syntax: mmm dir/:target1,target2.
-- mma:        Builds all of the modules in the current directory, and their dependencies.
-- mmma:       Builds all of the modules in the supplied directories, and their dependencies.
+- mma:        Same as 'mm'
+- mmma:       Same as 'mmm'
 - provision:  Flash device with all required partitions. Options will be passed on to fastboot.
 - cgrep:      Greps on all local C/C++ files.
 - ggrep:      Greps on all local Gradle files.
+- gogrep:     Greps on all local Go files.
 - jgrep:      Greps on all local Java files.
 - resgrep:    Greps on all local res/*.xml files.
 - mangrep:    Greps on all local AndroidManifest.xml files.
@@ -33,9 +36,7 @@ Invoke ". build/envsetup.sh" from your shell to add the following functions to y
 - refreshmod: Refresh list of modules for allmod/gomod.
 
 Environment options:
-- SANITIZE_HOST: Set to 'true' to use ASAN for all host modules. Note that
-                 ASAN_OPTIONS=detect_leaks=0 will be set by default until the
-                 build is leak-check clean.
+- SANITIZE_HOST: Set to 'address' to use ASAN for all host modules.
 - ANDROID_QUIET_BUILD: set to 'true' to display only the essential messages.
 
 Look at the source to view more functions. The complete list is:
@@ -333,7 +334,6 @@ function set_stuff_for_environment()
     export ANDROID_BUILD_TOP=$(gettop)
     # With this environment variable new GCC can apply colors to warnings/errors
     export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
-    export ASAN_OPTIONS=detect_leaks=0
 }
 
 function set_sequence_number()
@@ -527,7 +527,7 @@ function choosevariant()
             export TARGET_BUILD_VARIANT=$default_value
         elif (echo -n $ANSWER | grep -q -e "^[0-9][0-9]*$") ; then
             if [ "$ANSWER" -le "${#VARIANT_CHOICES[@]}" ] ; then
-                export TARGET_BUILD_VARIANT=${VARIANT_CHOICES[$(($ANSWER-1))]}
+                export TARGET_BUILD_VARIANT=${VARIANT_CHOICES[@]:$(($ANSWER-1)):1}
             fi
         else
             if check_variant $ANSWER
@@ -575,6 +575,7 @@ function add_lunch_combo()
 function print_lunch_menu()
 {
     local uname=$(uname)
+    local choices=$(TARGET_BUILD_APPS= get_build_var COMMON_LUNCH_CHOICES)
     echo
     echo "You're building on" $uname
     echo
@@ -582,7 +583,7 @@ function print_lunch_menu()
 
     local i=1
     local choice
-    for choice in $(TARGET_BUILD_APPS= get_build_var COMMON_LUNCH_CHOICES)
+    for choice in $(echo $choices)
     do
         echo "     $i. $choice"
         i=$(($i+1))
@@ -970,6 +971,12 @@ function ggrep()
         -exec grep --color -n "$@" {} +
 }
 
+function gogrep()
+{
+    find . -name .repo -prune -o -name .git -prune -o -name out -prune -o -type f -name "*\.go" \
+        -exec grep --color -n "$@" {} +
+}
+
 function jgrep()
 {
     find . -name .repo -prune -o -name .git -prune -o -name out -prune -o -type f -name "*\.java" \
@@ -1018,7 +1025,7 @@ case `uname -s` in
     Darwin)
         function mgrep()
         {
-            find -E . -name .repo -prune -o -name .git -prune -o -path ./out -prune -o \( -iregex '.*/(Makefile|Makefile\..*|.*\.make|.*\.mak|.*\.mk|.*\.bp)' -o -regex '(.*/)?soong/[^/]*.go' \) -type f \
+            find -E . -name .repo -prune -o -name .git -prune -o -path ./out -prune -o \( -iregex '.*/(Makefile|Makefile\..*|.*\.make|.*\.mak|.*\.mk|.*\.bp)' -o -regex '(.*/)?(build|soong)/.*[^/]*\.go' \) -type f \
                 -exec grep --color -n "$@" {} +
         }
 
@@ -1032,7 +1039,7 @@ case `uname -s` in
     *)
         function mgrep()
         {
-            find . -name .repo -prune -o -name .git -prune -o -path ./out -prune -o \( -regextype posix-egrep -iregex '(.*\/Makefile|.*\/Makefile\..*|.*\.make|.*\.mak|.*\.mk|.*\.bp)' -o -regextype posix-extended -regex '(.*/)?soong/[^/]*.go' \) -type f \
+            find . -name .repo -prune -o -name .git -prune -o -path ./out -prune -o \( -regextype posix-egrep -iregex '(.*\/Makefile|.*\/Makefile\..*|.*\.make|.*\.mak|.*\.mk|.*\.bp)' -o -regextype posix-extended -regex '(.*/)?(build|soong)/.*[^/]*\.go' \) -type f \
                 -exec grep --color -n "$@" {} +
         }
 
@@ -1297,10 +1304,10 @@ function godir () {
                 echo "Invalid choice"
                 continue
             fi
-            pathname=${lines[$(($choice-1))]}
+            pathname=${lines[@]:$(($choice-1)):1}
         done
     else
-        pathname=${lines[0]}
+        pathname=${lines[@]:0:1}
     fi
     \cd $T/$pathname
 }
@@ -1500,6 +1507,13 @@ function mmma()
 
 function make()
 {
+    _wrap_build $(get_make_command hidl-gen) hidl-gen ALLOW_MISSING_DEPENDENCIES=true
+    if [ $? -ne 0 ]; then
+        echo -n "${color_failed}#### hidl-gen compilation failed, check above errors"
+        echo " ####${color_reset}"
+        return
+    fi
+    source device/qcom/common/vendor_hal_makefile_generator.sh
     _wrap_build $(get_make_command "$@") "$@"
 }
 

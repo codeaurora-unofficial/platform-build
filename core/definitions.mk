@@ -1363,8 +1363,10 @@ DOTDOT_REPLACEMENT := dotdot/
 # $(1): the C++ source file in LOCAL_SRC_FILES.
 # $(2): the additional dependencies.
 # $(3): the variable name to collect the output object file.
+# $(4): the ninja pool to use for the rule
 define compile-dotdot-cpp-file
 o := $(intermediates)/$(patsubst %$(LOCAL_CPP_EXTENSION),%.o,$(subst ../,$(DOTDOT_REPLACEMENT),$(1)))
+$$(o) : .KATI_NINJA_POOL := $(4)
 $$(o) : $(TOPDIR)$(LOCAL_PATH)/$(1) $(2) $(CLANG_CXX)
 	$$(transform-$$(PRIVATE_HOST)cpp-to-o)
 $$(call include-depfiles-for-objs, $$(o))
@@ -1376,8 +1378,10 @@ endef
 # $(1): the C source file in LOCAL_SRC_FILES.
 # $(2): the additional dependencies.
 # $(3): the variable name to collect the output object file.
+# $(4): the ninja pool to use for the rule
 define compile-dotdot-c-file
 o := $(intermediates)/$(patsubst %.c,%.o,$(subst ../,$(DOTDOT_REPLACEMENT),$(1)))
+$$(o) : .KATI_NINJA_POOL := $(4)
 $$(o) : $(TOPDIR)$(LOCAL_PATH)/$(1) $(2) $(CLANG)
 	$$(transform-$$(PRIVATE_HOST)c-to-o)
 $$(call include-depfiles-for-objs, $$(o))
@@ -1389,8 +1393,10 @@ endef
 # $(1): the .S source file in LOCAL_SRC_FILES.
 # $(2): the additional dependencies.
 # $(3): the variable name to collect the output object file.
+# $(4): the ninja pool to use for the rule
 define compile-dotdot-s-file
 o := $(intermediates)/$(patsubst %.S,%.o,$(subst ../,$(DOTDOT_REPLACEMENT),$(1)))
+$$(o) : .KATI_NINJA_POOL := $(4)
 $$(o) : $(TOPDIR)$(LOCAL_PATH)/$(1) $(2) $(CLANG)
 	$$(transform-$$(PRIVATE_HOST)s-to-o)
 $$(call include-depfiles-for-objs, $$(o))
@@ -1402,8 +1408,10 @@ endef
 # $(1): the .s source file in LOCAL_SRC_FILES.
 # $(2): the additional dependencies.
 # $(3): the variable name to collect the output object file.
+# $(4): the ninja pool to use for the rule
 define compile-dotdot-s-file-no-deps
 o := $(intermediates)/$(patsubst %.s,%.o,$(subst ../,$(DOTDOT_REPLACEMENT),$(1)))
+$$(o) : .KATI_NINJA_POOL := $(4)
 $$(o) : $(TOPDIR)$(LOCAL_PATH)/$(1) $(2) $(CLANG)
 	$$(transform-$$(PRIVATE_HOST)s-to-o)
 $(3) += $$(o)
@@ -2099,8 +2107,12 @@ $(hide) if [ -s $(PRIVATE_JAVA_SOURCE_LIST) -o -n "$(PRIVATE_SRCJARS)" ] ; then 
     --output $@.premerged --temp_dir $(dir $@)/classes-turbine \
     --sources \@$(PRIVATE_JAVA_SOURCE_LIST) --source_jars $(PRIVATE_SRCJARS) \
     --javacopts $(PRIVATE_JAVACFLAGS) $(COMMON_JDK_FLAGS) -- \
-    $(addprefix --bootclasspath ,$(strip $(PRIVATE_BOOTCLASSPATH))) \
-    $(addprefix --classpath ,$(strip $(PRIVATE_ALL_JAVA_HEADER_LIBRARIES))) \
+    $(if $(PRIVATE_USE_SYSTEM_MODULES), \
+      --system $(PRIVATE_SYSTEM_MODULES_DIR), \
+      --bootclasspath $(strip $(PRIVATE_BOOTCLASSPATH))) \
+    --classpath $(strip $(if $(PRIVATE_USE_SYSTEM_MODULES), \
+        $(filter-out $(PRIVATE_SYSTEM_MODULES_LIBS),$(PRIVATE_BOOTCLASSPATH))) \
+      $(PRIVATE_ALL_JAVA_HEADER_LIBRARIES)) \
     || ( rm -rf $(dir $@)/classes-turbine ; exit 41 ) && \
     $(MERGE_ZIPS) -j --ignore-duplicates -stripDir META-INF $@.tmp $@.premerged $(PRIVATE_STATIC_JAVA_HEADER_LIBRARIES) ; \
 else \
@@ -2279,7 +2291,7 @@ endef
 # Align STORED entries of a package on 4-byte boundaries to make them easier to mmap.
 #
 define align-package
-$(hide) if ! $(ZIPALIGN) -c $(ZIPALIGN_PAGE_ALIGN_FLAGS) 4 $@ >/dev/null ; then \
+$(hide) if ! $(ZIPALIGN) -c -p 4 $@ >/dev/null ; then \
   mv $@ $@.unaligned; \
   $(ZIPALIGN) \
     -f \
@@ -2419,6 +2431,16 @@ define compat-copy-pair
 $(if $(filter-out $(2), $(LOCAL_INSTALLED_MODULE)), $(1):$(2))
 endef
 
+# Create copy pair for $(1) $(2)
+# If $(2) is substring of $(3) do nothing.
+# $(1): source path
+# $(2): destination path
+# $(3): filter-out target
+# The format of copy pair is src:dst
+define filter-copy-pair
+$(if $(findstring $(2), $(3)),,$(1):$(2))
+endef
+
 # Copies many files.
 # $(1): The files to copy.  Each entry is a ':' separated src:dst pair
 # $(2): An optional directory to prepend to the destination
@@ -2444,17 +2466,26 @@ ifneq ($(HOST_OS),darwin)
 $(2): \
 	$(1) \
 	$(HOST_INIT_VERIFIER) \
-	$(HIDL_INHERITANCE_HIERARCHY) \
 	$(call intermediates-dir-for,ETC,passwd_system)/passwd_system \
 	$(call intermediates-dir-for,ETC,passwd_vendor)/passwd_vendor \
 	$(call intermediates-dir-for,ETC,passwd_odm)/passwd_odm \
-	$(call intermediates-dir-for,ETC,passwd_product)/passwd_product
+	$(call intermediates-dir-for,ETC,passwd_product)/passwd_product \
+	$(call intermediates-dir-for,ETC,plat_property_contexts)/plat_property_contexts \
+	$(call intermediates-dir-for,ETC,system_ext_property_contexts)/system_ext_property_contexts \
+	$(call intermediates-dir-for,ETC,product_property_contexts)/product_property_contexts \
+	$(call intermediates-dir-for,ETC,vendor_property_contexts)/vendor_property_contexts \
+	$(call intermediates-dir-for,ETC,odm_property_contexts)/odm_property_contexts
 	$(hide) $(HOST_INIT_VERIFIER) \
 	  -p $(call intermediates-dir-for,ETC,passwd_system)/passwd_system \
 	  -p $(call intermediates-dir-for,ETC,passwd_vendor)/passwd_vendor \
 	  -p $(call intermediates-dir-for,ETC,passwd_odm)/passwd_odm \
 	  -p $(call intermediates-dir-for,ETC,passwd_product)/passwd_product \
-	  -i $(HIDL_INHERITANCE_HIERARCHY) $$<
+	  --property-contexts=$(call intermediates-dir-for,ETC,plat_property_contexts)/plat_property_contexts \
+	  --property-contexts=$(call intermediates-dir-for,ETC,system_ext_property_contexts)/system_ext_property_contexts \
+	  --property-contexts=$(call intermediates-dir-for,ETC,product_property_contexts)/product_property_contexts \
+	  --property-contexts=$(call intermediates-dir-for,ETC,vendor_property_contexts)/vendor_property_contexts \
+	  --property-contexts=$(call intermediates-dir-for,ETC,odm_property_contexts)/odm_property_contexts \
+	  $$<
 else
 $(2): $(1)
 endif
@@ -2847,7 +2878,9 @@ endef
 # Can be passed a subdirectory to use for the common testcase directory.
 define compatibility_suite_dirs
   $(strip \
-    $(COMPATIBILITY_TESTCASES_OUT_$(1)) \
+    $(if $(COMPATIBILITY_TESTCASES_OUT_INCLUDE_MODULE_FOLDER_$(1)),\
+      $(COMPATIBILITY_TESTCASES_OUT_$(1))/$(LOCAL_MODULE)$(2),\
+      $(COMPATIBILITY_TESTCASES_OUT_$(1))) \
     $($(my_prefix)OUT_TESTCASES)/$(LOCAL_MODULE)$(2))
 endef
 

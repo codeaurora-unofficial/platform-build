@@ -184,6 +184,18 @@ current_product_makefile :=
 all_product_makefiles :=
 all_product_configs :=
 
+# Jacoco agent JARS to be built and installed, if any.
+ifeq ($(EMMA_INSTRUMENT),true)
+  ifneq ($(EMMA_INSTRUMENT_STATIC),true)
+    # For instrumented build, if Jacoco is not being included statically
+    # in instrumented packages then include Jacoco classes into the
+    # bootclasspath.
+    $(foreach product,$(PRODUCTS),\
+      $(eval PRODUCTS.$(product).PRODUCT_PACKAGES += jacocoagent)\
+      $(eval PRODUCTS.$(product).PRODUCT_BOOT_JARS += jacocoagent))
+  endif # EMMA_INSTRUMENT_STATIC
+endif # EMMA_INSTRUMENT
+
 ############################################################################
 # Strip and assign the PRODUCT_ variables.
 $(call strip-product-vars)
@@ -251,6 +263,13 @@ ifdef PRODUCT_DEFAULT_DEV_CERTIFICATE
       only 1 certificate is allowed.)
   endif
 endif
+
+$(foreach pair,$(PRODUCT_UPDATABLE_BOOT_JARS), \
+  $(if $(findstring $(call word-colon,2,$(pair)),$(PRODUCT_BOOT_JARS)),, \
+    $(error Every jar in PRODUCT_UPDATABLE_BOOT_JARS must also be in PRODUCT_BOOT_JARS, \
+      $(call word-colon,2,$(pair)) is not) \
+  ) \
+)
 
 ENFORCE_SYSTEM_CERTIFICATE := $(PRODUCT_ENFORCE_ARTIFACT_SYSTEM_CERTIFICATE_REQUIREMENT)
 ENFORCE_SYSTEM_CERTIFICATE_WHITELIST := $(PRODUCT_ARTIFACT_SYSTEM_CERTIFICATE_REQUIREMENT_WHITELIST)

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2016 The Android Open Source Project
+# Copyright (C) 2019 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +14,8 @@
 # limitations under the License.
 #
 
-LOCAL_MODULE_CLASS := FAKE
-LOCAL_IS_HOST_MODULE := true
-LOCAL_COMPATIBILITY_SUITE := vts
+# This is the list of modules that are specific to products that have telephony
+# hardware, and install to the system_ext partition.
 
-include $(BUILD_SYSTEM)/base_rules.mk
-
-$(LOCAL_BUILT_MODULE):
-	@echo "VTS host-driven test target: $(PRIVATE_MODULE)"
-	$(hide) touch $@
-
+# /system_ext packages
+PRODUCT_PACKAGES += \

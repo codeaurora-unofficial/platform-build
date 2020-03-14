@@ -68,8 +68,7 @@ Usage: merge_target_files.py [args]
       files package and saves it at this path.
 
   --rebuild_recovery
-      Rebuild the recovery patch used by non-A/B devices and write it to the
-      system image.
+      Deprecated; does nothing.
 
   --keep-tmp
       Keep tempoary files for debugging purposes.
@@ -106,6 +105,7 @@ OPTIONS.output_item_list = None
 OPTIONS.output_ota = None
 OPTIONS.output_img = None
 OPTIONS.output_super_empty = None
+# TODO(b/132730255): Remove this option.
 OPTIONS.rebuild_recovery = False
 OPTIONS.keep_tmp = False
 
@@ -372,32 +372,6 @@ def process_ab_partitions_txt(framework_target_files_temp_dir,
   write_sorted_data(data=output_ab_partitions, path=output_ab_partitions_txt)
 
 
-def append_recovery_to_filesystem_config(output_target_files_temp_dir):
-  """Performs special processing for META/filesystem_config.txt.
-
-  This function appends recovery information to META/filesystem_config.txt so
-  that recovery patch regeneration will succeed.
-
-  Args:
-    output_target_files_temp_dir: The name of a directory that will be used to
-      create the output target files package after all the special cases are
-      processed. We find filesystem_config.txt here.
-  """
-
-  filesystem_config_txt = os.path.join(output_target_files_temp_dir, 'META',
-                                       'filesystem_config.txt')
-
-  with open(filesystem_config_txt, 'a') as f:
-    # TODO(bpeckham) this data is hard coded. It should be generated
-    # programmatically.
-    f.write('system/bin/install-recovery.sh 0 0 750 '
-            'selabel=u:object_r:install_recovery_exec:s0 capabilities=0x0\n')
-    f.write('system/recovery-from-boot.p 0 0 644 '
-            'selabel=u:object_r:system_file:s0 capabilities=0x0\n')
-    f.write('system/etc/recovery.img 0 0 440 '
-            'selabel=u:object_r:install_recovery_exec:s0 capabilities=0x0\n')
-
-
 def process_misc_info_txt(framework_target_files_temp_dir,
                           vendor_target_files_temp_dir,
                           output_target_files_temp_dir,
@@ -442,12 +416,7 @@ def process_misc_info_txt(framework_target_files_temp_dir,
   if (merged_dict.get('use_dynamic_partitions') == 'true') and (
       framework_dict.get('use_dynamic_partitions') == 'true'):
     merged_dynamic_partitions_dict = common.MergeDynamicPartitionInfoDicts(
-        framework_dict=framework_dict,
-        vendor_dict=merged_dict,
-        size_prefix='super_',
-        size_suffix='_group_size',
-        list_prefix='super_',
-        list_suffix='_partition_list')
+        framework_dict=framework_dict, vendor_dict=merged_dict)
     merged_dict.update(merged_dynamic_partitions_dict)
     # Ensure that add_img_to_target_files rebuilds super split images for
     # devices that retrofit dynamic partitions. This flag may have been set to
@@ -506,11 +475,7 @@ def process_dynamic_partitions_info_txt(framework_target_files_dir,
 
   merged_dynamic_partitions_dict = common.MergeDynamicPartitionInfoDicts(
       framework_dict=framework_dynamic_partitions_dict,
-      vendor_dict=vendor_dynamic_partitions_dict,
-      # META/dynamic_partitions_info.txt does not use dynamic_partition_list.
-      include_dynamic_partition_list=False,
-      size_suffix='_size',
-      list_suffix='_partition_list')
+      vendor_dict=vendor_dynamic_partitions_dict)
 
   output_dynamic_partitions_info_txt = os.path.join(
       output_target_files_dir, 'META', 'dynamic_partitions_info.txt')
@@ -594,7 +559,7 @@ def copy_file_contexts(framework_target_files_dir, vendor_target_files_dir,
 def process_special_cases(framework_target_files_temp_dir,
                           vendor_target_files_temp_dir,
                           output_target_files_temp_dir,
-                          framework_misc_info_keys, rebuild_recovery):
+                          framework_misc_info_keys):
   """Performs special-case processing for certain target files items.
 
   Certain files in the output target files package require special-case
@@ -611,18 +576,12 @@ def process_special_cases(framework_target_files_temp_dir,
     framework_misc_info_keys: A list of keys to obtain from the framework
       instance of META/misc_info.txt. The remaining keys from the vendor
       instance.
-    rebuild_recovery: If true, rebuild the recovery patch used by non-A/B
-      devices and write it to the system image.
   """
 
   if 'ab_update' in framework_misc_info_keys:
     process_ab_partitions_txt(
         framework_target_files_temp_dir=framework_target_files_temp_dir,
         vendor_target_files_temp_dir=vendor_target_files_temp_dir,
-        output_target_files_temp_dir=output_target_files_temp_dir)
-
-  if rebuild_recovery:
-    append_recovery_to_filesystem_config(
         output_target_files_temp_dir=output_target_files_temp_dir)
 
   copy_file_contexts(
@@ -757,8 +716,7 @@ def create_merged_package(temp_dir, framework_target_files, framework_item_list,
       framework_target_files_temp_dir=framework_target_files_temp_dir,
       vendor_target_files_temp_dir=vendor_target_files_temp_dir,
       output_target_files_temp_dir=output_target_files_temp_dir,
-      framework_misc_info_keys=framework_misc_info_keys,
-      rebuild_recovery=rebuild_recovery)
+      framework_misc_info_keys=framework_misc_info_keys)
 
   return output_target_files_temp_dir
 
@@ -779,6 +737,7 @@ def generate_images(target_files_dir, rebuild_recovery):
 
   add_img_args = ['--verbose']
   add_img_args.append('--add_missing')
+  # TODO(b/132730255): Remove this if statement.
   if rebuild_recovery:
     add_img_args.append('--rebuild_recovery')
   add_img_args.append(target_files_dir)
@@ -914,11 +873,6 @@ def merge_target_files(temp_dir, framework_target_files, framework_item_list,
 
   generate_super_empty_image(output_target_files_temp_dir, output_super_empty)
 
-  if output_img:
-    # Create the IMG package from the merged target files (before zipping, in
-    # order to avoid an unnecessary unzip and copy).
-    img_from_target_files.main([output_target_files_temp_dir, output_img])
-
   # Finally, create the output target files zip archive and/or copy the
   # output items to the output target files directory.
 
@@ -931,6 +885,11 @@ def merge_target_files(temp_dir, framework_target_files, framework_item_list,
   output_zip = create_target_files_archive(output_target_files,
                                            output_target_files_temp_dir,
                                            temp_dir)
+
+  # Create the IMG package from the merged target files package.
+
+  if output_img:
+    img_from_target_files.main([output_zip, output_img])
 
   # Create the OTA package from the merged target files package.
 
@@ -1016,7 +975,7 @@ def main():
       OPTIONS.output_img = a
     elif o == '--output-super-empty':
       OPTIONS.output_super_empty = a
-    elif o == '--rebuild_recovery':
+    elif o == '--rebuild_recovery': # TODO(b/132730255): Warn
       OPTIONS.rebuild_recovery = True
     elif o == '--keep-tmp':
       OPTIONS.keep_tmp = True

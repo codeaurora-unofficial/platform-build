@@ -16,12 +16,8 @@
 
 # Base modules and settings for the system partition.
 PRODUCT_PACKAGES += \
-    abb \
-    adbd \
+    adbd_system_binaries \
     am \
-    android.hardware.neuralnetworks@1.0 \
-    android.hardware.neuralnetworks@1.1 \
-    android.hardware.neuralnetworks@1.2 \
     android.hidl.allocator@1.0-service \
     android.hidl.base-V1.0-java \
     android.hidl.manager-V1.0-java \
@@ -32,17 +28,17 @@ PRODUCT_PACKAGES += \
     android.test.mock \
     android.test.runner \
     apexd \
-    applypatch \
     appops \
     app_process \
+    service-appsearch \
     appwidget \
-    ashmemd \
     atrace \
     audioserver \
     BackupRestoreConfirmation \
     bcc \
     blank_screen \
     blkid \
+    service-blobstore \
     bmgr \
     bootanimation \
     bootstat \
@@ -50,17 +46,29 @@ PRODUCT_PACKAGES += \
     bu \
     bugreport \
     bugreportz \
+    cacerts_wfa \
     cgroups.json \
     charger \
     cmd \
+    com.android.adbd \
+    com.android.apex.cts.shim.v1_prebuilt \
     com.android.conscrypt \
+    com.android.cronet \
     com.android.i18n \
+    com.android.ipsec \
     com.android.location.provider \
     com.android.media \
     com.android.media.swcodec \
+    com.android.mediaprovider \
+    com.android.os.statsd \
+    com.android.permission \
     com.android.resolv \
     com.android.neuralnetworks \
+    com.android.os.statsd \
+    com.android.sdkext \
+    com.android.telephony \
     com.android.tzdata \
+    com.android.wifi \
     ContactsProvider \
     content \
     crash_dump \
@@ -79,7 +87,7 @@ PRODUCT_PACKAGES += \
     ExtServices \
     ExtShared \
     flags_health_check \
-    framework \
+    framework-minus-apex \
     framework-res \
     framework-sysconfig.xml \
     fsck_msdos \
@@ -94,17 +102,15 @@ PRODUCT_PACKAGES += \
     gpuservice \
     hid \
     hwservicemanager \
-    idmap \
     idmap2 \
     idmap2d \
     ime \
-    ims-common \
     incident \
     incidentd \
     incident_helper \
     init.environ.rc \
-    init.rc \
     init_system \
+    InProcessTethering \
     input \
     installd \
     iorapd \
@@ -113,7 +119,7 @@ PRODUCT_PACKAGES += \
     iptables \
     ip-up-vpn \
     javax.obex \
-    jobscheduler-service \
+    service-jobscheduler \
     keystore \
     ld.config.txt \
     ld.mc \
@@ -124,7 +130,6 @@ PRODUCT_PACKAGES += \
     libandroid_runtime \
     libandroid_servers \
     libartpalette-system \
-    libashmemd_client \
     libaudioeffect_jni \
     libbinder \
     libbinder_ndk \
@@ -132,6 +137,7 @@ PRODUCT_PACKAGES += \
     libcamera2ndk \
     libcutils \
     libdl.bootstrap \
+    libdl_android.bootstrap \
     libdrmframework \
     libdrmframework_jni \
     libEGL \
@@ -160,6 +166,7 @@ PRODUCT_PACKAGES += \
     libnetd_client \
     libnetlink \
     libnetutils \
+    libneuralnetworks_packageinfo \
     libOpenMAXAL \
     libOpenSLES \
     libpdfium \
@@ -176,8 +183,6 @@ PRODUCT_PACKAGES += \
     libspeexresampler \
     libsqlite \
     libstagefright \
-    libstagefright_amrnb_common \
-    libstagefright_enc_common \
     libstagefright_foundation \
     libstagefright_omx \
     libstdc++ \
@@ -186,7 +191,6 @@ PRODUCT_PACKAGES += \
     libui \
     libusbhost \
     libutils \
-    libvorbisidec \
     libvulkan \
     libwilhelm \
     linker \
@@ -199,20 +203,19 @@ PRODUCT_PACKAGES += \
     lpdump \
     lshal \
     mdnsd \
-    media \
     mediacodec.policy \
-    mediadrmserver \
     mediaextractor \
     mediametrics \
     media_profiles_V1_0.dtd \
-    MediaProvider \
+    MediaProviderLegacy \
     mediaserver \
+    mediatranscoding \
     mke2fs \
     monkey \
     mtpd \
     ndc \
     netd \
-    NetworkStack \
+    NetworkStackNext \
     org.apache.http.legacy \
     otacerts \
     PackageInstaller \
@@ -224,6 +227,7 @@ PRODUCT_PACKAGES += \
     platform.xml \
     pm \
     pppd \
+    preinstalled-packages-platform.xml \
     privapp-permissions-platform.xml \
     racoon \
     recovery-persist \
@@ -247,6 +251,7 @@ PRODUCT_PACKAGES += \
     Shell \
     shell_and_utilities_system \
     sm \
+    snapshotctl \
     SoundPicker \
     statsd \
     storaged \
@@ -255,7 +260,6 @@ PRODUCT_PACKAGES += \
     task_profiles.json \
     tc \
     telecom \
-    telephony-common \
     tombstoned \
     traced \
     traced_probes \
@@ -270,7 +274,6 @@ PRODUCT_PACKAGES += \
     vold \
     WallpaperBackup \
     watchdogd \
-    InProcessWifiStack \
     wificond \
     wm \
 
@@ -322,21 +325,28 @@ endif
 # The order matters for runtime class lookup performance.
 PRODUCT_BOOT_JARS := \
     $(TARGET_CORE_JARS) \
-    framework \
+    framework-minus-apex \
     ext \
+    telephony-common \
     voip-common \
     ims-common \
+    framework-sdkext \
+    framework-statsd \
+    ike \
     updatable-media
-PRODUCT_UPDATABLE_BOOT_MODULES := conscrypt updatable-media
-PRODUCT_UPDATABLE_BOOT_LOCATIONS := \
-    /apex/com.android.conscrypt/javalib/conscrypt.jar \
-    /apex/com.android.media/javalib/updatable-media.jar
 
+PRODUCT_UPDATABLE_BOOT_JARS := \
+    com.android.conscrypt:conscrypt \
+    com.android.ipsec:ike \
+    com.android.media:updatable-media \
+    com.android.os.statsd:framework-statsd \
+    com.android.sdkext:framework-sdkext \
+    com.android.telephony:telephony-common \
+    com.android.telephony:ims-common
 
 PRODUCT_COPY_FILES += \
-    system/core/rootdir/init.usb.rc:root/init.usb.rc \
-    system/core/rootdir/init.usb.configfs.rc:root/init.usb.configfs.rc \
-    system/core/rootdir/ueventd.rc:root/ueventd.rc \
+    system/core/rootdir/init.usb.rc:system/etc/init/hw/init.usb.rc \
+    system/core/rootdir/init.usb.configfs.rc:system/etc/init/hw/init.usb.configfs.rc \
     system/core/rootdir/etc/hosts:system/etc/hosts
 
 # Add the compatibility library that is needed when android.test.base
@@ -349,16 +359,18 @@ else
 PRODUCT_BOOT_JARS += android.test.base
 endif
 
-PRODUCT_COPY_FILES += system/core/rootdir/init.zygote32.rc:root/init.zygote32.rc
+PRODUCT_COPY_FILES += system/core/rootdir/init.zygote32.rc:system/etc/init/hw/init.zygote32.rc
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.zygote=zygote32
 
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += debug.atrace.tags.enableflags=0
+PRODUCT_SYSTEM_DEFAULT_PROPERTIES += persist.traced.enable=1
 
 # Packages included only for eng or userdebug builds, previously debug tagged
 PRODUCT_PACKAGES_DEBUG := \
     adb_keys \
     arping \
     gdbserver \
+    idlcli \
     init-debug.rc \
     iotop \
     iperf3 \
@@ -366,6 +378,7 @@ PRODUCT_PACKAGES_DEBUG := \
     logpersist.start \
     logtagd.rc \
     procrank \
+    remount \
     showmap \
     sqlite3 \
     ss \
