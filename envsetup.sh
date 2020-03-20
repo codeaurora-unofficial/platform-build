@@ -254,6 +254,9 @@ function setpaths()
     local ANDROID_LLVM_BINUTILS=$(get_abs_build_var ANDROID_CLANG_PREBUILTS)/llvm-binutils-stable
     ANDROID_BUILD_PATHS=$ANDROID_BUILD_PATHS:$ANDROID_LLVM_BINUTILS
 
+    # Set up ASAN_SYMBOLIZER_PATH for SANITIZE_HOST=address builds.
+    export ASAN_SYMBOLIZER_PATH=$ANDROID_LLVM_BINUTILS/llvm-symbolizer
+
     # If prebuilts/android-emulator/<system>/ exists, prepend it to our PATH
     # to ensure that the corresponding 'emulator' binaries are used.
     case $(uname -s) in
@@ -1342,7 +1345,7 @@ function allmod() {
         refreshmod || return 1
     fi
 
-    python -c "import json; print '\n'.join(sorted(json.load(open('$ANDROID_PRODUCT_OUT/module-info.json')).keys()))"
+    python -c "import json; print('\n'.join(sorted(json.load(open('$ANDROID_PRODUCT_OUT/module-info.json')).keys())))"
 }
 
 # Get the path of a specific module in the android tree, as cached in module-info.json. If any build change
@@ -1368,7 +1371,7 @@ module = '$1'
 module_info = json.load(open('$ANDROID_PRODUCT_OUT/module-info.json'))
 if module not in module_info:
     exit(1)
-print module_info[module]['path'][0]" 2>/dev/null)
+print(module_info[module]['path'][0])" 2>/dev/null)
 
     if [ -z "$relpath" ]; then
         echo "Could not find module '$1' (try 'refreshmod' if there have been build changes?)." >&2

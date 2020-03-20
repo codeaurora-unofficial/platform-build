@@ -231,6 +231,17 @@ endif
 # mount system_other partition.
 ADDITIONAL_DEFAULT_PROPERTIES += ro.postinstall.fstab.prefix=/system
 
+# Set ro.product.vndk.version to know the VNDK version required by product
+# modules. It uses the version in PRODUCT_PRODUCT_VNDK_VERSION. If the value
+# is "current", use PLATFORM_VNDK_VERSION.
+ifdef PRODUCT_PRODUCT_VNDK_VERSION
+ifeq ($(PRODUCT_PRODUCT_VNDK_VERSION),current)
+ADDITIONAL_PRODUCT_PROPERTIES += ro.product.vndk.version=$(PLATFORM_VNDK_VERSION)
+else
+ADDITIONAL_PRODUCT_PROPERTIES += ro.product.vndk.version=$(PRODUCT_PRODUCT_VNDK_VERSION)
+endif
+endif
+
 # -----------------------------------------------------------------
 ###
 ### In this section we set up the things that are different
@@ -431,10 +442,6 @@ endif # dont_bother
 ifndef subdir_makefiles_total
 subdir_makefiles_total := $(words init post finish)
 endif
-
-droid_targets: no_vendor_variant_vndk_check
-.PHONY: no_vendor_variant_vndk_check
-no_vendor_variant_vndk_check:
 
 $(info [$(call inc_and_print,subdir_makefiles_inc)/$(subdir_makefiles_total)] finishing build rules ...)
 
@@ -924,10 +931,6 @@ $(foreach t,$($(2).TYPE),\
       $(call link-type-error,$(1),$(2),$(t)))))
 endef
 
-# TODO: Verify all branches/configs have reasonable warnings/errors, and remove
-# this override
-verify-link-type = $(eval $$(1).MISSING := true)
-
 $(foreach lt,$(ALL_LINK_TYPES),\
   $(foreach d,$($(lt).DEPS),\
     $(if $($(d).TYPE),\
@@ -1022,7 +1025,7 @@ endef
 # variables being set.
 define auto-included-modules
   $(if $(BOARD_VNDK_VERSION),vndk_package) \
-  $(if $(DEVICE_MANIFEST_FILE),device_manifest.xml) \
+  $(if $(DEVICE_MANIFEST_FILE),vendor_manifest.xml) \
   $(if $(ODM_MANIFEST_FILES),odm_manifest.xml) \
   $(if $(ODM_MANIFEST_SKUS),$(foreach sku, $(ODM_MANIFEST_SKUS),odm_manifest_$(sku).xml)) \
 
@@ -1105,179 +1108,6 @@ $(if $(strip $(1)), \
   $(error Build failed) \
 )
 endef
-
-# Check that libraries that should only be in APEXes don't end up in the system
-# image. For the ART APEX this complements the checks in
-# art/build/apex/art_apex_test.py.
-# TODO(b/128708192): Implement this restriction in Soong instead.
-
-# ART APEX (native) libraries
-APEX_MODULE_LIBS := \
-  libadbconnection.so \
-  libadbconnectiond.so \
-  libandroidicu.so \
-  libandroidio.so \
-  libart-compiler.so \
-  libart-dexlayout.so \
-  libart-disassembler.so \
-  libart.so \
-  libartbase.so \
-  libartbased.so \
-  libartd-compiler.so \
-  libartd-dexlayout.so \
-  libartd.so \
-  libartpalette.so \
-  libdexfile.so \
-  libdexfile_external.so \
-  libdexfiled.so \
-  libdexfiled_external.so \
-  libdt_fd_forward.so \
-  libdt_socket.so \
-  libicui18n.so \
-  libicuuc.so \
-  libicu_jni.so \
-  libjavacore.so \
-  libjdwp.so \
-  libnativebridge.so \
-  libnativehelper.so \
-  libnativeloader.so \
-  libnpt.so \
-  libopenjdk.so \
-  libopenjdkjvm.so \
-  libopenjdkjvmd.so \
-  libopenjdkjvmti.so \
-  libopenjdkjvmtid.so \
-  libpac.so \
-  libprofile.so \
-  libprofiled.so \
-  libsigchain.so \
-
-# Runtime (Bionic) APEX (native) libraries
-APEX_MODULE_LIBS += \
-  libc.so \
-  libc_malloc_debug.so \
-  libc_malloc_hooks.so \
-  libdl.so \
-  libm.so \
-
-# Conscrypt APEX libraries
-APEX_MODULE_LIBS += \
-  libjavacrypto.so \
-
-# Android Neural Network API (NNAPI) APEX (native) libraries
-APEX_MODULE_LIBS += \
-  libneuralnetworks.so \
-
-# ART APEX JARs (Java libraries)
-APEX_MODULE_LIBS += \
-  apache-xml.jar \
-  bouncycastle.jar \
-  core-icu4j.jar \
-  core-libart.jar \
-  core-oj.jar \
-  okhttp.jar \
-
-# Conscrypt APEX JARs (Java libraries)
-APEX_MODULE_LIBS += \
-  conscrypt.jar \
-
-# An option to disable the check below, for local use since some build targets
-# still may create these libraries in /system (b/129006418).
-DISABLE_APEX_LIBS_ABSENCE_CHECK ?=
-
-# Allow APEX libraries under:
-# /system/apex, which happens when APEX flattening is enabled.
-# /system/system_ext, which happens with GSI
-APEX_LIBS_ABSENCE_CHECK_EXCLUDE := apex system_ext
-
-# Bionic should not be in /system, except for the bootstrap instance.
-APEX_LIBS_ABSENCE_CHECK_EXCLUDE += lib/bootstrap lib64/bootstrap
-
-# Exclude lib/arm and lib64/arm64 which contain the native bridge proxy libs. They
-# are compiled for the guest architecture and used with an entirely different
-# linker config. The native libs are then linked to as usual via exported
-# interfaces, so the proxy libs do not violate the interface boundaries on the
-# native architecture.
-# TODO(b/130630776): Introduce a make variable for the appropriate directory
-# when native bridge is active.
-APEX_LIBS_ABSENCE_CHECK_EXCLUDE += lib/arm lib64/arm64
-
-ifdef TARGET_NATIVE_BRIDGE_RELATIVE_PATH
-	APEX_LIBS_ABSENCE_CHECK_EXCLUDE += lib/$(TARGET_NATIVE_BRIDGE_RELATIVE_PATH) lib64/$(TARGET_NATIVE_BRIDGE_RELATIVE_PATH)
-endif
-
-ifdef TARGET_NATIVE_BRIDGE_2ND_RELATIVE_PATH
-	APEX_LIBS_ABSENCE_CHECK_EXCLUDE += lib/$(TARGET_NATIVE_BRIDGE_2ND_RELATIVE_PATH) lib64/$(TARGET_NATIVE_BRIDGE_2ND_RELATIVE_PATH)
-endif
-
-# Exclude vndk-* subdirectories which contain prebuilts from older releases.
-APEX_LIBS_ABSENCE_CHECK_EXCLUDE += lib/vndk-% lib64/vndk-%
-
-ifdef DISABLE_APEX_LIBS_ABSENCE_CHECK
-  check-apex-libs-absence :=
-  check-apex-libs-absence-on-disk :=
-else
-  # If the check below fails, some library has ended up in system/lib or
-  # system/lib64 that is intended to only go into some APEX package. The likely
-  # cause is that a library or binary in /system has grown a dependency that
-  # directly or indirectly pulls in the prohibited library.
-  #
-  # To resolve this, look for the APEX package that the library belong to -
-  # search for it in 'native_shared_lib' properties in 'apex' build modules (see
-  # art/build/apex/Android.bp for an example). Then check if there is an
-  # exported library in that APEX package that should be used instead, i.e. one
-  # listed in its 'native_shared_lib' property for which the corresponding
-  # 'cc_library' module has a 'stubs' clause (like libdexfile_external in
-  # art/libdexfile/Android.bp).
-  #
-  # If you cannot find an APEX exported library that fits your needs, or you
-  # think that the library you want to depend on should be allowed in /system,
-  # then please contact the owners of the APEX package containing the library.
-  #
-  # If you get this error for a library that is exported in an APEX, then the
-  # APEX might be misconfigured or something is wrong in the build system.
-  # Please reach out to the APEX package owners and/or soong-team@, or
-  # android-building@googlegroups.com externally.
-  #
-  # Likewise, we check for the absence of APEX Java libraries (JARs).
-  define check-apex-libs-absence
-    $(call maybe-print-list-and-error, \
-      $(filter $(foreach lib,$(APEX_MODULE_LIBS),%/$(lib)), \
-        $(filter-out $(foreach dir,$(APEX_LIBS_ABSENCE_CHECK_EXCLUDE), \
-                       $(TARGET_OUT)/$(if $(findstring %,$(dir)),$(dir),$(dir)/%)), \
-          $(filter $(TARGET_OUT),$(1)))), \
-      APEX libraries found in product_target_FILES (see comment for check-apex-libs-absence in \
-      build/make/core/main.mk for details))
-  endef
-
-  # TODO(b/129006418): The check above catches libraries through product
-  # dependencies visible to make, but as long as they have install rules in
-  # /system they may still be created there through other make targets. To catch
-  # that we also do a check on disk just before the system image is built.
-  # NB: This check may fail if you have built intermediate targets in the out
-  # tree earlier, e.g. "m <some lib in APEX_MODULE_LIBS>". In that case, please
-  # try "m installclean && m systemimage" to get a correct system image. For
-  # local work you can also disable the check with the
-  # DISABLE_APEX_LIBS_ABSENCE_CHECK environment variable.
-  #
-  # Likewise, we check for the absence of APEX Java libraries (JARs).
-  define check-apex-libs-absence-on-disk
-    $(hide) ( \
-      cd $(TARGET_OUT) && \
-      findres=$$(find . \
-        $(foreach dir,$(APEX_LIBS_ABSENCE_CHECK_EXCLUDE),-path "./$(subst %,*,$(dir))" -prune -o) \
-        -type f \( -false $(foreach lib,$(APEX_MODULE_LIBS),-o -name $(lib)) \) \
-        -print) && \
-      if [ -n "$$findres" ]; then \
-        echo "APEX libraries found in system image in TARGET_OUT (see comments for" 1>&2; \
-        echo "check-apex-libs-absence and check-apex-libs-absence-on-disk in" 1>&2; \
-        echo "build/make/core/main.mk for details):" 1>&2; \
-        echo "$$findres" | sort 1>&2; \
-        false; \
-      fi; \
-    )
-  endef
-endif
 
 ifdef FULL_BUILD
   ifneq (true,$(ALLOW_MISSING_DEPENDENCIES))
@@ -1399,8 +1229,6 @@ $(PRODUCT_OUT)/offending_artifacts.txt:
 	rm -f $@
 	$(foreach f,$(sort $(all_offending_files)),echo $(f) >> $@;)
   endif
-
-  $(call check-apex-libs-absence,$(product_target_FILES))
 else
   # We're not doing a full build, and are probably only including
   # a subset of the module makefiles.  Don't try to build any modules
@@ -1418,6 +1246,30 @@ modules_to_install := $(sort \
     $(product_host_FILES) \
     $(CUSTOM_MODULES) \
   )
+
+ifdef FULL_BUILD
+#
+# Used by the cleanup logic in soong_ui to remove files that should no longer
+# be installed.
+#
+
+# Include all tests, so that we remove them from the test suites / testcase
+# folders when they are removed.
+test_files := $(foreach ts,$(ALL_COMPATIBILITY_SUITES),$(COMPATIBILITY.$(ts).FILES))
+
+$(shell mkdir -p $(PRODUCT_OUT) $(HOST_OUT))
+
+$(file >$(PRODUCT_OUT)/.installable_files$(if $(filter address,$(SANITIZE_TARGET)),_asan), \
+  $(sort $(patsubst $(PRODUCT_OUT)/%,%,$(filter $(PRODUCT_OUT)/%, \
+    $(modules_to_install) $(test_files)))))
+
+$(file >$(HOST_OUT)/.installable_test_files,$(sort \
+  $(patsubst $(HOST_OUT)/%,%,$(filter $(HOST_OUT)/%, \
+    $(test_files)))))
+
+test_files :=
+endif
+
 
 # Don't include any GNU General Public License shared objects or static
 # libraries in SDK images.  GPL executables (not static/dynamic libraries)
@@ -1482,7 +1334,7 @@ modules_to_check += $(foreach m,$(ALL_MODULES),$(ALL_MODULES.$(m).BUILT))
 endif
 
 # Build docs as part of checkbuild to catch more breakages.
-module_to_check += $(ALL_DOCS)
+modules_to_check += $(ALL_DOCS)
 
 # for easier debugging
 modules_to_check := $(sort $(modules_to_check))
@@ -1523,6 +1375,9 @@ ramdisk_debug: $(INSTALLED_DEBUG_RAMDISK_TARGET)
 .PHONY: ramdisk_test_harness
 ramdisk_test_harness: $(INSTALLED_TEST_HARNESS_RAMDISK_TARGET)
 
+.PHONY: vendor_ramdisk_debug
+vendor_ramdisk_debug: $(INSTALLED_VENDOR_DEBUG_RAMDISK_TARGET)
+
 .PHONY: userdataimage
 userdataimage: $(INSTALLED_USERDATAIMAGE_TARGET)
 
@@ -1541,6 +1396,9 @@ vendorimage: $(INSTALLED_VENDORIMAGE_TARGET)
 
 .PHONY: vendorbootimage
 vendorbootimage: $(INSTALLED_VENDOR_BOOTIMAGE_TARGET)
+
+.PHONY: vendorbootimage_debug
+vendorbootimage_debug: $(INSTALLED_VENDOR_DEBUG_BOOTIMAGE_TARGET)
 
 .PHONY: productimage
 productimage: $(INSTALLED_PRODUCTIMAGE_TARGET)
@@ -1588,6 +1446,8 @@ droidcore: $(filter $(HOST_OUT_ROOT)/%,$(modules_to_install)) \
     $(INSTALLED_BPTIMAGE_TARGET) \
     $(INSTALLED_VENDORIMAGE_TARGET) \
     $(INSTALLED_VENDOR_BOOTIMAGE_TARGET) \
+    $(INSTALLED_VENDOR_DEBUG_RAMDISK_TARGET) \
+    $(INSTALLED_VENDOR_DEBUG_BOOTIMAGE_TARGET) \
     $(INSTALLED_ODMIMAGE_TARGET) \
     $(INSTALLED_SUPERIMAGE_EMPTY_TARGET) \
     $(INSTALLED_PRODUCTIMAGE_TARGET) \
@@ -1608,6 +1468,8 @@ droidcore: $(filter $(HOST_OUT_ROOT)/%,$(modules_to_install)) \
     $(INSTALLED_FILES_JSON_RAMDISK) \
     $(INSTALLED_FILES_FILE_DEBUG_RAMDISK) \
     $(INSTALLED_FILES_JSON_DEBUG_RAMDISK) \
+    $(INSTALLED_FILES_FILE_VENDOR_DEBUG_RAMDISK) \
+    $(INSTALLED_FILES_JSON_VENDOR_DEBUG_RAMDISK) \
     $(INSTALLED_FILES_FILE_ROOT) \
     $(INSTALLED_FILES_JSON_ROOT) \
     $(INSTALLED_FILES_FILE_RECOVERY) \
@@ -1703,6 +1565,7 @@ else # TARGET_BUILD_APPS
     $(INSTALLED_BUILD_PROP_TARGET) \
     $(BUILT_TARGET_FILES_PACKAGE) \
     $(INSTALLED_ANDROID_INFO_TXT_TARGET) \
+    $(INSTALLED_MISC_INFO_TARGET) \
     $(INSTALLED_RAMDISK_TARGET) \
    )
 
@@ -1730,8 +1593,12 @@ else # TARGET_BUILD_APPS
       $(INSTALLED_FILES_JSON_RAMDISK) \
       $(INSTALLED_FILES_FILE_DEBUG_RAMDISK) \
       $(INSTALLED_FILES_JSON_DEBUG_RAMDISK) \
+      $(INSTALLED_FILES_FILE_VENDOR_DEBUG_RAMDISK) \
+      $(INSTALLED_FILES_JSON_VENDOR_DEBUG_RAMDISK) \
       $(INSTALLED_DEBUG_RAMDISK_TARGET) \
       $(INSTALLED_DEBUG_BOOTIMAGE_TARGET) \
+      $(INSTALLED_VENDOR_DEBUG_RAMDISK_TARGET) \
+      $(INSTALLED_VENDOR_DEBUG_BOOTIMAGE_TARGET) \
     )
     $(call dist-for-goals, bootimage_test_harness, \
       $(INSTALLED_TEST_HARNESS_RAMDISK_TARGET) \
@@ -1739,8 +1606,14 @@ else # TARGET_BUILD_APPS
     )
   endif
 
+  ifeq ($(BOARD_USES_RECOVERY_AS_BOOT),true)
+    $(call dist-for-goals, droidcore, \
+      $(recovery_ramdisk) \
+    )
+  endif
+
   ifeq ($(EMMA_INSTRUMENT),true)
-    $(JACOCO_REPORT_CLASSES_ALL) : $(INSTALLED_SYSTEMIMAGE_TARGET)
+    $(JACOCO_REPORT_CLASSES_ALL) : $(modules_to_install)
     $(call dist-for-goals, dist_files, $(JACOCO_REPORT_CLASSES_ALL))
   endif
 

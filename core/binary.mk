@@ -90,32 +90,6 @@ ifneq (,$(filter $(addsuffix %,$(ALLOWED_MANUAL_INTERFACE_PATHS)),$(LOCAL_PATH))
   my_cflags += -DDO_NOT_CHECK_MANUAL_BINDER_INTERFACES
 endif
 
-ifneq ($(strip $(ENABLE_XOM)),false)
-  ifndef LOCAL_IS_HOST_MODULE
-    my_xom := true
-    # Disable XOM in excluded paths.
-    combined_xom_exclude_paths := $(XOM_EXCLUDE_PATHS) \
-                                  $(PRODUCT_XOM_EXCLUDE_PATHS)
-    ifneq ($(strip $(foreach dir,$(subst $(comma),$(space),$(combined_xom_exclude_paths)),\
-           $(filter $(dir)%,$(LOCAL_PATH)))),)
-      my_xom := false
-    endif
-
-    # Allow LOCAL_XOM to override the above
-    ifdef LOCAL_XOM
-      my_xom := $(LOCAL_XOM)
-    endif
-
-    ifeq ($(strip $(my_xom)),true)
-      ifeq (arm64,$(TARGET_$(LOCAL_2ND_ARCH_VAR_PREFIX)ARCH))
-        ifeq ($(my_use_clang_lld),true)
-          my_ldflags += -Wl,--execute-only -Wl,-z,separate-code
-        endif
-      endif
-    endif
-  endif
-endif
-
 my_allow_undefined_symbols := $(strip $(LOCAL_ALLOW_UNDEFINED_SYMBOLS))
 ifdef SANITIZE_HOST
 ifdef LOCAL_IS_HOST_MODULE
@@ -299,6 +273,9 @@ ifneq ($(LOCAL_USE_VNDK),)
     # If PLATFORM_VNDK_VERSION has a CODENAME, it will return
     # __ANDROID_API_FUTURE__.
     my_api_level := $(call codename-or-sdk-to-sdk,$(PLATFORM_VNDK_VERSION))
+  else
+    # Build with current BOARD_VNDK_VERSION.
+    my_api_level := $(call codename-or-sdk-to-sdk,$(BOARD_VNDK_VERSION))
   endif
   my_cflags += -D__ANDROID_VNDK__
 endif
@@ -816,7 +793,7 @@ y_yacc_cs := $(addprefix \
     $(intermediates)/,$(y_yacc_sources:.y=.c))
 ifneq ($(y_yacc_cs),)
 $(y_yacc_cs): $(intermediates)/%.c: \
-    $(TOPDIR)$(LOCAL_PATH)/%.y $(BISON) $(BISON_DATA) \
+    $(TOPDIR)$(LOCAL_PATH)/%.y $(BISON) $(BISON_DATA) $(M4) \
     $(my_additional_dependencies)
 	$(call transform-y-to-c-or-cpp)
 $(call track-src-file-gen,$(y_yacc_sources),$(y_yacc_cs))
@@ -829,7 +806,7 @@ yy_yacc_cpps := $(addprefix \
     $(intermediates)/,$(yy_yacc_sources:.yy=$(LOCAL_CPP_EXTENSION)))
 ifneq ($(yy_yacc_cpps),)
 $(yy_yacc_cpps): $(intermediates)/%$(LOCAL_CPP_EXTENSION): \
-    $(TOPDIR)$(LOCAL_PATH)/%.yy $(BISON) $(BISON_DATA) \
+    $(TOPDIR)$(LOCAL_PATH)/%.yy $(BISON) $(BISON_DATA) $(M4) \
     $(my_additional_dependencies)
 	$(call transform-y-to-c-or-cpp)
 $(call track-src-file-gen,$(yy_yacc_sources),$(yy_yacc_cpps))
@@ -845,6 +822,7 @@ l_lex_sources := $(filter %.l,$(my_src_files))
 l_lex_cs := $(addprefix \
     $(intermediates)/,$(l_lex_sources:.l=.c))
 ifneq ($(l_lex_cs),)
+$(l_lex_cs): $(LEX) $(M4)
 $(l_lex_cs): $(intermediates)/%.c: \
     $(TOPDIR)$(LOCAL_PATH)/%.l
 	$(transform-l-to-c-or-cpp)
@@ -857,6 +835,7 @@ ll_lex_sources := $(filter %.ll,$(my_src_files))
 ll_lex_cpps := $(addprefix \
     $(intermediates)/,$(ll_lex_sources:.ll=$(LOCAL_CPP_EXTENSION)))
 ifneq ($(ll_lex_cpps),)
+$(ll_lex_cpps): $(LEX) $(M4)
 $(ll_lex_cpps): $(intermediates)/%$(LOCAL_CPP_EXTENSION): \
     $(TOPDIR)$(LOCAL_PATH)/%.ll
 	$(transform-l-to-c-or-cpp)
@@ -1143,22 +1122,35 @@ endif
 ## When compiling against the VNDK, use LL-NDK libraries
 ###########################################################
 ifneq ($(LOCAL_USE_VNDK),)
-  ####################################################
-  ## Soong modules may be built twice, once for /system
-  ## and once for /vendor. If we're using the VNDK,
-  ## switch all soong libraries over to the /vendor
-  ## variant.
-  ####################################################
-  my_whole_static_libraries := $(foreach l,$(my_whole_static_libraries),\
-    $(if $(SPLIT_VENDOR.STATIC_LIBRARIES.$(l)),$(l).vendor,$(l)))
-  my_static_libraries := $(foreach l,$(my_static_libraries),\
-    $(if $(SPLIT_VENDOR.STATIC_LIBRARIES.$(l)),$(l).vendor,$(l)))
-  my_shared_libraries := $(foreach l,$(my_shared_libraries),\
-    $(if $(SPLIT_VENDOR.SHARED_LIBRARIES.$(l)),$(l).vendor,$(l)))
-  my_system_shared_libraries := $(foreach l,$(my_system_shared_libraries),\
-    $(if $(SPLIT_VENDOR.SHARED_LIBRARIES.$(l)),$(l).vendor,$(l)))
-  my_header_libraries := $(foreach l,$(my_header_libraries),\
-    $(if $(SPLIT_VENDOR.HEADER_LIBRARIES.$(l)),$(l).vendor,$(l)))
+  #####################################################
+  ## Soong modules may be built three times, once for
+  ## /system, once for /vendor and once for /product.
+  ## If we're using the VNDK, switch all soong
+  ## libraries over to the /vendor or /product variant.
+  #####################################################
+  ifeq ($(LOCAL_USE_VNDK_PRODUCT),true)
+    my_whole_static_libraries := $(foreach l,$(my_whole_static_libraries),\
+      $(if $(SPLIT_PRODUCT.STATIC_LIBRARIES.$(l)),$(l).product,$(l)))
+    my_static_libraries := $(foreach l,$(my_static_libraries),\
+      $(if $(SPLIT_PRODUCT.STATIC_LIBRARIES.$(l)),$(l).product,$(l)))
+    my_shared_libraries := $(foreach l,$(my_shared_libraries),\
+      $(if $(SPLIT_PRODUCT.SHARED_LIBRARIES.$(l)),$(l).product,$(l)))
+    my_system_shared_libraries := $(foreach l,$(my_system_shared_libraries),\
+      $(if $(SPLIT_PRODUCT.SHARED_LIBRARIES.$(l)),$(l).product,$(l)))
+    my_header_libraries := $(foreach l,$(my_header_libraries),\
+      $(if $(SPLIT_PRODUCT.HEADER_LIBRARIES.$(l)),$(l).product,$(l)))
+  else
+    my_whole_static_libraries := $(foreach l,$(my_whole_static_libraries),\
+      $(if $(SPLIT_VENDOR.STATIC_LIBRARIES.$(l)),$(l).vendor,$(l)))
+    my_static_libraries := $(foreach l,$(my_static_libraries),\
+      $(if $(SPLIT_VENDOR.STATIC_LIBRARIES.$(l)),$(l).vendor,$(l)))
+    my_shared_libraries := $(foreach l,$(my_shared_libraries),\
+      $(if $(SPLIT_VENDOR.SHARED_LIBRARIES.$(l)),$(l).vendor,$(l)))
+    my_system_shared_libraries := $(foreach l,$(my_system_shared_libraries),\
+      $(if $(SPLIT_VENDOR.SHARED_LIBRARIES.$(l)),$(l).vendor,$(l)))
+    my_header_libraries := $(foreach l,$(my_header_libraries),\
+      $(if $(SPLIT_VENDOR.HEADER_LIBRARIES.$(l)),$(l).vendor,$(l)))
+  endif
 endif
 
 # Platform can use vendor public libraries. If a required shared lib is one of
@@ -1205,6 +1197,7 @@ my_warn_types := $(my_warn_ndk_types)
 my_allowed_types := $(my_allowed_ndk_types)
 else ifdef LOCAL_USE_VNDK
     _name := $(patsubst %.vendor,%,$(LOCAL_MODULE))
+    _name := $(patsubst %.product,%,$(LOCAL_MODULE))
     ifneq ($(filter $(_name),$(VNDK_CORE_LIBRARIES) $(VNDK_SAMEPROCESS_LIBRARIES) $(LLNDK_LIBRARIES)),)
         ifeq ($(filter $(_name),$(VNDK_PRIVATE_LIBRARIES)),)
             my_link_type := native:vndk
@@ -1213,6 +1206,12 @@ else ifdef LOCAL_USE_VNDK
         endif
         my_warn_types :=
         my_allowed_types := native:vndk native:vndk_private
+    else ifeq ($(LOCAL_USE_VNDK_PRODUCT),true)
+        # Modules installed to /product cannot directly depend on modules marked
+        # with vendor_available: false
+        my_link_type := native:product
+        my_warn_types :=
+        my_allowed_types := native:product native:vndk native:platform_vndk
     else
         # Modules installed to /vendor cannot directly depend on modules marked
         # with vendor_available: false
