@@ -51,6 +51,12 @@ endif
 
 my_skip_non_preferred_arch :=
 
+ifneq ($(FORCE_SDCLANG_OFF),true)
+ifeq ($(LOCAL_SDCLANG),true)
+include $(SDCLANG_FLAG_DEFS)
+endif
+endif
+
 # check if preferred arch is supported
 include $(BUILD_SYSTEM)/module_arch_supported.mk
 ifeq ($(my_module_arch_supported),true)
@@ -87,5 +93,11 @@ LOCAL_2ND_ARCH_VAR_PREFIX :=
 LOCAL_NO_2ND_ARCH_MODULE_SUFFIX :=
 
 my_module_arch_supported :=
+
+ifeq ($(LOCAL_SDCLANG),true)
+ifeq ($(LOCAL_SDCLANG_LTO),true)
+include $(SDCLANG_LTO_DEFS)
+endif
+endif
 
 endif
