@@ -1594,12 +1594,14 @@ function make()
             echo " ####${color_reset}"
             return $RET
         fi
+        if [ -f $vendor_hal_script ]; then
         source $vendor_hal_script
         RET=$?
         if [ $RET -ne 0 ]; then
             echo -n "${color_failed}#### HAL file .bp generation failed dure to incpomaptible HAL files , please check above error log"
             echo " ####${color_reset}"
             return $RET
+        fi
         fi
     fi
     _wrap_build $(get_make_command "$@") "$@"
