@@ -30,7 +30,6 @@ PRODUCT_PACKAGES += \
     apexd \
     appops \
     app_process \
-    service-appsearch \
     appwidget \
     atrace \
     audioserver \
@@ -46,14 +45,13 @@ PRODUCT_PACKAGES += \
     bu \
     bugreport \
     bugreportz \
-    cacerts_wfa \
     cgroups.json \
     charger \
     cmd \
     com.android.adbd \
-    com.android.apex.cts.shim.v1_prebuilt \
+    com.android.apex.cts.shim.v1 \
     com.android.conscrypt \
-    com.android.cronet \
+    com.android.extservices \
     com.android.i18n \
     com.android.ipsec \
     com.android.location.provider \
@@ -64,16 +62,13 @@ PRODUCT_PACKAGES += \
     com.android.permission \
     com.android.resolv \
     com.android.neuralnetworks \
-    com.android.os.statsd \
     com.android.sdkext \
-    com.android.telephony \
+    com.android.tethering \
     com.android.tzdata \
     com.android.wifi \
     ContactsProvider \
     content \
     crash_dump \
-    CtsShimPrebuilt \
-    CtsShimPrivPrebuilt \
     debuggerd\
     device_config \
     dmctl \
@@ -84,12 +79,12 @@ PRODUCT_PACKAGES += \
     dumpsys \
     DynamicSystemInstallationService \
     e2fsck \
-    ExtServices \
     ExtShared \
     flags_health_check \
     framework-minus-apex \
     framework-res \
     framework-sysconfig.xml \
+    framework-telephony \
     fsck_msdos \
     fs_config_files_system \
     fs_config_dirs_system \
@@ -105,12 +100,13 @@ PRODUCT_PACKAGES += \
     idmap2 \
     idmap2d \
     ime \
+    ims-common \
     incident \
     incidentd \
     incident_helper \
+    incident-helper-cmd \
     init.environ.rc \
     init_system \
-    InProcessTethering \
     input \
     installd \
     iorapd \
@@ -121,7 +117,6 @@ PRODUCT_PACKAGES += \
     javax.obex \
     service-jobscheduler \
     keystore \
-    ld.config.txt \
     ld.mc \
     libaaudio \
     libamidi \
@@ -142,6 +137,7 @@ PRODUCT_PACKAGES += \
     libdrmframework_jni \
     libEGL \
     libETC1 \
+    libfdtrack \
     libFFTEm \
     libfilterfw \
     libgatekeeper \
@@ -209,7 +205,6 @@ PRODUCT_PACKAGES += \
     media_profiles_V1_0.dtd \
     MediaProviderLegacy \
     mediaserver \
-    mediatranscoding \
     mke2fs \
     monkey \
     mtpd \
@@ -221,7 +216,6 @@ PRODUCT_PACKAGES += \
     PackageInstaller \
     passwd_system \
     perfetto \
-    PermissionController \
     ping \
     ping6 \
     platform.xml \
@@ -253,13 +247,13 @@ PRODUCT_PACKAGES += \
     sm \
     snapshotctl \
     SoundPicker \
-    statsd \
     storaged \
     surfaceflinger \
     svc \
     task_profiles.json \
     tc \
     telecom \
+    telephony-common \
     tombstoned \
     traced \
     traced_probes \
@@ -275,6 +269,7 @@ PRODUCT_PACKAGES += \
     WallpaperBackup \
     watchdogd \
     wificond \
+    wifi.rc \
     wm \
 
 # VINTF data for system image
@@ -324,25 +319,23 @@ endif
 
 # The order matters for runtime class lookup performance.
 PRODUCT_BOOT_JARS := \
-    $(TARGET_CORE_JARS) \
+    $(ART_APEX_JARS) \
     framework-minus-apex \
     ext \
     telephony-common \
     voip-common \
     ims-common \
-    framework-sdkext \
-    framework-statsd \
-    ike \
-    updatable-media
+    framework-telephony
 
 PRODUCT_UPDATABLE_BOOT_JARS := \
     com.android.conscrypt:conscrypt \
-    com.android.ipsec:ike \
     com.android.media:updatable-media \
+    com.android.mediaprovider:framework-mediaprovider \
     com.android.os.statsd:framework-statsd \
-    com.android.sdkext:framework-sdkext \
-    com.android.telephony:telephony-common \
-    com.android.telephony:ims-common
+    com.android.permission:framework-permission \
+    com.android.sdkext:framework-sdkextensions \
+    com.android.wifi:framework-wifi \
+    com.android.tethering:framework-tethering
 
 PRODUCT_COPY_FILES += \
     system/core/rootdir/init.usb.rc:system/etc/init/hw/init.usb.rc \

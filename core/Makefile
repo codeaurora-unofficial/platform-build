@@ -16,7 +16,28 @@ LOCAL_PATH := $(BUILD_SYSTEM)
 define check-product-copy-files
 $(if $(filter-out $(TARGET_COPY_OUT_SYSTEM_OTHER)/%,$(2)), \
   $(if $(filter %.apk, $(2)),$(error \
-     Prebuilt apk found in PRODUCT_COPY_FILES: $(1), use BUILD_PREBUILT instead!)))
+     Prebuilt apk found in PRODUCT_COPY_FILES: $(1), use BUILD_PREBUILT instead!))) \
+$(if $(filter true,$(BUILD_BROKEN_VINTF_PRODUCT_COPY_FILES)),, \
+  $(if $(filter $(TARGET_COPY_OUT_SYSTEM)/etc/vintf/% \
+                $(TARGET_COPY_OUT_SYSTEM)/manifest.xml \
+                $(TARGET_COPY_OUT_SYSTEM)/compatibility_matrix.xml,$(2)), \
+    $(error VINTF metadata found in PRODUCT_COPY_FILES: $(1), use vintf_fragments instead!)) \
+  $(if $(filter $(TARGET_COPY_OUT_PRODUCT)/etc/vintf/%,$(2)), \
+    $(error VINTF metadata found in PRODUCT_COPY_FILES: $(1), \
+      use PRODUCT_MANIFEST_FILES / DEVICE_PRODUCT_COMPATIBILITY_MATRIX_FILE / vintf_compatibility_matrix / vintf_fragments instead!)) \
+  $(if $(filter $(TARGET_COPY_OUT_SYSTEM_EXT)/etc/vintf/%,$(2)), \
+    $(error VINTF metadata found in PRODUCT_COPY_FILES: $(1), \
+      use vintf_compatibility_matrix / vintf_fragments instead!)) \
+  $(if $(filter $(TARGET_COPY_OUT_VENDOR)/etc/vintf/% \
+                $(TARGET_COPY_OUT_VENDOR)/manifest.xml \
+                $(TARGET_COPY_OUT_VENDOR)/compatibility_matrix.xml,$(2)), \
+    $(error VINTF metadata found in PRODUCT_COPY_FILES: $(1), \
+      use DEVICE_MANIFEST_FILE / DEVICE_MATRIX_FILE / vintf_compatibility_matrix / vintf_fragments instead!)) \
+  $(if $(filter $(TARGET_COPY_OUT_ODM)/etc/vintf/% \
+                $(TARGET_COPY_OUT_ODM)/etc/manifest%,$(2)), \
+    $(error VINTF metadata found in PRODUCT_COPY_FILES: $(1), \
+      use ODM_MANIFEST_FILES / vintf_fragments instead!)) \
+)
 endef
 # filter out the duplicate <source file>:<dest file> pairs.
 unique_product_copy_files_pairs :=
@@ -220,6 +241,7 @@ define generate-common-build-props-with-product-vars-set
 	BUILD_VERSION_TAGS="$(BUILD_VERSION_TAGS)" \
 	DATE="$(DATE_FROM_FILE)" \
 	PLATFORM_SDK_VERSION="$(PLATFORM_SDK_VERSION)" \
+	PLATFORM_VERSION_LAST_STABLE="$(PLATFORM_VERSION_LAST_STABLE)" \
 	PLATFORM_VERSION="$(PLATFORM_VERSION)" \
 	TARGET_BUILD_TYPE="$(TARGET_BUILD_VARIANT)" \
 	bash $(BUILDINFO_COMMON_SH) "$(1)" >> $(2)
@@ -425,6 +447,7 @@ endif
 	        BUILD_NUMBER="$(BUILD_NUMBER_FROM_FILE)" \
 	        BOARD_BUILD_SYSTEM_ROOT_IMAGE="$(BOARD_BUILD_SYSTEM_ROOT_IMAGE)" \
 	        PLATFORM_VERSION="$(PLATFORM_VERSION)" \
+	        PLATFORM_VERSION_LAST_STABLE="$(PLATFORM_VERSION_LAST_STABLE)" \
 	        PLATFORM_SECURITY_PATCH="$(PLATFORM_SECURITY_PATCH)" \
 	        PLATFORM_BASE_OS="$(PLATFORM_BASE_OS)" \
 	        PLATFORM_SDK_VERSION="$(PLATFORM_SDK_VERSION)" \
@@ -480,6 +503,12 @@ $(INSTALLED_BUILD_PROP_TARGET): $(intermediate_system_build_prop)
 INSTALLED_VENDOR_BUILD_PROP_TARGET := $(TARGET_OUT_VENDOR)/build.prop
 ALL_DEFAULT_INSTALLED_MODULES += $(INSTALLED_VENDOR_BUILD_PROP_TARGET)
 
+ifdef TARGET_VENDOR_PROP
+vendor_prop_files := $(TARGET_VENDOR_PROP)
+else
+vendor_prop_files := $(wildcard $(TARGET_DEVICE_DIR)/vendor.prop)
+endif
+
 ifdef property_overrides_split_enabled
 FINAL_VENDOR_BUILD_PROPERTIES += \
     $(call collapse-pairs, $(PRODUCT_PROPERTY_OVERRIDES))
@@ -487,7 +516,7 @@ FINAL_VENDOR_BUILD_PROPERTIES := $(call uniq-pairs-by-first-component, \
     $(FINAL_VENDOR_BUILD_PROPERTIES),=)
 endif  # property_overrides_split_enabled
 
-$(INSTALLED_VENDOR_BUILD_PROP_TARGET): $(BUILDINFO_COMMON_SH) $(POST_PROCESS_PROPS) $(intermediate_system_build_prop)
+$(INSTALLED_VENDOR_BUILD_PROP_TARGET): $(BUILDINFO_COMMON_SH) $(POST_PROCESS_PROPS) $(intermediate_system_build_prop) $(vendor_prop_files)
 	@echo Target vendor buildinfo: $@
 	@mkdir -p $(dir $@)
 	$(hide) echo > $@
@@ -523,6 +552,16 @@ endif
 	        echo "#" >> $@;
 	$(hide) cat $(INSTALLED_ANDROID_INFO_TXT_TARGET) | grep 'require version-' | sed -e 's/require version-/ro.build.expect./g' >> $@
 ifdef property_overrides_split_enabled
+	$(hide) $(foreach file,$(vendor_prop_files), \
+	    if [ -f "$(file)" ]; then \
+	        echo Target vendor properties from: "$(file)"; \
+	        echo "" >> $@; \
+	        echo "#" >> $@; \
+	        echo "# from $(file)" >> $@; \
+	        echo "#" >> $@; \
+	        cat $(file) >> $@; \
+	        echo "# end of $(file)" >> $@; \
+	    fi;)
 	$(hide) $(foreach line,$(FINAL_VENDOR_BUILD_PROPERTIES), \
 	    echo "$(line)" >> $@;)
 endif  # property_overrides_split_enabled
@@ -574,12 +613,18 @@ endif  # BOARD_USES_PRODUCTIMAGE
 INSTALLED_ODM_BUILD_PROP_TARGET := $(TARGET_OUT_ODM)/etc/build.prop
 ALL_DEFAULT_INSTALLED_MODULES += $(INSTALLED_ODM_BUILD_PROP_TARGET)
 
+ifdef TARGET_ODM_PROP
+odm_prop_files := $(TARGET_ODM_PROP)
+else
+odm_prop_files := $(wildcard $(TARGET_DEVICE_DIR)/odm.prop)
+endif
+
 FINAL_ODM_BUILD_PROPERTIES += \
     $(call collapse-pairs, $(PRODUCT_ODM_PROPERTIES))
 FINAL_ODM_BUILD_PROPERTIES := $(call uniq-pairs-by-first-component, \
     $(FINAL_ODM_BUILD_PROPERTIES),=)
 
-$(INSTALLED_ODM_BUILD_PROP_TARGET): $(BUILDINFO_COMMON_SH) $(POST_PROCESS_PROPS)
+$(INSTALLED_ODM_BUILD_PROP_TARGET): $(BUILDINFO_COMMON_SH) $(POST_PROCESS_PROPS) $(odm_prop_files)
 	@echo Target odm buildinfo: $@
 	@mkdir -p $(dir $@)
 	$(hide) echo > $@
@@ -587,6 +632,16 @@ $(INSTALLED_ODM_BUILD_PROP_TARGET): $(BUILDINFO_COMMON_SH) $(POST_PROCESS_PROPS)
 	$(hide) echo ro.odm.product.cpu.abilist32="$(TARGET_CPU_ABI_LIST_32_BIT)">>$@
 	$(hide) echo ro.odm.product.cpu.abilist64="$(TARGET_CPU_ABI_LIST_64_BIT)">>$@
 	$(hide) $(call generate-common-build-props,odm,$@)
+	$(hide) $(foreach file,$(odm_prop_files), \
+	    if [ -f "$(file)" ]; then \
+	        echo Target odm properties from: "$(file)"; \
+	        echo "" >> $@; \
+	        echo "#" >> $@; \
+	        echo "# from $(file)" >> $@; \
+	        echo "#" >> $@; \
+	        cat $(file) >> $@; \
+	        echo "# end of $(file)" >> $@; \
+	    fi;)
 	$(hide) echo "#" >> $@; \
 	        echo "# ADDITIONAL ODM BUILD PROPERTIES" >> $@; \
 	        echo "#" >> $@;
@@ -713,7 +768,6 @@ $(3)/$(DEPMOD_STAGING_SUBDIR)/modules.dep: $(1) $(6)
 	$(if $(6),\
 	  unzip -qo -d $$(PRIVATE_MODULE_DIR) $$(PRIVATE_MODULE_ARCHIVE); \
 	  mkdir -p $$(PRIVATE_OUTPUT_DIR)/lib; \
-	  rm -rf $$(PRIVATE_OUTPUT_DIR)/lib/modules; \
 	  cp -r $$(PRIVATE_MODULE_DIR) $$(PRIVATE_OUTPUT_DIR)/lib/; \
 	  find $$(PRIVATE_MODULE_DIR) -type f -name *.ko | xargs basename -a > $$(PRIVATE_LOAD_FILE); \
 	)
@@ -1098,7 +1152,7 @@ endif
 endif
 
 INTERNAL_MKBOOTIMG_VERSION_ARGS := \
-    --os_version $(PLATFORM_VERSION) \
+    --os_version $(PLATFORM_VERSION_LAST_STABLE) \
     --os_patch_level $(PLATFORM_SECURITY_PATCH)
 
 # Define these only if we are building boot
@@ -1550,6 +1604,8 @@ $(if $(filter $(2),system),\
 $(if $(filter $(2),userdata),\
     $(if $(BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "userdata_fs_type=$(BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
     $(if $(BOARD_USERDATAIMAGE_PARTITION_SIZE),$(hide) echo "userdata_size=$(BOARD_USERDATAIMAGE_PARTITION_SIZE)" >> $(1))
+    $(if $(PRODUCT_FS_CASEFOLD),$(hide) echo "needs_casefold=$(PRODUCT_FS_CASEFOLD)" >> $(1))
+    $(if $(PRODUCT_QUOTA_PROJID),$(hide) echo "needs_projid=$(PRODUCT_QUOTA_PROJID)" >> $(1))
     $(hide) echo "userdata_selinux_fc=$(SELINUX_FC)" >> $(1)
 )
 $(if $(filter $(2),cache),\
@@ -1691,7 +1747,8 @@ $(if $(filter true,$(BOARD_USES_RECOVERY_AS_BOOT)),\
 $(if $(filter true,$(BOARD_BUILD_SYSTEM_ROOT_IMAGE)),\
     $(hide) echo "system_root_image=true" >> $(1))
 $(hide) echo "root_dir=$(TARGET_ROOT_OUT)" >> $(1)
-$(if $(PRODUCT_USE_DYNAMIC_PARTITION_SIZE),$(hide) echo "use_dynamic_partition_size=true" >> $(1))
+$(if $(filter true,$(PRODUCT_USE_DYNAMIC_PARTITION_SIZE)),\
+    $(hide) echo "use_dynamic_partition_size=true" >> $(1))
 $(if $(3),$(hide) $(foreach kv,$(3),echo "$(kv)" >> $(1);))
 endef
 
@@ -2124,6 +2181,7 @@ $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTFS) $(MKBOOTIMG) $(MINIGZIP) \
 	    $(recovery_fstab)
 	$(call pretty,"Target boot image from recovery: $@")
 	$(call build-recoveryimage-target, $@)
+$(INSTALLED_BOOTIMAGE_TARGET): .KATI_IMPLICIT_OUTPUTS += $(recovery_ramdisk)
 endif # BOARD_USES_RECOVERY_AS_BOOT
 
 ifdef BOARD_INCLUDE_RECOVERY_DTBO
@@ -2305,6 +2363,81 @@ bootimage_debug-nodeps: $(MKBOOTIMG)
 	$(if $(BOARD_AVB_BOOT_KEY_PATH),$(call test-key-sign-bootimage,$(INSTALLED_DEBUG_BOOTIMAGE_TARGET)))
 
 endif # TARGET_NO_KERNEL
+
+ifeq ($(BUILDING_VENDOR_BOOT_IMAGE),true)
+ifeq ($(BUILDING_RAMDISK_IMAGE),true)
+# -----------------------------------------------------------------
+# vendor debug ramdisk
+# Combines vendor ramdisk files and debug ramdisk files to build the vendor debug ramdisk.
+INSTALLED_VENDOR_DEBUG_RAMDISK_TARGET := $(PRODUCT_OUT)/vendor-ramdisk-debug.cpio.gz
+$(INSTALLED_VENDOR_DEBUG_RAMDISK_TARGET): DEBUG_RAMDISK_FILES := $(INTERNAL_DEBUG_RAMDISK_FILES)
+$(INSTALLED_VENDOR_DEBUG_RAMDISK_TARGET): VENDOR_RAMDISK_DIR := $(TARGET_VENDOR_RAMDISK_OUT)
+
+INTERNAL_VENDOR_DEBUG_RAMDISK_FILES := $(filter $(TARGET_VENDOR_DEBUG_RAMDISK_OUT)/%, \
+    $(ALL_GENERATED_SOURCES) \
+    $(ALL_DEFAULT_INSTALLED_MODULES))
+
+# Note: TARGET_VENDOR_DEBUG_RAMDISK_OUT will be $(PRODUCT_OUT)/vendor_debug_ramdisk/first_stage_ramdisk,
+# if BOARD_USES_RECOVERY_AS_BOOT is true. Otherwise, it will be $(PRODUCT_OUT)/vendor_debug_ramdisk.
+# But the path of $(VENDOR_DEBUG_RAMDISK_DIR) to build the vendor debug ramdisk, is always
+# $(PRODUCT_OUT)/vendor_debug_ramdisk.
+$(INSTALLED_VENDOR_DEBUG_RAMDISK_TARGET): VENDOR_DEBUG_RAMDISK_DIR := $(PRODUCT_OUT)/vendor_debug_ramdisk
+$(INSTALLED_VENDOR_DEBUG_RAMDISK_TARGET): $(INTERNAL_VENDOR_RAMDISK_TARGET) $(INSTALLED_DEBUG_RAMDISK_TARGET)
+$(INSTALLED_VENDOR_DEBUG_RAMDISK_TARGET): $(MKBOOTFS) $(INTERNAL_VENDOR_DEBUG_RAMDISK_FILES) | $(MINIGZIP)
+	$(call pretty,"Target vendor debug ram disk: $@")
+	mkdir -p $(TARGET_VENDOR_DEBUG_RAMDISK_OUT)
+	touch $(TARGET_VENDOR_DEBUG_RAMDISK_OUT)/force_debuggable
+	$(foreach debug_file,$(DEBUG_RAMDISK_FILES), \
+	  cp -f $(debug_file) $(subst $(PRODUCT_OUT)/debug_ramdisk,$(PRODUCT_OUT)/vendor_debug_ramdisk,$(debug_file)) &&) true
+	rsync -a $(VENDOR_RAMDISK_DIR)/ $(VENDOR_DEBUG_RAMDISK_DIR)
+	$(MKBOOTFS) -d $(TARGET_OUT) $(VENDOR_DEBUG_RAMDISK_DIR) | $(MINIGZIP) > $@
+
+INSTALLED_FILES_FILE_VENDOR_DEBUG_RAMDISK := $(PRODUCT_OUT)/installed-files-vendor-ramdisk-debug.txt
+INSTALLED_FILES_JSON_VENDOR_DEBUG_RAMDISK := $(INSTALLED_FILES_FILE_VENDOR_DEBUG_RAMDISK:.txt=.json)
+$(INSTALLED_FILES_FILE_VENDOR_DEBUG_RAMDISK): .KATI_IMPLICIT_OUTPUTS := $(INSTALLED_FILES_JSON_VENDOR_DEBUG_RAMDISK)
+$(INSTALLED_FILES_FILE_VENDOR_DEBUG_RAMDISK): VENDOR_DEBUG_RAMDISK_DIR := $(PRODUCT_OUT)/vendor_debug_ramdisk
+
+# The vendor debug ramdisk will rsync from $(TARGET_VENDOR_RAMDISK_OUT) and $(INTERNAL_DEBUG_RAMDISK_FILES),
+# so we have to wait for the vendor debug ramdisk to be built before generating the installed file list.
+$(INSTALLED_FILES_FILE_VENDOR_DEBUG_RAMDISK): $(INSTALLED_VENDOR_DEBUG_RAMDISK_TARGET)
+$(INSTALLED_FILES_FILE_VENDOR_DEBUG_RAMDISK): $(INTERNAL_VENDOR_DEBUG_RAMDISK_FILES) $(FILESLIST) $(FILESLIST_UTIL)
+	echo Installed file list: $@
+	mkdir -p $(dir $@)
+	rm -f $@
+	$(FILESLIST) $(VENDOR_DEBUG_RAMDISK_DIR) > $(@:.txt=.json)
+	$(FILESLIST_UTIL) -c $(@:.txt=.json) > $@
+
+# -----------------------------------------------------------------
+# vendor_boot-debug.img.
+INSTALLED_VENDOR_DEBUG_BOOTIMAGE_TARGET := $(PRODUCT_OUT)/vendor_boot-debug.img
+
+# The util to sign vendor_boot-debug.img with a test key.
+BOARD_AVB_VENDOR_BOOT_TEST_KEY_PATH := external/avb/test/data/testkey_rsa2048.pem
+INTERNAL_AVB_VENDOR_BOOT_TEST_SIGNING_ARGS := --algorithm SHA256_RSA2048 --key $(BOARD_AVB_VENDOR_BOOT_TEST_KEY_PATH)
+# $(1): the vendor bootimage to sign
+define test-key-sign-vendor-bootimage
+$(call assert-max-image-size,$(1),$(call get-hash-image-max-size,$(BOARD_VENDOR_BOOTIMAGE_PARTITION_SIZE)))
+$(AVBTOOL) add_hash_footer \
+  --image $(1) \
+  --partition_size $(BOARD_VENDOR_BOOTIMAGE_PARTITION_SIZE) \
+  --partition_name vendor_boot $(INTERNAL_AVB_VENDOR_BOOT_TEST_SIGNING_ARGS) \
+  $(BOARD_AVB_VENDOR_BOOT_ADD_HASH_FOOTER_ARGS)
+$(call assert-max-image-size,$(1),$(BOARD_VENDOR_BOOTIMAGE_PARTITION_SIZE))
+endef
+
+ifneq ($(BOARD_AVB_VENDOR_BOOT_KEY_PATH),)
+$(INSTALLED_VENDOR_DEBUG_BOOTIMAGE_TARGET): $(AVBTOOL) $(BOARD_AVB_VENDOR_BOOT_TEST_KEY_PATH)
+endif
+
+# Depends on vendor_boot.img and vendor-ramdisk-debug.cpio.gz to build the new vendor_boot-debug.img
+$(INSTALLED_VENDOR_DEBUG_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INSTALLED_VENDOR_BOOTIMAGE_TARGET) $(INSTALLED_VENDOR_DEBUG_RAMDISK_TARGET)
+	$(call pretty,"Target vendor_boot debug image: $@")
+	$(MKBOOTIMG) $(INTERNAL_VENDOR_BOOTIMAGE_ARGS) $(INTERNAL_MKBOOTIMG_VERSION_ARGS) $(BOARD_MKBOOTIMG_ARGS) --vendor_ramdisk $(INSTALLED_VENDOR_DEBUG_RAMDISK_TARGET) --vendor_boot $@
+	$(call assert-max-image-size,$@,$(BOARD_VENDOR_BOOTIMAGE_PARTITION_SIZE))
+	$(if $(BOARD_AVB_VENDOR_BOOT_KEY_PATH),$(call test-key-sign-vendor-bootimage,$@))
+
+endif # BUILDING_RAMDISK_IMAGE
+endif # BUILDING_VENDOR_BOOT_IMAGE
 
 # -----------------------------------------------------------------
 # The test harness ramdisk, which is based off debug_ramdisk, plus a
@@ -2489,7 +2622,6 @@ define build-systemimage-target
   $(call create-system-vendor-symlink)
   $(call create-system-product-symlink)
   $(call create-system-system_ext-symlink)
-  $(call check-apex-libs-absence-on-disk)
   @mkdir -p $(dir $(1)) $(systemimage_intermediates) && rm -rf $(systemimage_intermediates)/system_image_info.txt
   $(call generate-image-prop-dictionary, $(systemimage_intermediates)/system_image_info.txt,system, \
       skip_fsck=true)
@@ -2870,94 +3002,6 @@ INTERNAL_VENDORIMAGE_FILES := \
       $(ALL_PDK_FUSION_FILES)) \
     $(PDK_FUSION_SYMLINK_STAMP)
 
-# Final Vendor VINTF manifest including fragments. This is not assembled
-# on the device because it depends on everything in a given device
-# image which defines a vintf_fragment.
-ifdef BUILT_VENDOR_MANIFEST
-BUILT_ASSEMBLED_VENDOR_MANIFEST := $(PRODUCT_OUT)/verified_assembled_vendor_manifest.xml
-ifeq (true,$(PRODUCT_ENFORCE_VINTF_MANIFEST))
-ifneq ($(strip $(DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE) $(DEVICE_PRODUCT_COMPATIBILITY_MATRIX_FILE)),)
-$(BUILT_ASSEMBLED_VENDOR_MANIFEST): PRIVATE_SYSTEM_ASSEMBLE_VINTF_ENV_VARS := VINTF_ENFORCE_NO_UNUSED_HALS=true
-endif # DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE or DEVICE_PRODUCT_COMPATIBILITY_MATRIX_FILE
-endif # PRODUCT_ENFORCE_VINTF_MANIFEST
-$(BUILT_ASSEMBLED_VENDOR_MANIFEST): $(HOST_OUT_EXECUTABLES)/assemble_vintf
-$(BUILT_ASSEMBLED_VENDOR_MANIFEST): $(BUILT_SYSTEM_MATRIX)
-$(BUILT_ASSEMBLED_VENDOR_MANIFEST): $(BUILT_VENDOR_MANIFEST)
-$(BUILT_ASSEMBLED_VENDOR_MANIFEST): $(INTERNAL_VENDORIMAGE_FILES)
-
-$(BUILT_ASSEMBLED_VENDOR_MANIFEST): PRIVATE_FLAGS :=
-
-# -- Kernel version and configurations.
-ifeq ($(PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS),true)
-
-intermediates := $(call intermediates-dir-for,ETC,$(notdir $(BUILT_ASSEMBLED_VENDOR_MANIFEST)))
-BUILT_KERNEL_CONFIGS_FILE := $(intermediates)/kernel_configs.txt
-BUILT_KERNEL_VERSION_FILE := $(intermediates)/kernel_version.txt
-
-# BOARD_KERNEL_CONFIG_FILE and BOARD_KERNEL_VERSION can be used to override the values extracted
-# from INSTALLED_KERNEL_TARGET.
-ifdef BOARD_KERNEL_CONFIG_FILE
-ifdef BOARD_KERNEL_VERSION
-$(BUILT_KERNEL_CONFIGS_FILE): $(BOARD_KERNEL_CONFIG_FILE)
-	cp $< $@
-$(BUILT_KERNEL_VERSION_FILE):
-	echo $(BOARD_KERNEL_VERSION) > $@
-
-my_board_extracted_kernel := true
-endif # BOARD_KERNEL_VERSION
-endif # BOARD_KERNEL_CONFIG_FILE
-
-ifneq ($(my_board_extracted_kernel),true)
-ifndef INSTALLED_KERNEL_TARGET
-$(warning No INSTALLED_KERNEL_TARGET is defined when PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS \
-    is true. Information about the updated kernel cannot be built into OTA update package. \
-    You can fix this by: (1) setting TARGET_NO_KERNEL to false and installing the built kernel \
-    to $(PRODUCT_OUT)/kernel, so that kernel information will be extracted from the built kernel; \
-    or (2) extracting kernel configuration and defining BOARD_KERNEL_CONFIG_FILE and \
-    BOARD_KERNEL_VERSION manually; or (3) unsetting PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS \
-    manually.)
-else
-
-# Tools for decompression that is not in PATH.
-# Check $(EXTRACT_KERNEL) for decompression algorithms supported by the script.
-# Algorithms that are in the script but not in this list will be found in PATH.
-my_decompress_tools := \
-    lz4:$(HOST_OUT_EXECUTABLES)/lz4 \
-
-$(BUILT_KERNEL_CONFIGS_FILE): .KATI_IMPLICIT_OUTPUTS := $(BUILT_KERNEL_VERSION_FILE)
-$(BUILT_KERNEL_CONFIGS_FILE): PRIVATE_DECOMPRESS_TOOLS := $(my_decompress_tools)
-$(BUILT_KERNEL_CONFIGS_FILE): $(foreach pair,$(my_decompress_tools),$(call word-colon,2,$(pair)))
-$(BUILT_KERNEL_CONFIGS_FILE): $(EXTRACT_KERNEL) $(INSTALLED_KERNEL_TARGET)
-	$< --tools $(PRIVATE_DECOMPRESS_TOOLS) --input $(INSTALLED_KERNEL_TARGET) \
-	  --output-configs $@ \
-	  --output-version $(BUILT_KERNEL_VERSION_FILE)
-
-intermediates :=
-my_decompress_tools :=
-
-endif # my_board_extracted_kernel
-my_board_extracted_kernel :=
-
-endif # INSTALLED_KERNEL_TARGET
-
-$(BUILT_ASSEMBLED_VENDOR_MANIFEST): $(BUILT_KERNEL_CONFIGS_FILE) $(BUILT_KERNEL_VERSION_FILE)
-$(BUILT_ASSEMBLED_VENDOR_MANIFEST): PRIVATE_FLAGS += --kernel $$(cat $(BUILT_KERNEL_VERSION_FILE)):$(BUILT_KERNEL_CONFIGS_FILE)
-
-endif # PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS
-
-$(BUILT_ASSEMBLED_VENDOR_MANIFEST):
-	@echo "Verifying vendor VINTF manifest."
-	PRODUCT_ENFORCE_VINTF_MANIFEST=$(PRODUCT_ENFORCE_VINTF_MANIFEST) \
-	$(PRIVATE_SYSTEM_ASSEMBLE_VINTF_ENV_VARS) \
-	$(HOST_OUT_EXECUTABLES)/assemble_vintf \
-	    $(PRIVATE_FLAGS) \
-	    -c $(BUILT_SYSTEM_MATRIX) \
-	    -i $(BUILT_VENDOR_MANIFEST) \
-	    $$([ -d $(TARGET_OUT_VENDOR)/etc/vintf/manifest ] && \
-	        find $(TARGET_OUT_VENDOR)/etc/vintf/manifest -type f -name "*.xml" | \
-	        sed "s/^/-i /" | tr '\n' ' ') -o $@
-endif # BUILT_VENDOR_MANIFEST
-
 # platform.zip depends on $(INTERNAL_VENDORIMAGE_FILES).
 $(INSTALLED_PLATFORM_ZIP) : $(INTERNAL_VENDORIMAGE_FILES)
 
@@ -3004,9 +3048,6 @@ endef
 
 # We just build this directly to the install location.
 INSTALLED_VENDORIMAGE_TARGET := $(BUILT_VENDORIMAGE_TARGET)
-ifdef BUILT_VENDOR_MANIFEST
-$(INSTALLED_VENDORIMAGE_TARGET): $(BUILT_ASSEMBLED_VENDOR_MANIFEST)
-endif
 $(INSTALLED_VENDORIMAGE_TARGET): \
     $(INTERNAL_USERIMAGES_DEPS) \
     $(INTERNAL_VENDORIMAGE_FILES) \
@@ -3079,52 +3120,6 @@ else ifdef BOARD_PREBUILT_PRODUCTIMAGE
 INSTALLED_PRODUCTIMAGE_TARGET := $(PRODUCT_OUT)/product.img
 $(eval $(call copy-one-file,$(BOARD_PREBUILT_PRODUCTIMAGE),$(INSTALLED_PRODUCTIMAGE_TARGET)))
 endif
-
-# -----------------------------------------------------------------
-# Final Framework VINTF manifest including fragments. This is not assembled
-# on the device because it depends on everything in a given device
-# image which defines a vintf_fragment.
-
-ifdef BUILDING_SYSTEM_IMAGE
-
-ifndef BOARD_USES_PRODUCTIMAGE
-  # If no product image at all, check system manifest directly against device matrix.
-  check_framework_manifest := true
-else ifdef BUILDING_PRODUCT_IMAGE
-  # If device has a product image, only check if the product image is built.
-  check_framework_manifest := true
-endif
-
-# TODO (b/131425279): delete this line once build_mixed script can correctly merge system and
-# product manifests.
-check_framework_manifest := true
-
-ifeq ($(check_framework_manifest),true)
-
-BUILT_ASSEMBLED_FRAMEWORK_MANIFEST := $(PRODUCT_OUT)/verified_assembled_framework_manifest.xml
-$(BUILT_ASSEMBLED_FRAMEWORK_MANIFEST): $(HOST_OUT_EXECUTABLES)/assemble_vintf \
-                                       $(BUILT_VENDOR_MATRIX) \
-                                       $(BUILT_SYSTEM_MANIFEST) \
-                                       $(FULL_SYSTEMIMAGE_DEPS) \
-                                       $(BUILT_PRODUCT_MANIFEST) \
-                                       $(BUILT_PRODUCTIMAGE_TARGET)
-	@echo "Verifying framework VINTF manifest."
-	PRODUCT_ENFORCE_VINTF_MANIFEST=$(PRODUCT_ENFORCE_VINTF_MANIFEST) \
-	$(HOST_OUT_EXECUTABLES)/assemble_vintf \
-	    -o $@ \
-	    -c $(BUILT_VENDOR_MATRIX) \
-	    -i $(BUILT_SYSTEM_MANIFEST) \
-	    $(addprefix -i ,\
-	      $(filter $(TARGET_OUT)/etc/vintf/manifest/%.xml,$(FULL_SYSTEMIMAGE_DEPS)) \
-	      $(BUILT_PRODUCT_MANIFEST) \
-	      $(filter $(TARGET_OUT_PRODUCT)/etc/vintf/manifest/%.xml,$(INTERNAL_PRODUCTIMAGE_FILES)))
-
-droidcore: $(BUILT_ASSEMBLED_FRAMEWORK_MANIFEST)
-
-endif # check_framework_manifest
-check_framework_manifest :=
-
-endif # BUILDING_SYSTEM_IMAGE
 
 # -----------------------------------------------------------------
 # system_ext partition image
@@ -3329,22 +3324,22 @@ endif
 
 BOARD_AVB_SYSTEM_ADD_HASHTREE_FOOTER_ARGS += \
     --prop com.android.build.system.fingerprint:$(BUILD_FINGERPRINT_FROM_FILE) \
-    --prop com.android.build.system.os_version:$(PLATFORM_VERSION) \
+    --prop com.android.build.system.os_version:$(PLATFORM_VERSION_LAST_STABLE) \
     --prop com.android.build.system.security_patch:$(PLATFORM_SECURITY_PATCH)
 
 BOARD_AVB_PRODUCT_ADD_HASHTREE_FOOTER_ARGS += \
     --prop com.android.build.product.fingerprint:$(BUILD_FINGERPRINT_FROM_FILE) \
-    --prop com.android.build.product.os_version:$(PLATFORM_VERSION) \
+    --prop com.android.build.product.os_version:$(PLATFORM_VERSION_LAST_STABLE) \
     --prop com.android.build.product.security_patch:$(PLATFORM_SECURITY_PATCH)
 
 BOARD_AVB_SYSTEM_EXT_ADD_HASHTREE_FOOTER_ARGS += \
     --prop com.android.build.system_ext.fingerprint:$(BUILD_FINGERPRINT_FROM_FILE) \
-    --prop com.android.build.system_ext.os_version:$(PLATFORM_VERSION) \
+    --prop com.android.build.system_ext.os_version:$(PLATFORM_VERSION_LAST_STABLE) \
     --prop com.android.build.system_ext.security_patch:$(PLATFORM_SECURITY_PATCH)
 
 BOARD_AVB_BOOT_ADD_HASH_FOOTER_ARGS += \
     --prop com.android.build.boot.fingerprint:$(BUILD_FINGERPRINT_FROM_FILE) \
-    --prop com.android.build.boot.os_version:$(PLATFORM_VERSION)
+    --prop com.android.build.boot.os_version:$(PLATFORM_VERSION_LAST_STABLE)
 
 BOARD_AVB_VENDOR_BOOT_ADD_HASH_FOOTER_ARGS += \
     --prop com.android.build.vendor_boot.fingerprint:$(BUILD_FINGERPRINT_FROM_FILE) \
@@ -3354,11 +3349,11 @@ BOARD_AVB_RECOVERY_ADD_HASH_FOOTER_ARGS += \
 
 BOARD_AVB_VENDOR_ADD_HASHTREE_FOOTER_ARGS += \
     --prop com.android.build.vendor.fingerprint:$(BUILD_FINGERPRINT_FROM_FILE) \
-    --prop com.android.build.vendor.os_version:$(PLATFORM_VERSION)
+    --prop com.android.build.vendor.os_version:$(PLATFORM_VERSION_LAST_STABLE)
 
 BOARD_AVB_ODM_ADD_HASHTREE_FOOTER_ARGS += \
     --prop com.android.build.odm.fingerprint:$(BUILD_FINGERPRINT_FROM_FILE) \
-    --prop com.android.build.odm.os_version:$(PLATFORM_VERSION)
+    --prop com.android.build.odm.os_version:$(PLATFORM_VERSION_LAST_STABLE)
 
 BOARD_AVB_DTBO_ADD_HASH_FOOTER_ARGS += \
     --prop com.android.build.dtbo.fingerprint:$(BUILD_FINGERPRINT_FROM_FILE)
@@ -3636,6 +3631,186 @@ endif # BUILDING_VBMETA_IMAGE
 endif # BOARD_AVB_ENABLE
 
 # -----------------------------------------------------------------
+# Check VINTF of build
+
+ifndef TARGET_BUILD_APPS
+intermediates := $(call intermediates-dir-for,PACKAGING,check_vintf_all)
+check_vintf_all_deps :=
+
+# The build system only writes VINTF metadata to */etc/vintf paths. Legacy paths aren't needed here
+# because they are only used for prebuilt images.
+check_vintf_common_srcs_patterns := \
+  $(TARGET_OUT)/etc/vintf/% \
+  $(TARGET_OUT_VENDOR)/etc/vintf/% \
+  $(TARGET_OUT_ODM)/etc/vintf/% \
+  $(TARGET_OUT_PRODUCT)/etc/vintf/% \
+  $(TARGET_OUT_SYSTEM_EXT)/etc/vintf/% \
+
+check_vintf_common_srcs := $(sort $(filter $(check_vintf_common_srcs_patterns), \
+  $(INTERNAL_SYSTEMIMAGE_FILES) \
+  $(INTERNAL_VENDORIMAGE_FILES) \
+  $(INTERNAL_ODMIMAGE_FILES) \
+  $(INTERNAL_PRODUCTIMAGE_FILES) \
+  $(INTERNAL_SYSTEM_EXTIMAGE_FILES) \
+))
+check_vintf_common_srcs_patterns :=
+
+check_vintf_has_system :=
+check_vintf_has_vendor :=
+
+# -- Check system manifest / matrix including fragments (excluding other framework manifests / matrices, e.g. product);
+check_vintf_system_deps := $(filter $(TARGET_OUT)/etc/vintf/%, $(check_vintf_common_srcs))
+ifneq ($(check_vintf_system_deps),)
+check_vintf_has_system := true
+check_vintf_system_log := $(intermediates)/check_vintf_system_log
+check_vintf_all_deps += $(check_vintf_system_log)
+$(check_vintf_system_log): $(HOST_OUT_EXECUTABLES)/checkvintf $(check_vintf_system_deps)
+	@( $< --check-one --dirmap /system:$(TARGET_OUT) > $@ 2>&1 ) || ( cat $@ && exit 1 )
+check_vintf_system_log :=
+endif # check_vintf_system_deps
+check_vintf_system_deps :=
+
+# -- Check vendor manifest / matrix including fragments (excluding other device manifests / matrices)
+check_vintf_vendor_deps := $(filter $(TARGET_OUT_VENDOR)/etc/vintf/%, $(check_vintf_common_srcs))
+ifneq ($(check_vintf_vendor_deps),)
+check_vintf_has_vendor := true
+check_vintf_vendor_log := $(intermediates)/check_vintf_vendor_log
+check_vintf_all_deps += $(check_vintf_vendor_log)
+$(check_vintf_vendor_log): $(HOST_OUT_EXECUTABLES)/checkvintf $(check_vintf_vendor_deps)
+	@( $< --check-one --dirmap /vendor:$(TARGET_OUT_VENDOR) > $@ 2>&1 ) || ( cat $@ && exit 1 )
+check_vintf_vendor_log :=
+endif # check_vintf_vendor_deps
+check_vintf_vendor_deps :=
+
+# -- Check VINTF compatibility of build.
+# Skip partial builds; only check full builds. Only check if:
+# - PRODUCT_ENFORCE_VINTF_MANIFEST is true
+# - system / vendor VINTF metadata exists
+# - Building product / system_ext / odm images if board has product / system_ext / odm images
+ifeq ($(PRODUCT_ENFORCE_VINTF_MANIFEST),true)
+ifeq ($(check_vintf_has_system),true)
+ifeq ($(check_vintf_has_vendor),true)
+ifeq ($(filter true,$(BUILDING_ODM_IMAGE)),$(filter true,$(BOARD_USES_ODMIMAGE)))
+ifeq ($(filter true,$(BUILDING_PRODUCT_IMAGE)),$(filter true,$(BOARD_USES_PRODUCTIMAGE)))
+ifeq ($(filter true,$(BUILDING_SYSTEM_EXT_IMAGE)),$(filter true,$(BOARD_USES_SYSTEM_EXTIMAGE)))
+
+check_vintf_compatible_log := $(intermediates)/check_vintf_compatible_log
+check_vintf_all_deps += $(check_vintf_compatible_log)
+
+check_vintf_compatible_args :=
+check_vintf_compatible_deps := $(check_vintf_common_srcs)
+
+# -- Kernel version and configurations.
+ifeq ($(PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS),true)
+
+BUILT_KERNEL_CONFIGS_FILE := $(intermediates)/kernel_configs.txt
+BUILT_KERNEL_VERSION_FILE := $(intermediates)/kernel_version.txt
+
+my_board_extracted_kernel :=
+
+# BOARD_KERNEL_CONFIG_FILE and BOARD_KERNEL_VERSION can be used to override the values extracted
+# from INSTALLED_KERNEL_TARGET.
+ifdef BOARD_KERNEL_CONFIG_FILE
+ifdef BOARD_KERNEL_VERSION
+$(BUILT_KERNEL_CONFIGS_FILE): $(BOARD_KERNEL_CONFIG_FILE)
+	cp $< $@
+$(BUILT_KERNEL_VERSION_FILE):
+	echo $(BOARD_KERNEL_VERSION) > $@
+
+my_board_extracted_kernel := true
+endif # BOARD_KERNEL_VERSION
+endif # BOARD_KERNEL_CONFIG_FILE
+
+ifneq ($(my_board_extracted_kernel),true)
+ifndef INSTALLED_KERNEL_TARGET
+$(warning No INSTALLED_KERNEL_TARGET is defined when PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS \
+    is true. Information about the updated kernel cannot be built into OTA update package. \
+    You can fix this by: (1) setting TARGET_NO_KERNEL to false and installing the built kernel \
+    to $(PRODUCT_OUT)/kernel, so that kernel information will be extracted from the built kernel; \
+    or (2) extracting kernel configuration and defining BOARD_KERNEL_CONFIG_FILE and \
+    BOARD_KERNEL_VERSION manually; or (3) unsetting PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS \
+    manually.)
+else
+
+# Tools for decompression that is not in PATH.
+# Check $(EXTRACT_KERNEL) for decompression algorithms supported by the script.
+# Algorithms that are in the script but not in this list will be found in PATH.
+my_decompress_tools := \
+    lz4:$(HOST_OUT_EXECUTABLES)/lz4 \
+
+$(BUILT_KERNEL_CONFIGS_FILE): .KATI_IMPLICIT_OUTPUTS := $(BUILT_KERNEL_VERSION_FILE)
+$(BUILT_KERNEL_CONFIGS_FILE): PRIVATE_DECOMPRESS_TOOLS := $(my_decompress_tools)
+$(BUILT_KERNEL_CONFIGS_FILE): $(foreach pair,$(my_decompress_tools),$(call word-colon,2,$(pair)))
+$(BUILT_KERNEL_CONFIGS_FILE): $(EXTRACT_KERNEL) $(INSTALLED_KERNEL_TARGET)
+	$< --tools $(PRIVATE_DECOMPRESS_TOOLS) --input $(INSTALLED_KERNEL_TARGET) \
+	  --output-configs $@ \
+	  --output-version $(BUILT_KERNEL_VERSION_FILE)
+
+my_decompress_tools :=
+
+endif # my_board_extracted_kernel
+my_board_extracted_kernel :=
+
+endif # INSTALLED_KERNEL_TARGET
+
+check_vintf_compatible_args += --kernel $$(cat $(BUILT_KERNEL_VERSION_FILE)):$(BUILT_KERNEL_CONFIGS_FILE)
+check_vintf_compatible_deps += $(BUILT_KERNEL_CONFIGS_FILE) $(BUILT_KERNEL_VERSION_FILE)
+
+endif # PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS
+
+check_vintf_compatible_args += \
+  --dirmap /system:$(TARGET_OUT) \
+  --dirmap /vendor:$(TARGET_OUT_VENDOR) \
+  --dirmap /odm:$(TARGET_OUT_ODM) \
+  --dirmap /product:$(TARGET_OUT_PRODUCT) \
+  --dirmap /system_ext:$(TARGET_OUT_SYSTEM_EXT) \
+
+ifdef PRODUCT_SHIPPING_API_LEVEL
+check_vintf_compatible_args += --property ro.product.first_api_level=$(PRODUCT_SHIPPING_API_LEVEL)
+endif # PRODUCT_SHIPPING_API_LEVEL
+
+$(check_vintf_compatible_log): PRIVATE_CHECK_VINTF_ARGS := $(check_vintf_compatible_args)
+$(check_vintf_compatible_log): PRIVATE_CHECK_VINTF_DEPS := $(check_vintf_compatible_deps)
+$(check_vintf_compatible_log): $(HOST_OUT_EXECUTABLES)/checkvintf $(check_vintf_compatible_deps)
+	@echo -n -e 'Deps: \n  ' > $@
+	@sed 's/ /\n  /g' <<< "$(PRIVATE_CHECK_VINTF_DEPS)" >> $@
+	@echo -n -e 'Args: \n  ' >> $@
+	@cat <<< "$(PRIVATE_CHECK_VINTF_ARGS)" >> $@
+	@echo -n -e 'For empty SKU:' >> $@
+	@( $< --check-compat $(PRIVATE_CHECK_VINTF_ARGS) >> $@ 2>&1 ) || ( cat $@ && exit 1 )
+	$(foreach sku,$(ODM_MANIFEST_SKUS), \
+	  echo "For SKU = $(sku):" >> $@; \
+	  ( $< --check-compat $(PRIVATE_CHECK_VINTF_ARGS) \
+	      --property ro.boot.product.hardware.sku=$(sku) >> $@ 2>&1 ) || ( cat $@ && exit 1 ); )
+
+check_vintf_compatible_log :=
+check_vintf_compatible_args :=
+check_vintf_compatible_deps :=
+
+endif # BUILDING_SYSTEM_EXT_IMAGE equals BOARD_USES_SYSTEM_EXTIMAGE
+endif # BUILDING_PRODUCT_IMAGE equals BOARD_USES_PRODUCTIMAGE
+endif # BUILDING_ODM_IMAGE equals BOARD_USES_ODMIMAGE
+endif # check_vintf_has_vendor
+endif # check_vintf_has_system
+endif # PRODUCT_ENFORCE_VINTF_MANIFEST
+
+# Add all logs of VINTF checks to dist builds
+droid_targets: $(check_vintf_all_deps)
+$(call dist-for-goals, droid_targets, $(check_vintf_all_deps))
+
+# Helper alias to check all VINTF of current build.
+.PHONY: check-vintf-all
+check-vintf-all: $(check_vintf_all_deps)
+	$(foreach file,$^,echo "$(file)"; cat "$(file)"; echo;)
+
+check_vintf_has_vendor :=
+check_vintf_has_system :=
+check_vintf_common_srcs :=
+check_vintf_all_deps :=
+intermediates :=
+endif # !TARGET_BUILD_APPS
+
+# -----------------------------------------------------------------
 # Check image sizes <= size of super partition
 
 ifeq (,$(TARGET_BUILD_APPS))
@@ -3764,6 +3939,7 @@ INTERNAL_OTATOOLS_MODULES := \
   mkbootfs \
   mkbootimg \
   mke2fs \
+  mke2fs.conf \
   mkf2fsuserimg.sh \
   mksquashfs \
   mksquashfsimage.sh \
@@ -3778,11 +3954,21 @@ INTERNAL_OTATOOLS_MODULES := \
   simg2img \
   sload_f2fs \
   tune2fs \
+  unpack_bootimg \
   update_host_simulator \
   validate_target_files \
   verity_signer \
   verity_verifier \
   zipalign \
+
+# Additional tools to unpack and repack the apex file.
+INTERNAL_OTATOOLS_MODULES += \
+  apexer \
+  deapexer \
+  debugfs_static \
+  merge_zips \
+  resize2fs \
+  soong_zip \
 
 ifeq (true,$(PRODUCT_SUPPORTS_VBOOT))
 INTERNAL_OTATOOLS_MODULES += \
@@ -3839,7 +4025,7 @@ $(BUILT_OTATOOLS_PACKAGE): $(SOONG_ZIP) $(ZIP2ZIP)
 	mkdir -p $(dir $@)
 	$(call copy-files-with-structure,$(PRIVATE_OTATOOLS_PACKAGE_FILES),$(HOST_OUT)/,$(PRIVATE_ZIP_ROOT))
 	$(call copy-files-with-structure,$(PRIVATE_OTATOOLS_RELEASETOOLS),build/make/tools/,$(PRIVATE_ZIP_ROOT))
-	cp $(SOONG_ZIP) $(ZIP2ZIP) $(PRIVATE_ZIP_ROOT)/bin/
+	cp $(SOONG_ZIP) $(ZIP2ZIP) $(MERGE_ZIPS) $(PRIVATE_ZIP_ROOT)/bin/
 	$(SOONG_ZIP) -o $@ -C $(PRIVATE_ZIP_ROOT) -D $(PRIVATE_ZIP_ROOT)
 
 .PHONY: otatools-package
@@ -4655,13 +4841,8 @@ ifeq (true,$(EMMA_INSTRUMENT))
 JACOCO_REPORT_CLASSES_ALL := $(PRODUCT_OUT)/jacoco-report-classes-all.jar
 $(JACOCO_REPORT_CLASSES_ALL) :
 	@echo "Collecting uninstrumented classes"
-	$(hide) find $(TARGET_COMMON_OUT_ROOT) $(HOST_COMMON_OUT_ROOT) -name "jacoco-report-classes.jar" | \
-	    zip -@ -0 -q -X $@
-# Meaning of these options:
-# -@ scan stdin for file paths to add to the zip
-# -0 don't do any compression
-# -q supress most output
-# -X skip storing extended file attributes
+	find $(TARGET_COMMON_OUT_ROOT) $(HOST_COMMON_OUT_ROOT) -name "jacoco-report-classes.jar" 2>/dev/null | sort > $@.list
+	$(SOONG_ZIP) -o $@ -L 0 -C $(OUT_DIR) -P out -l $@.list
 
 endif # EMMA_INSTRUMENT=true
 
@@ -5152,3 +5333,7 @@ FUZZ_SHARED_DEPS := $(call copy-many-files,$(strip $(FUZZ_TARGET_SHARED_DEPS_INS
 .PHONY: haiku
 haiku: $(SOONG_FUZZ_PACKAGING_ARCH_MODULES) $(ALL_FUZZ_TARGETS)
 $(call dist-for-goals,haiku,$(SOONG_FUZZ_PACKAGING_ARCH_MODULES))
+
+# -----------------------------------------------------------------
+# The makefile for haiku line coverage.
+include $(BUILD_SYSTEM)/line_coverage.mk

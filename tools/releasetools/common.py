@@ -62,13 +62,14 @@ class Options(object):
           'Warning: releasetools script should be invoked as hermetic Python '
           'executable -- build and run `{}` directly.'.format(script_name[:-3]),
           file=sys.stderr)
-    self.search_path = os.path.realpath(os.path.join(exec_path, '..'))
+    self.search_path = os.path.realpath(os.path.join(os.path.dirname(exec_path), '..'))
 
     self.signapk_path = "framework/signapk.jar"  # Relative to search_path
     self.signapk_shared_library_path = "lib64"   # Relative to search_path
     self.extra_signapk_args = []
     self.java_path = "java"  # Use the one on the path by default.
     self.java_args = ["-Xmx2048m"]  # The default JVM args.
+    self.android_jar_path = None
     self.public_key_suffix = ".x509.pem"
     self.private_key_suffix = ".pk8"
     # use otatools built boot_signer by default
@@ -823,6 +824,12 @@ def MergeDynamicPartitionInfoDicts(framework_dict, vendor_dict):
     merged_dict[key] = (
         "%s %s" %
         (framework_dict.get(key, ""), vendor_dict.get(key, ""))).strip()
+
+  # Pick virtual ab related flags from vendor dict, if defined.
+  if "virtual_ab" in vendor_dict.keys():
+     merged_dict["virtual_ab"] = vendor_dict["virtual_ab"]
+  if "virtual_ab_retrofit" in vendor_dict.keys():
+     merged_dict["virtual_ab_retrofit"] = vendor_dict["virtual_ab_retrofit"]
   return merged_dict
 
 
@@ -1817,7 +1824,7 @@ def ParseOptions(argv,
         argv, "hvp:s:x:" + extra_opts,
         ["help", "verbose", "path=", "signapk_path=",
          "signapk_shared_library_path=", "extra_signapk_args=",
-         "java_path=", "java_args=", "public_key_suffix=",
+         "java_path=", "java_args=", "android_jar_path=", "public_key_suffix=",
          "private_key_suffix=", "boot_signer_path=", "boot_signer_args=",
          "verity_signer_path=", "verity_signer_args=", "device_specific=",
          "extra=", "logfile=", "aftl_server=", "aftl_key_path=",
@@ -1846,6 +1853,8 @@ def ParseOptions(argv,
       OPTIONS.java_path = a
     elif o in ("--java_args",):
       OPTIONS.java_args = shlex.split(a)
+    elif o in ("--android_jar_path",):
+      OPTIONS.android_jar_path = a
     elif o in ("--public_key_suffix",):
       OPTIONS.public_key_suffix = a
     elif o in ("--private_key_suffix",):

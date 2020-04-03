@@ -254,6 +254,9 @@ function setpaths()
     local ANDROID_LLVM_BINUTILS=$(get_abs_build_var ANDROID_CLANG_PREBUILTS)/llvm-binutils-stable
     ANDROID_BUILD_PATHS=$ANDROID_BUILD_PATHS:$ANDROID_LLVM_BINUTILS
 
+    # Set up ASAN_SYMBOLIZER_PATH for SANITIZE_HOST=address builds.
+    export ASAN_SYMBOLIZER_PATH=$ANDROID_LLVM_BINUTILS/llvm-symbolizer
+
     # If prebuilts/android-emulator/<system>/ exists, prepend it to our PATH
     # to ensure that the corresponding 'emulator' binaries are used.
     case $(uname -s) in
@@ -1342,7 +1345,7 @@ function allmod() {
         refreshmod || return 1
     fi
 
-    python -c "import json; print '\n'.join(sorted(json.load(open('$ANDROID_PRODUCT_OUT/module-info.json')).keys()))"
+    python -c "import json; print('\n'.join(sorted(json.load(open('$ANDROID_PRODUCT_OUT/module-info.json')).keys())))"
 }
 
 # Get the path of a specific module in the android tree, as cached in module-info.json. If any build change
@@ -1368,7 +1371,7 @@ module = '$1'
 module_info = json.load(open('$ANDROID_PRODUCT_OUT/module-info.json'))
 if module not in module_info:
     exit(1)
-print module_info[module]['path'][0]" 2>/dev/null)
+print(module_info[module]['path'][0])" 2>/dev/null)
 
     if [ -z "$relpath" ]; then
         echo "Could not find module '$1' (try 'refreshmod' if there have been build changes?)." >&2
@@ -1470,6 +1473,43 @@ function _wrap_build()
     return $ret
 }
 
+function call_hook
+{
+    if [ "$2" = "-h" ] ||[ "$2" = "clean" ] ||[ "$2" = "--help" ]; then
+        return 0
+    fi
+    local T=$(gettop)
+    local ARGS
+    if [ "$T" ]; then
+        if [ "$1" = "m" ] ||  [ "$1" = "make" ] || [ "$1" = "mma" ] ||  [ "$1" = "mmma" ]; then
+            ARGS=$T
+        elif [ "$1" = "mm" ]; then
+            ARGS=`/bin/pwd`
+        elif [ "$1" = "mmm" ]; then
+            local DIRS=$(echo "${@:2}" | awk -v RS=" " -v ORS=" " '/^[^-].*$/')
+            local prefix=`/bin/pwd`
+            for dir in $DIRS
+            do
+                ARGS+=$prefix"/"$dir" "
+            done
+            echo $ARGS
+        fi
+        if [ -e $T/${QCPATH}/common/restriction_checker/restriction_checker.py ]; then
+            python $T/${QCPATH}/common/restriction_checker/restriction_checker.py $T $ARGS
+        else
+            echo "Restriction Checker not present, skipping.."
+        fi
+        local ret_val=$?
+        if [ $ret_val -ne 0 ]; then
+            echo "Violations detected, aborting build."
+        fi
+        return $ret_val
+    else
+        echo "Couldn't locate the top of the tree.  Try setting TOP."
+        return 1
+    fi
+}
+
 function _trigger_build()
 (
     local -r bc="$1"; shift
@@ -1482,38 +1522,86 @@ function _trigger_build()
 
 function m()
 (
+    call_hook ${FUNCNAME[0]} $@
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
     _trigger_build "all-modules" "$@"
 )
 
 function mm()
 (
+    call_hook ${FUNCNAME[0]} $@
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
     _trigger_build "modules-in-a-dir-no-deps" "$@"
 )
 
 function mmm()
 (
+    call_hook ${FUNCNAME[0]} $@
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
     _trigger_build "modules-in-dirs-no-deps" "$@"
 )
 
 function mma()
 (
+    call_hook ${FUNCNAME[0]} $@
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
     _trigger_build "modules-in-a-dir" "$@"
 )
 
 function mmma()
 (
+    call_hook ${FUNCNAME[0]} $@
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
     _trigger_build "modules-in-dirs" "$@"
 )
 
 function make()
 {
-    _wrap_build $(get_make_command hidl-gen) hidl-gen ALLOW_MISSING_DEPENDENCIES=true
+    call_hook ${FUNCNAME[0]} $@
     if [ $? -ne 0 ]; then
-        echo -n "${color_failed}#### hidl-gen compilation failed, check above errors"
-        echo " ####${color_reset}"
-        return
+        return 1
     fi
-    source device/qcom/common/vendor_hal_makefile_generator.sh
+
+    if [ -f $ANDROID_BUILD_TOP/$QTI_BUILDTOOLS_DIR/build/update-vendor-hal-makefiles.sh ]; then
+        vendor_hal_script=$ANDROID_BUILD_TOP/$QTI_BUILDTOOLS_DIR/build/update-vendor-hal-makefiles.sh
+        source $vendor_hal_script --check
+        regen_needed=$?
+    else
+        vendor_hal_script=$ANDROID_BUILD_TOP/device/qcom/common/vendor_hal_makefile_generator.sh
+        regen_needed=1
+    fi
+
+    if [ $regen_needed -eq 1 ]; then
+        _wrap_build $(get_make_command hidl-gen) hidl-gen ALLOW_MISSING_DEPENDENCIES=true
+        RET=$?
+        if [ $RET -ne 0 ]; then
+            echo -n "${color_failed}#### hidl-gen compilation failed, check above errors"
+            echo " ####${color_reset}"
+            return $RET
+        fi
+        source $vendor_hal_script
+        RET=$?
+        if [ $RET -ne 0 ]; then
+            echo -n "${color_failed}#### HAL file .bp generation failed dure to incpomaptible HAL files , please check above error log"
+            echo " ####${color_reset}"
+            return $RET
+        fi
+    fi
     _wrap_build $(get_make_command "$@") "$@"
 }
 

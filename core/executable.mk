@@ -6,6 +6,10 @@
 # LOCAL_MODULE_PATH_32 and LOCAL_MODULE_PATH_64 or LOCAL_MODULE_STEM_32 and
 # LOCAL_MODULE_STEM_64
 
+ifdef LOCAL_IS_HOST_MODULE
+  $(call pretty-error,BUILD_EXECUTABLE is incompatible with LOCAL_IS_HOST_MODULE. Use BUILD_HOST_EXECUTABLE instead.)
+endif
+
 my_skip_this_target :=
 ifneq ($(filter address,$(SANITIZE_TARGET)),)
   ifeq (true,$(LOCAL_FORCE_STATIC_EXECUTABLE))
@@ -47,6 +51,12 @@ endif
 
 my_skip_non_preferred_arch :=
 
+ifneq ($(FORCE_SDCLANG_OFF),true)
+ifeq ($(LOCAL_SDCLANG),true)
+include $(SDCLANG_FLAG_DEFS)
+endif
+endif
+
 # check if preferred arch is supported
 include $(BUILD_SYSTEM)/module_arch_supported.mk
 ifeq ($(my_module_arch_supported),true)
@@ -83,5 +93,11 @@ LOCAL_2ND_ARCH_VAR_PREFIX :=
 LOCAL_NO_2ND_ARCH_MODULE_SUFFIX :=
 
 my_module_arch_supported :=
+
+ifeq ($(LOCAL_SDCLANG),true)
+ifeq ($(LOCAL_SDCLANG_LTO),true)
+include $(SDCLANG_LTO_DEFS)
+endif
+endif
 
 endif

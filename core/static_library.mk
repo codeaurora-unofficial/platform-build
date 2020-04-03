@@ -1,10 +1,19 @@
 $(call record-module-type,STATIC_LIBRARY)
+ifdef LOCAL_IS_HOST_MODULE
+  $(call pretty-error,BUILD_STATIC_LIBRARY is incompatible with LOCAL_IS_HOST_MODULE. Use BUILD_HOST_STATIC_LIBRARY instead)
+endif
 my_prefix := TARGET_
 include $(BUILD_SYSTEM)/multilib.mk
 
 ifndef my_module_multilib
 # libraries default to building for both architecturess
 my_module_multilib := both
+endif
+
+ifneq ($(FORCE_SDCLANG_OFF),true)
+ifeq ($(LOCAL_SDCLANG),true)
+include $(SDCLANG_FLAG_DEFS)
+endif
 endif
 
 LOCAL_2ND_ARCH_VAR_PREFIX :=
@@ -33,9 +42,22 @@ LOCAL_2ND_ARCH_VAR_PREFIX :=
 
 endif # TARGET_2ND_ARCH
 
+ifneq ($(FORCE_SDCLANG_OFF),true)
+ifeq ($(LOCAL_SDCLANG),true)
+ifeq ($(LOCAL_SDCLANG_LTO),true)
+include $(SDCLANG_LTO_DEFS)
+endif
+endif
+endif
+
 my_module_arch_supported :=
 
 ###########################################################
 ## Copy headers to the install tree
 ###########################################################
-include $(BUILD_COPY_HEADERS)
+ifdef LOCAL_COPY_HEADERS
+$(if $(filter true,$(BUILD_BROKEN_USES_BUILD_COPY_HEADERS)),\
+  $(call pretty-warning,LOCAL_COPY_HEADERS is deprecated. See $(CHANGES_URL)#copy_headers),\
+  $(call pretty-error,LOCAL_COPY_HEADERS is obsolete. See $(CHANGES_URL)#copy_headers))
+include $(BUILD_SYSTEM)/copy_headers.mk
+endif
