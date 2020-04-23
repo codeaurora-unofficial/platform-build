@@ -548,6 +548,7 @@ def ImagePropFromGlobalDict(glob_dict, mount_point):
     copy_prop("system_fs_type", "fs_type")
     copy_prop("system_headroom", "partition_headroom")
     copy_prop("system_size", "partition_size")
+    copy_prop("system_name", "partition_name")
     if not copy_prop("system_journal_size", "journal_size"):
       d["journal_size"] = "0"
     copy_prop("system_verity_block_device", "verity_block_device")
@@ -605,6 +606,7 @@ def ImagePropFromGlobalDict(glob_dict, mount_point):
     copy_prop("avb_vendor_algorithm", "avb_algorithm")
     copy_prop("vendor_fs_type", "fs_type")
     copy_prop("vendor_size", "partition_size")
+    copy_prop("vendor_name", "partition_name")
     if not copy_prop("vendor_journal_size", "journal_size"):
       d["journal_size"] = "0"
     copy_prop("vendor_verity_block_device", "verity_block_device")
@@ -692,7 +694,9 @@ def ImagePropFromGlobalDict(glob_dict, mount_point):
     copy_prop("ext4_share_dup_blocks", "ext4_share_dup_blocks")
     if not copy_prop("oem_extfs_rsv_pct", "extfs_rsv_pct"):
       d["extfs_rsv_pct"] = "0"
-  d["partition_name"] = mount_point
+  if not "partition_name" in d:
+    d["partition_name"] = mount_point
+
   return d
 
 
