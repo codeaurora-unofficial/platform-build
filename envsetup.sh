@@ -1452,7 +1452,7 @@ function get_make_command()
 function make()
 {
     local start_time=$(date +"%s")
-    $(get_make_command) "$@"
+    $(get_make_command) "$@" --output-sync=target
     local ret=$?
     local end_time=$(date +"%s")
     local tdiff=$(($end_time-$start_time))
