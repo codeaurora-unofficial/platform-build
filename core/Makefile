@@ -1346,6 +1346,7 @@ endif # PRODUCT_USE_DYNAMIC_PARTITIONS
 define generate-image-prop-dictionary
 $(if $(filter $(2),system),\
     $(if $(BOARD_SYSTEMIMAGE_PARTITION_SIZE),$(hide) echo "system_size=$(BOARD_SYSTEMIMAGE_PARTITION_SIZE)" >> $(1))
+    $(if $(BOARD_SYSTEMIMAGE_PARTITION_NAME),$(hide) echo "system_name=$(BOARD_SYSTEMIMAGE_PARTITION_NAME)" >> $(1))
     $(if $(INTERNAL_SYSTEM_OTHER_PARTITION_SIZE),$(hide) echo "system_other_size=$(INTERNAL_SYSTEM_OTHER_PARTITION_SIZE)" >> $(1))
     $(if $(BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "system_fs_type=$(BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
     $(if $(BOARD_SYSTEMIMAGE_EXTFS_INODE_COUNT),$(hide) echo "system_extfs_inode_count=$(BOARD_SYSTEMIMAGE_EXTFS_INODE_COUNT)" >> $(1))
@@ -1372,6 +1373,7 @@ $(if $(filter $(2),vendor),\
     $(if $(BOARD_VENDORIMAGE_EXTFS_INODE_COUNT),$(hide) echo "vendor_extfs_inode_count=$(BOARD_VENDORIMAGE_EXTFS_INODE_COUNT)" >> $(1))
     $(if $(BOARD_VENDORIMAGE_EXTFS_RSV_PCT),$(hide) echo "vendor_extfs_rsv_pct=$(BOARD_VENDORIMAGE_EXTFS_RSV_PCT)" >> $(1))
     $(if $(BOARD_VENDORIMAGE_PARTITION_SIZE),$(hide) echo "vendor_size=$(BOARD_VENDORIMAGE_PARTITION_SIZE)" >> $(1))
+    $(if $(BOARD_VENDORIMAGE_PARTITION_NAME),$(hide) echo "vendor_name=$(BOARD_VENDORIMAGE_PARTITION_NAME)" >> $(1))
     $(if $(BOARD_VENDORIMAGE_JOURNAL_SIZE),$(hide) echo "vendor_journal_size=$(BOARD_VENDORIMAGE_JOURNAL_SIZE)" >> $(1))
     $(if $(BOARD_VENDORIMAGE_SQUASHFS_COMPRESSOR),$(hide) echo "vendor_squashfs_compressor=$(BOARD_VENDORIMAGE_SQUASHFS_COMPRESSOR)" >> $(1))
     $(if $(BOARD_VENDORIMAGE_SQUASHFS_COMPRESSOR_OPT),$(hide) echo "vendor_squashfs_compressor_opt=$(BOARD_VENDORIMAGE_SQUASHFS_COMPRESSOR_OPT)" >> $(1))
@@ -1849,6 +1851,10 @@ $(RECOVERY_INSTALL_OTA_KEYS): $(SOONG_ZIP) $(OTA_PUBLIC_KEYS) $(extra_keys)
 
 RECOVERYIMAGE_ID_FILE := $(PRODUCT_OUT)/recovery.id
 
+ifndef BOARD_BOOTIMAGE_PARTITION_NAME
+    BOARD_BOOTIMAGE_PARTITION_NAME := boot
+endif
+
 # $(1): output file
 define build-recoveryimage-target
   # Making recovery image
@@ -1899,7 +1905,7 @@ define build-recoveryimage-target
     $(hide) $(call assert-max-image-size,$(1),$(call get-hash-image-max-size,$(BOARD_RECOVERYIMAGE_PARTITION_SIZE))))
   $(if $(filter true,$(BOARD_AVB_ENABLE)), \
     $(if $(filter true,$(BOARD_USES_RECOVERY_AS_BOOT)), \
-      $(hide) $(AVBTOOL) add_hash_footer --image $(1) --partition_size $(BOARD_BOOTIMAGE_PARTITION_SIZE) --partition_name boot $(INTERNAL_AVB_BOOT_SIGNING_ARGS) $(BOARD_AVB_BOOT_ADD_HASH_FOOTER_ARGS),\
+      $(hide) $(AVBTOOL) add_hash_footer --image $(1) --partition_size $(BOARD_BOOTIMAGE_PARTITION_SIZE) --partition_name $(BOARD_BOOTIMAGE_PARTITION_NAME) $(INTERNAL_AVB_BOOT_SIGNING_ARGS) $(BOARD_AVB_BOOT_ADD_HASH_FOOTER_ARGS),\
       $(hide) $(AVBTOOL) add_hash_footer --image $(1) --partition_size $(BOARD_RECOVERYIMAGE_PARTITION_SIZE) --partition_name recovery $(INTERNAL_AVB_RECOVERY_SIGNING_ARGS) $(BOARD_AVB_RECOVERY_ADD_HASH_FOOTER_ARGS)))
 endef
 
@@ -3189,6 +3195,7 @@ $(if $(BOARD_AVB_$(call to-upper,$(1))_KEY_PATH),\
             --include_descriptors_from_image $(call images-for-partitions,$(1)))))
 endef
 
+
 ifdef INSTALLED_BOOTIMAGE_TARGET
 $(eval $(call check-and-set-avb-args,boot))
 endif
@@ -3343,6 +3350,8 @@ define build-vbmetaimage-target
     $(BOARD_AVB_MAKE_VBMETA_IMAGE_ARGS) \
     --output $@
   $(hide) rm -rf $(AVB_CHAIN_KEY_DIR)
+  $(if $(filter true,$(BOARD_AVB_REMOVE_BOOT_FOOTER)), \
+    $(hide) $(AVBTOOL) erase_footer --image $(INSTALLED_BOOTIMAGE_TARGET))
 endef
 
 INSTALLED_VBMETAIMAGE_TARGET := $(BUILT_VBMETAIMAGE_TARGET)
