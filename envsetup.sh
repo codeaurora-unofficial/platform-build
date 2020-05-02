@@ -1748,6 +1748,7 @@ function make()
             echo " ####${color_reset}"
             return $RET
         fi
+        if [ -f $vendor_hal_script ]; then
         source $vendor_hal_script
         RET=$?
         if [ $RET -ne 0 ]; then
@@ -1755,8 +1756,8 @@ function make()
             echo " ####${color_reset}"
             return $RET
         fi
+        fi
     fi
-    source device/qcom/common/vendor_hal_makefile_generator.sh
     _wrap_build $(get_make_command "$@") "$@"
 }
 
