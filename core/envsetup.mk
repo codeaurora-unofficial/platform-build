@@ -586,6 +586,9 @@ endif
 TARGET_OUT_CACHE := $(PRODUCT_OUT)/cache
 
 TARGET_OUT_VENDOR := $(PRODUCT_OUT)/$(TARGET_COPY_OUT_VENDOR)
+ifeq ($(BOARD_SUPPORTS_EARLY_INIT),true)
+TARGET_OUT_EARLY_SERVICES := $(PRODUCT_OUT)/$(TARGET_COPY_OUT_EARLY_SERVICES)
+endif
 ifneq ($(filter address,$(SANITIZE_TARGET)),)
 target_out_vendor_shared_libraries_base := $(PRODUCT_OUT)/$(TARGET_COPY_OUT_ASAN)/vendor
 ifeq ($(SANITIZE_LITE),true)

@@ -2718,6 +2718,12 @@ ifdef BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE
 	$(hide) $(call package_files-copy-root, \
 		$(TARGET_OUT_VENDOR),$(zip_root)/VENDOR)
 endif
+ifeq ($(BOARD_SUPPORTS_EARLY_INIT),true)
+	mkdir -p $(zip_root)/EARLY_SERVICES;
+	@# Contents of the early_services image
+	$(hide) $(call package_files-copy-root, \
+		$(TARGET_OUT_EARLY_SERVICES),$(zip_root)/EARLY_SERVICES)
+endif
 ifdef BOARD_PRODUCTIMAGE_FILE_SYSTEM_TYPE
 	@# Contents of the product image
 	$(hide) $(call package_files-copy-root, \
@@ -2910,6 +2916,9 @@ endif # BOARD_PREBUILT_DTBOIMAGE
 	$(hide) $(call fs_config,$(zip_root)/SYSTEM,system/) > $(zip_root)/META/filesystem_config.txt
 ifdef BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE
 	$(hide) $(call fs_config,$(zip_root)/VENDOR,vendor/) > $(zip_root)/META/vendor_filesystem_config.txt
+endif
+ifeq ($(BOARD_SUPPORTS_EARLY_INIT),true)
+	$(hide) $(call fs_config,$(zip_root)/EARLY_SERVICES,early_services/) > $(zip_root)/META/early_services_filesystem_config.txt
 endif
 ifdef BOARD_PRODUCTIMAGE_FILE_SYSTEM_TYPE
 	$(hide) $(call fs_config,$(zip_root)/PRODUCT,product/) > $(zip_root)/META/product_filesystem_config.txt
