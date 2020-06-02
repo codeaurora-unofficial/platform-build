@@ -66,7 +66,6 @@ PRODUCT_PACKAGES += \
     SimAppDialog \
     Telecom \
     TelephonyProvider \
-    TeleService \
     Traceur \
     UserDictionaryProvider \
     VpnDialogs \
