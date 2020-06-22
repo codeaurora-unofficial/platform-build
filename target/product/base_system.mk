@@ -16,7 +16,7 @@
 
 # Base modules and settings for the system partition.
 PRODUCT_PACKAGES += \
-    adbd_system_binaries \
+    adbd_system_api \
     am \
     android.hidl.allocator@1.0-service \
     android.hidl.base-V1.0-java \
@@ -42,6 +42,7 @@ PRODUCT_PACKAGES += \
     bmgr \
     bootanimation \
     bootstat \
+    boringssl_self_test \
     bpfloader \
     bu \
     bugreport \
@@ -50,7 +51,6 @@ PRODUCT_PACKAGES += \
     charger \
     cmd \
     com.android.adbd \
-    com.android.apex.cts.shim.v1 \
     com.android.conscrypt \
     com.android.extservices \
     com.android.i18n \
@@ -70,6 +70,8 @@ PRODUCT_PACKAGES += \
     ContactsProvider \
     content \
     crash_dump \
+    CtsShimPrebuilt \
+    CtsShimPrivPrebuilt \
     debuggerd\
     device_config \
     dmctl \
@@ -86,6 +88,7 @@ PRODUCT_PACKAGES += \
     framework-res \
     framework-sysconfig.xml \
     fsck_msdos \
+    fsverity-release-cert-der \
     fs_config_files_system \
     fs_config_dirs_system \
     group_system \
@@ -111,7 +114,6 @@ PRODUCT_PACKAGES += \
     installd \
     iorapd \
     ip \
-    ip6tables \
     iptables \
     ip-up-vpn \
     javax.obex \
@@ -210,7 +212,7 @@ PRODUCT_PACKAGES += \
     mtpd \
     ndc \
     netd \
-    NetworkStackNext \
+    NetworkStack \
     org.apache.http.legacy \
     otacerts \
     PackageInstaller \

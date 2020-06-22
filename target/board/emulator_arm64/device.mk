@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 The Android Open Source Project
+# Copyright (C) 2020 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,11 +17,16 @@
 PRODUCT_SOONG_NAMESPACES += device/generic/goldfish # for libwifi-hal-emu
 PRODUCT_SOONG_NAMESPACES += device/generic/goldfish-opengl # for goldfish deps.
 
-ifdef NET_ETH0_STARTONBOOT
-  PRODUCT_PROPERTY_OVERRIDES += net.eth0.startonboot=1
+# Cuttlefish has GKI kernel prebuilts, so use those for the GKI boot.img.
+ifeq ($(TARGET_PREBUILT_KERNEL),)
+    LOCAL_KERNEL := device/google/cuttlefish_kernel/5.4-arm64/kernel
+else
+    LOCAL_KERNEL := $(TARGET_PREBUILT_KERNEL)
 endif
 
-# Ensure we package the BIOS files too.
-PRODUCT_HOST_PACKAGES += \
-	bios.bin \
-	vgabios-cirrus.bin \
+PRODUCT_COPY_FILES += \
+    $(LOCAL_KERNEL):kernel
+
+# Adjust the Dalvik heap to be appropriate for a tablet.
+$(call inherit-product-if-exists, frameworks/base/build/tablet-dalvik-heap.mk)
+$(call inherit-product-if-exists, frameworks/native/build/tablet-dalvik-heap.mk)

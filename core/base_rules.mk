@@ -597,6 +597,7 @@ endif
 ## Compatibility suite files.
 ###########################################################
 ifdef LOCAL_COMPATIBILITY_SUITE
+ifneq (true,$(LOCAL_UNINSTALLABLE_MODULE))
 
 # If we are building a native test or benchmark and its stem variants are not defined,
 # separate the multiple architectures into subdirectories of the testcase folder.
@@ -750,6 +751,7 @@ $(call create-suite-dependencies)
 $(foreach suite, $(LOCAL_COMPATIBILITY_SUITE), \
   $(eval my_compat_dist_config_$(suite) := ))
 
+endif  # LOCAL_UNINSTALLABLE_MODULE
 endif  # LOCAL_COMPATIBILITY_SUITE
 
 ###########################################################
@@ -826,6 +828,16 @@ ifdef LOCAL_PICKUP_FILES
 # when $(LOCAL_BUILT_MODULE) is done.
 ALL_MODULES.$(my_register_name).PICKUP_FILES := \
     $(ALL_MODULES.$(my_register_name).PICKUP_FILES) $(LOCAL_PICKUP_FILES)
+endif
+# Record the platform availability of this module. Note that the availability is not
+# meaningful for non-installable modules (e.g., static libs) or host modules.
+# We only care about modules that are installable to the device.
+ifeq (true,$(LOCAL_NOT_AVAILABLE_FOR_PLATFORM))
+  ifneq (true,$(LOCAL_UNINSTALLABLE_MODULE))
+    ifndef LOCAL_IS_HOST_MODULE
+      ALL_MODULES.$(my_register_name).NOT_AVAILABLE_FOR_PLATFORM := true
+    endif
+  endif
 endif
 
 my_required_modules := $(LOCAL_REQUIRED_MODULES) \
@@ -917,7 +929,7 @@ INSTALLABLE_FILES.$(LOCAL_INSTALLED_MODULE).MODULE := $(my_register_name)
 ##########################################################
 # Track module-level dependencies.
 # Use $(LOCAL_MODULE) instead of $(my_register_name) to ignore module's bitness.
-ifneq (,$(filter deps-license,$(MAKECMDGOALS)))
+ifdef RECORD_ALL_DEPS
 ALL_DEPS.MODULES := $(ALL_DEPS.MODULES) $(LOCAL_MODULE)
 ALL_DEPS.$(LOCAL_MODULE).ALL_DEPS := $(sort \
   $(ALL_DEPS.$(LOCAL_MODULE).ALL_DEPS) \
