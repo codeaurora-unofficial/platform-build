@@ -712,7 +712,7 @@ DEPMOD_STAGING_SUBDIR :=$= lib/modules/0.0
 
 define copy-and-strip-kernel-module
 $(2): $(1)
-	$($(LOCAL_2ND_ARCH_VAR_PREFIX)TARGET_STRIP) -o $(2) --strip-debug $(1)
+	$(LLVM_STRIP) -o $(2) --strip-debug $(1)
 endef
 
 # $(1): modules list
@@ -726,17 +726,20 @@ endef
 # $(9): module directory name
 # Returns the a list of src:dest pairs to install the modules using copy-many-files.
 define build-image-kernel-modules
+  $(if $(9), \
+    $(eval _dir := $(9)/), \
+    $(eval _dir :=)) \
   $(foreach module,$(1), \
     $(eval _src := $(module)) \
     $(if $(8), \
       $(eval _src := $(8)/$(notdir $(module))) \
       $(eval $(call copy-and-strip-kernel-module,$(module),$(_src)))) \
-    $(_src):$(2)/lib/modules/$(9)/$(notdir $(module))) \
+    $(_src):$(2)/lib/modules/$(_dir)$(notdir $(module))) \
   $(eval $(call build-image-kernel-modules-depmod,$(1),$(3),$(4),$(5),$(6),$(7),$(2),$(9))) \
-  $(4)/$(DEPMOD_STAGING_SUBDIR)/modules.dep:$(2)/lib/modules/$(9)/modules.dep \
-  $(4)/$(DEPMOD_STAGING_SUBDIR)/modules.alias:$(2)/lib/modules/$(9)/modules.alias \
-  $(4)/$(DEPMOD_STAGING_SUBDIR)/modules.softdep:$(2)/lib/modules/$(9)/modules.softdep \
-  $(4)/$(DEPMOD_STAGING_SUBDIR)/$(6):$(2)/lib/modules/$(9)/$(6)
+  $(4)/$(DEPMOD_STAGING_SUBDIR)/modules.dep:$(2)/lib/modules/$(_dir)modules.dep \
+  $(4)/$(DEPMOD_STAGING_SUBDIR)/modules.alias:$(2)/lib/modules/$(_dir)modules.alias \
+  $(4)/$(DEPMOD_STAGING_SUBDIR)/modules.softdep:$(2)/lib/modules/$(_dir)modules.softdep \
+  $(4)/$(DEPMOD_STAGING_SUBDIR)/$(6):$(2)/lib/modules/$(_dir)$(6)
 endef
 
 # $(1): modules list
@@ -866,10 +869,16 @@ else
 	VENDOR_STRIPPED_MODULE_STAGING_DIR :=
 endif
 
+ifneq ($(BOARD_DO_NOT_STRIP_VENDOR_RAMDISK_MODULES),true)
+  VENDOR_RAMDISK_STRIPPED_MODULE_STAGING_DIR := $(call intermediates-dir-for,PACKAGING,depmod_vendor_ramdisk_stripped)
+else
+  VENDOR_RAMDISK_STRIPPED_MODULE_STAGING_DIR :=
+endif
+
 BOARD_KERNEL_MODULE_DIRS += top
 $(foreach dir,$(BOARD_KERNEL_MODULE_DIRS), \
   $(eval ALL_DEFAULT_INSTALLED_MODULES += $(call build-image-kernel-modules-dir,RECOVERY,$(TARGET_RECOVERY_ROOT_OUT),,modules.load.recovery,,$(dir))) \
-  $(eval ALL_DEFAULT_INSTALLED_MODULES += $(call build-image-kernel-modules-dir,VENDOR_RAMDISK,$(TARGET_VENDOR_RAMDISK_OUT),,modules.load,$(call intermediates-dir-for,PACKAGING,depmod_vendor_ramdisk_stripped),$(dir))) \
+  $(eval ALL_DEFAULT_INSTALLED_MODULES += $(call build-image-kernel-modules-dir,VENDOR_RAMDISK,$(TARGET_VENDOR_RAMDISK_OUT),,modules.load,$(VENDOR_RAMDISK_STRIPPED_MODULE_STAGING_DIR),$(dir))) \
   $(eval ALL_DEFAULT_INSTALLED_MODULES += $(call build-vendor-ramdisk-recovery-load,$(dir))) \
   $(eval ALL_DEFAULT_INSTALLED_MODULES += $(call build-image-kernel-modules-dir,VENDOR,$(TARGET_OUT_VENDOR),vendor,modules.load,$(VENDOR_STRIPPED_MODULE_STAGING_DIR),$(dir))) \
   $(eval ALL_DEFAULT_INSTALLED_MODULES += $(call build-image-kernel-modules-dir,ODM,$(TARGET_OUT_ODM),odm,modules.load,,$(dir))) \
@@ -1461,6 +1470,8 @@ license_modules := $(filter-out $(TARGET_OUT_FAKE)/%,$(license_modules))
 # testcases are not relevant to the system image.
 license_modules := $(filter-out $(TARGET_OUT_TESTCASES)/%,$(license_modules))
 license_modules_system := $(filter $(TARGET_OUT)/%,$(license_modules))
+# system_other is relevant to system partition.
+license_modules_system += $(filter $(TARGET_OUT_SYSTEM_OTHER)/%,$(license_modules))
 license_modules_vendor := $(filter $(TARGET_OUT_VENDOR)/%,$(license_modules))
 license_modules_product := $(filter $(TARGET_OUT_PRODUCT)/%,$(license_modules))
 license_modules_system_ext := $(filter $(TARGET_OUT_SYSTEM_EXT)/%,$(license_modules))
@@ -2217,52 +2228,37 @@ define build-recoveryimage-target
       $(AVBTOOL) add_hash_footer --image $(1) --partition_size $(BOARD_RECOVERYIMAGE_PARTITION_SIZE) --partition_name recovery $(INTERNAL_AVB_RECOVERY_SIGNING_ARGS) $(BOARD_AVB_RECOVERY_ADD_HASH_FOOTER_ARGS)))
 endef
 
-ifeq ($(BOARD_USES_RECOVERY_AS_BOOT),true)
+recoveryimage-deps := $(MKBOOTIMG) $(recovery_ramdisk) $(recovery_kernel)
 ifeq (true,$(PRODUCT_SUPPORTS_BOOT_SIGNER))
-$(INSTALLED_BOOTIMAGE_TARGET) : $(BOOT_SIGNER)
+  recoveryimage-deps += $(BOOT_SIGNER)
 endif
 ifeq (true,$(PRODUCT_SUPPORTS_VBOOT))
-$(INSTALLED_BOOTIMAGE_TARGET) : $(VBOOT_SIGNER)
+  recoveryimage-deps += $(VBOOT_SIGNER)
 endif
 ifeq (true,$(BOARD_AVB_ENABLE))
-$(INSTALLED_BOOTIMAGE_TARGET) : $(AVBTOOL) $(BOARD_AVB_BOOT_KEY_PATH)
+  recoveryimage-deps += $(AVBTOOL) $(BOARD_AVB_BOOT_KEY_PATH)
 endif
 ifdef BOARD_INCLUDE_RECOVERY_DTBO
-ifdef BOARD_PREBUILT_RECOVERY_DTBOIMAGE
-$(INSTALLED_BOOTIMAGE_TARGET): $(BOARD_PREBUILT_RECOVERY_DTBOIMAGE)
-else
-$(INSTALLED_BOOTIMAGE_TARGET): $(BOARD_PREBUILT_DTBOIMAGE)
-endif
+  ifdef BOARD_PREBUILT_RECOVERY_DTBOIMAGE
+    recoveryimage-deps += $(BOARD_PREBUILT_RECOVERY_DTBOIMAGE)
+  else
+    recoveryimage-deps += $(BOARD_PREBUILT_DTBOIMAGE)
+  endif
 endif
 ifdef BOARD_INCLUDE_RECOVERY_ACPIO
-$(INSTALLED_BOOTIMAGE_TARGET): $(BOARD_RECOVERY_ACPIO)
+  recoveryimage-deps += $(BOARD_RECOVERY_ACPIO)
 endif
 ifdef BOARD_INCLUDE_DTB_IN_BOOTIMG
-$(INSTALLED_BOOTIMAGE_TARGET): $(INSTALLED_DTBIMAGE_TARGET)
+  recoveryimage-deps += $(INSTALLED_DTBIMAGE_TARGET)
 endif
 
-$(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(recovery_ramdisk) \
-	    $(recovery_kernel)
+ifeq ($(BOARD_USES_RECOVERY_AS_BOOT),true)
+$(INSTALLED_BOOTIMAGE_TARGET): $(recoveryimage-deps)
 	$(call pretty,"Target boot image from recovery: $@")
 	$(call build-recoveryimage-target, $@, $(PRODUCT_OUT)/$(subst .img,,$(subst boot,kernel,$(notdir $@))))
 endif # BOARD_USES_RECOVERY_AS_BOOT
 
-ifdef BOARD_INCLUDE_RECOVERY_DTBO
-ifdef BOARD_PREBUILT_RECOVERY_DTBOIMAGE
-$(INSTALLED_RECOVERYIMAGE_TARGET): $(BOARD_PREBUILT_RECOVERY_DTBOIMAGE)
-else
-$(INSTALLED_RECOVERYIMAGE_TARGET): $(BOARD_PREBUILT_DTBOIMAGE)
-endif
-endif
-ifdef BOARD_INCLUDE_RECOVERY_ACPIO
-$(INSTALLED_RECOVERYIMAGE_TARGET): $(BOARD_RECOVERY_ACPIO)
-endif
-ifdef BOARD_INCLUDE_DTB_IN_BOOTIMG
-$(INSTALLED_RECOVERYIMAGE_TARGET): $(INSTALLED_DTBIMAGE_TARGET)
-endif
-
-$(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTIMG) $(recovery_ramdisk) \
-	    $(recovery_kernel)
+$(INSTALLED_RECOVERYIMAGE_TARGET): $(recoveryimage-deps)
 	$(call build-recoveryimage-target, $@, $(recovery_kernel))
 
 ifdef RECOVERY_RESOURCE_ZIP
@@ -3558,6 +3554,9 @@ endef
 # configured as a chained partition, if BOARD_AVB_<partition>_KEY_PATH is defined. Otherwise the
 # image descriptor will be included into vbmeta.img, unless it has been already added to any chained
 # VBMeta image.
+# Multiple boot images can be generated based on BOARD_KERNEL_BINARIES
+# but vbmeta would capture the image descriptor of only the first boot
+# image specified in BUILT_BOOTIMAGE_TARGET.
 # $(1): Partition name, e.g. boot or system.
 define check-and-set-avb-args
 $(eval _in_chained_vbmeta := $(filter $(1),$(INTERNAL_AVB_PARTITIONS_IN_CHAINED_VBMETA_IMAGES)))
@@ -3566,8 +3565,11 @@ $(if $(BOARD_AVB_$(call to-upper,$(1))_KEY_PATH),\
         $(error Chaining partition "$(1)" in chained VBMeta image is not supported)) \
     $(call _check-and-set-avb-chain-args,$(1)),\
     $(if $(_in_chained_vbmeta),,\
-        $(eval INTERNAL_AVB_MAKE_VBMETA_IMAGE_ARGS += \
-            --include_descriptors_from_image $(call images-for-partitions,$(1)))))
+        $(if $(filter boot,$(1)),\
+            $(eval INTERNAL_AVB_MAKE_VBMETA_IMAGE_ARGS += \
+                --include_descriptors_from_image $(firstword $(call images-for-partitions,$(1)))),\
+            $(eval INTERNAL_AVB_MAKE_VBMETA_IMAGE_ARGS += \
+                --include_descriptors_from_image $(call images-for-partitions,$(1))))))
 endef
 
 # Checks and sets build variables for a custom chained partition to include it into vbmeta.img.
@@ -4123,6 +4125,7 @@ INTERNAL_OTATOOLS_MODULES := \
   libconscrypt_openjdk_jni \
   lpmake \
   lpunpack \
+  lz4 \
   make_f2fs \
   merge_target_files \
   minigzip \
@@ -4258,6 +4261,9 @@ ifeq ($(INSTALLED_BOOTIMAGE_TARGET),)
 	$(hide) echo "no_boot=true" >> $@
 else
 	echo "boot_images=$(foreach b,$(INSTALLED_BOOTIMAGE_TARGET),$(notdir $(b)))" >> $@
+endif
+ifeq ($(BOARD_RAMDISK_USE_LZ4),true)
+	echo "lz4_ramdisks=true" >> $@
 endif
 ifneq ($(INSTALLED_VENDOR_BOOTIMAGE_TARGET),)
 	echo "vendor_boot=true" >> $@
