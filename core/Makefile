@@ -2196,7 +2196,7 @@ systemimage_intermediates := \
 BUILT_SYSTEMIMAGE := $(systemimage_intermediates)/system.img
 early_servicesimage_intermediates := $(call intermediates-dir-for,PACKAGING,early_servicesimage)
 BUILT_EARLY_SERVICESIMAGE := $(PRODUCT_OUT)/early_services.img
-EARLY_SERVICESS_PARTITION := early_services
+EARLY_SERVICES_PARTITION := early_services
 
 # Create symlink /system/vendor to /vendor if necessary.
 ifdef BOARD_USES_VENDORIMAGE
@@ -2310,7 +2310,7 @@ define build-systemimage-target
 	cp -r $(PRODUCT_OUT)/system/bin/* $(PRODUCT_OUT)/early_services/system/bin ;\
 	cp -r $(PRODUCT_OUT)/system/etc/selinux/* $(PRODUCT_OUT)/early_services/system/etc/selinux/ ;\
 	cp -r $(PRODUCT_OUT)/vendor/lib/modules/* $(PRODUCT_OUT)/early_services/vendor/lib/modules/ ;\
-        build/make/tools/releasetools/build_image.py $(PRODUCT_OUT)/early_services $(early_servicesimage_intermediates)/early_services_image_info.txt $(BUILT_EARLY_SERVICESSIMAGE) $(PRODUCT_OUT) ;\
+	PATH=$(foreach p,$(INTERNAL_USERIMAGES_BINARY_PATHS),$(p):)$$PATH build/make/tools/releasetools/build_image.py $(PRODUCT_OUT)/early_services $(early_servicesimage_intermediates)/early_services_image_info.txt $(BUILT_EARLY_SERVICESIMAGE) $(PRODUCT_OUT) ;\
   fi
 endef
 
