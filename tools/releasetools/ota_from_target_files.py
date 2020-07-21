@@ -675,6 +675,8 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
 
   script.ShowProgress(0.2, 10)
   device_specific.FullOTA_InstallEnd()
+  script.AppendExtra('run_program("/bin/find", "/",'
+                     '"-name", "__emptyfile__", "-type", "f", "-delete");')
 
   if OPTIONS.extra_script is not None:
     script.AppendExtra(OPTIONS.extra_script)
