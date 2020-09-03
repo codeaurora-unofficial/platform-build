@@ -3398,11 +3398,13 @@ DISABLED_USER_MODULES := \
     hid \
     ims \
     ims-common \
+    imsd \
     ims-ext-common \
     imssettings \
     input \
     inputlib \
     javax.obex \
+    libqcimsservice \
     locksettings \
     media \
     monkeylib \
