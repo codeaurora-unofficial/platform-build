@@ -3353,6 +3353,7 @@ DISABLED_USER_MODULES := \
     mediadrmserver \
     AntHalService \
     am \
+    android.hardware.keymaster@3.0-service-qti \
     android.hardware.light-V2.0-java \
     android.hidl.base-V1.0-java \
     android.hidl.manager-V1.0-java \
@@ -3396,13 +3397,16 @@ DISABLED_USER_MODULES := \
     framework \
     framework-res \
     hid \
+    idmap2d \
     ims \
     ims-common \
     imsd \
     ims-ext-common \
     imssettings \
+    incidentd \
     input \
     inputlib \
+    installd \
     javax.obex \
     libqcimsservice \
     locksettings \
@@ -3418,6 +3422,7 @@ DISABLED_USER_MODULES := \
     Qmmi \
     QPerformance \
     QTIDiagServices \
+    qrtr-ns \
     qti-telephony-common \
     qti-telephony-hidl-wrapper \
     qti-telephony-utils \
@@ -3429,6 +3434,7 @@ DISABLED_USER_MODULES := \
     services \
     SimSettings \
     sm \
+    statsd \
     svc \
     svclib \
     tcmclient \
@@ -3436,6 +3442,8 @@ DISABLED_USER_MODULES := \
     telecom \
     telephony-common \
     telephony-ext \
+    traced \
+    traced_probes \
     TimeService \
     uiautomator \
     uimremotesimlocklibrary \
@@ -3447,6 +3455,7 @@ DISABLED_USER_MODULES := \
     vendor.qti.data.factory-V2.1-java \
     vendor.qti.hardware.data.cne.internal.constants-V1.0-java \
     vendor.qti.hardware.data.qmi-V1.0-java \
+    vendor.qti.hardware.perf@2.0-service \
     vendor.qti.hardware.slmadapter-V1.0-java \
     voip-common \
     vr \
