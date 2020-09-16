@@ -15,6 +15,8 @@
 #
 
 # Base modules and settings for the system partition.
+# Disable below modules for building to save Memory.
+# idmap2d incidentd installd statsd traced traced_probes
 PRODUCT_PACKAGES += \
     abb \
     adbd \
@@ -90,17 +92,14 @@ PRODUCT_PACKAGES += \
     hwservicemanager \
     idmap \
     idmap2 \
-    idmap2d \
     ime \
     ims-common \
     incident \
-    incidentd \
     incident_helper \
     init.environ.rc \
     init.rc \
     init_system \
     input \
-    installd \
     iorapd \
     ip \
     ip6tables \
@@ -240,7 +239,6 @@ PRODUCT_PACKAGES += \
     Shell \
     shell_and_utilities_system \
     sm \
-    statsd \
     storaged \
     svc \
     task_profiles.json \
@@ -248,8 +246,6 @@ PRODUCT_PACKAGES += \
     telecom \
     telephony-common \
     tombstoned \
-    traced \
-    traced_probes \
     tune2fs \
     tzdatacheck \
     uiautomator \
