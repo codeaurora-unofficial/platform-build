@@ -2,7 +2,6 @@ LLNDK: libEGL.so
 LLNDK: libGLESv1_CM.so
 LLNDK: libGLESv2.so
 LLNDK: libGLESv3.so
-LLNDK: libRS.so
 LLNDK: libandroid_net.so
 LLNDK: libc.so
 LLNDK: libcgrouprc.so
@@ -22,17 +21,12 @@ VNDK-SP: android.hardware.graphics.common@1.2.so
 VNDK-SP: android.hardware.graphics.mapper@2.0.so
 VNDK-SP: android.hardware.graphics.mapper@2.1.so
 VNDK-SP: android.hardware.graphics.mapper@3.0.so
-VNDK-SP: android.hardware.renderscript@1.0.so
 VNDK-SP: android.hidl.memory.token@1.0.so
 VNDK-SP: android.hidl.memory@1.0.so
 VNDK-SP: android.hidl.memory@1.0-impl.so
 VNDK-SP: android.hidl.safe_union@1.0.so
-VNDK-SP: libRSCpuRef.so
-VNDK-SP: libRSDriver.so
-VNDK-SP: libRS_internal.so
 VNDK-SP: libbacktrace.so
 VNDK-SP: libbase.so
-VNDK-SP: libbcinfo.so
 VNDK-SP: libbinderthreadstate.so
 VNDK-SP: libblas.so
 VNDK-SP: libc++.so
