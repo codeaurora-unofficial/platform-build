@@ -3355,6 +3355,8 @@ DISABLED_USER_MODULES := \
     am \
     android.hardware.keymaster@3.0-service-qti \
     android.hardware.light-V2.0-java \
+    android.hardware.renderscript@1.0 \
+    android.hardware.renderscript@1.0-impl \
     android.hidl.base-V1.0-java \
     android.hidl.manager-V1.0-java \
     android.test.base \
@@ -3408,8 +3410,10 @@ DISABLED_USER_MODULES := \
     inputlib \
     installd \
     javax.obex \
+    librs_jni \
     libqcimsservice \
     libpdfium \
+    llvm-rs-cc \
     locksettings \
     media \
     monkeylib \
