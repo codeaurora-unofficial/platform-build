@@ -28,7 +28,6 @@ VNDK-SP: android.hidl.safe_union@1.0.so
 VNDK-SP: libbacktrace.so
 VNDK-SP: libbase.so
 VNDK-SP: libbinderthreadstate.so
-VNDK-SP: libblas.so
 VNDK-SP: libc++.so
 VNDK-SP: libcompiler_rt.so
 VNDK-SP: libcutils.so
@@ -261,7 +260,6 @@ VNDK-core: libyuv.so
 VNDK-core: libziparchive.so
 VNDK-private: libbacktrace.so
 VNDK-private: libbinderthreadstate.so
-VNDK-private: libblas.so
 VNDK-private: libcompiler_rt.so
 VNDK-private: libft2.so
 VNDK-private: libgui.so
