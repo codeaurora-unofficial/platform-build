@@ -11,7 +11,6 @@ LLNDK: liblog.so
 LLNDK: libm.so
 LLNDK: libmediandk.so
 LLNDK: libnativewindow.so
-LLNDK: libneuralnetworks.so
 LLNDK: libsync.so
 LLNDK: libvndksupport.so
 LLNDK: libvulkan.so
@@ -129,9 +128,6 @@ VNDK-core: android.hardware.media.c2@1.0.so
 VNDK-core: android.hardware.media.omx@1.0.so
 VNDK-core: android.hardware.media@1.0.so
 VNDK-core: android.hardware.memtrack@1.0.so
-VNDK-core: android.hardware.neuralnetworks@1.0.so
-VNDK-core: android.hardware.neuralnetworks@1.1.so
-VNDK-core: android.hardware.neuralnetworks@1.2.so
 VNDK-core: android.hardware.nfc@1.0.so
 VNDK-core: android.hardware.nfc@1.1.so
 VNDK-core: android.hardware.nfc@1.2.so
