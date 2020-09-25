@@ -3355,6 +3355,9 @@ DISABLED_USER_MODULES := \
     am \
     android.hardware.keymaster@3.0-service-qti \
     android.hardware.light-V2.0-java \
+    android.hardware.neuralnetworks@1.1 \
+    android.hardware.neuralnetworks@1.2 \
+    android.hardware.neuralnetworks@2.0 \
     android.hardware.renderscript@1.0 \
     android.hardware.renderscript@1.0-impl \
     android.hidl.base-V1.0-java \
@@ -3410,6 +3413,7 @@ DISABLED_USER_MODULES := \
     inputlib \
     installd \
     javax.obex \
+    libneuralnetworks \
     librs_jni \
     libqcimsservice \
     libpdfium \
