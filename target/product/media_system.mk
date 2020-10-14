@@ -24,7 +24,6 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/base_system.mk)
 # drmserver
 PRODUCT_PACKAGES += \
     com.android.future.usb.accessory \
-    com.android.mediadrm.signer \
     com.android.media.remotedisplay \
     com.android.media.remotedisplay.xml \
     CompanionDeviceManager \
