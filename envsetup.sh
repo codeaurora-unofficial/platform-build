@@ -588,8 +588,10 @@ function print_lunch_menu()
     local choice
     for choice in $(echo $choices)
     do
-        echo "     $i. $choice"
-        i=$(($i+1))
+	if [ "$choice" == "msm8937_32go-userdebug" ]; then
+		echo "     $i. $choice"
+		i=$(($i+1))
+	fi
     done
 
     echo
