@@ -2292,14 +2292,11 @@ define build-systemimage-target
 	cp -r $(PRODUCT_OUT)/system/lib64/libunwind.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libunwindstack.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libutilscallstack.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libc.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libc++.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libcrypto.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libcutils.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libutils.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libdl.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/liblog.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
-	cp -r $(PRODUCT_OUT)/system/lib64/libm.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libpackagelistparser.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libpcre2.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libselinux.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
@@ -2310,6 +2307,30 @@ define build-systemimage-target
 	cp -r $(PRODUCT_OUT)/system/bin/* $(PRODUCT_OUT)/early_services/system/bin ;\
 	cp -r $(PRODUCT_OUT)/system/etc/selinux/* $(PRODUCT_OUT)/early_services/system/etc/selinux/ ;\
 	cp -r $(PRODUCT_OUT)/vendor/lib/modules/* $(PRODUCT_OUT)/early_services/vendor/lib/modules/ ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libdl_android.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libcgrouprc.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libsync.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libion.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/ld-android.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/apex/com.android.runtime.debug/lib64/bionic/* $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libnetd_client.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libxml2.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib64/libais* $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib64/libmmosal_proprietary.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libdrm.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libmmosal.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libhardware.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/libbinderthreadstate.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.graphics.mapper@3.0.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.graphics.common@1.0.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.graphics.common@1.1.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.graphics.common@1.2.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/vendor/lib64/egl/eglSubDriverAndroid.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.graphics.mapper@2.0.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.graphics.mapper@2.1.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+        cp -r $(PRODUCT_OUT)/system/apex/com.android.runtime.debug/bin/linker64 $(PRODUCT_OUT)/early_services/system/bin/ ;\
+	cp -r $(PRODUCT_OUT)/system/apex/com.android.runtime.debug/lib64/* $(PRODUCT_OUT)/early_services/system/lib64/ ;\
+	cp -r $(PRODUCT_OUT)/vendor/lib64/* $(PRODUCT_OUT)/early_services/system/lib64/ ;\
 	PATH=$(foreach p,$(INTERNAL_USERIMAGES_BINARY_PATHS),$(p):)$$PATH build/make/tools/releasetools/build_image.py $(PRODUCT_OUT)/early_services $(early_servicesimage_intermediates)/early_services_image_info.txt $(BUILT_EARLY_SERVICESIMAGE) $(PRODUCT_OUT) ;\
   fi
 endef
