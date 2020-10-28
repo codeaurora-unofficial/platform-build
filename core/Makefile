@@ -3600,9 +3600,6 @@ OTATOOLS :=  $(HOST_OUT_EXECUTABLES)/minigzip \
   $(HOST_OUT_EXECUTABLES)/zipalign \
   $(HOST_OUT_EXECUTABLES)/bsdiff \
   $(HOST_OUT_EXECUTABLES)/imgdiff \
-  $(HOST_OUT_JAVA_LIBRARIES)/signapk.jar \
-  $(HOST_OUT_JAVA_LIBRARIES)/BootSignature.jar \
-  $(HOST_OUT_JAVA_LIBRARIES)/VeritySigner.jar \
   $(HOST_OUT_EXECUTABLES)/mke2fs \
   $(HOST_OUT_EXECUTABLES)/mkuserimg_mke2fs \
   $(HOST_OUT_EXECUTABLES)/e2fsdroid \
@@ -3623,7 +3620,6 @@ OTATOOLS :=  $(HOST_OUT_EXECUTABLES)/minigzip \
   $(HOST_OUT_EXECUTABLES)/fec \
   $(HOST_OUT_EXECUTABLES)/brillo_update_payload \
   $(HOST_OUT_EXECUTABLES)/lib/shflags/shflags \
-  $(HOST_OUT_EXECUTABLES)/delta_generator \
   $(HOST_OUT_EXECUTABLES)/care_map_generator \
   $(HOST_OUT_EXECUTABLES)/fc_sort \
   $(HOST_OUT_EXECUTABLES)/sefcontext_compile \
@@ -3656,7 +3652,6 @@ OTATOOLS += \
   $(HOST_LIBRARY_PATH)/libext2_profile-host$(HOST_SHLIB_SUFFIX) \
   $(HOST_LIBRARY_PATH)/libext2_quota-host$(HOST_SHLIB_SUFFIX) \
   $(HOST_LIBRARY_PATH)/libext2_uuid-host$(HOST_SHLIB_SUFFIX) \
-  $(HOST_LIBRARY_PATH)/libconscrypt_openjdk_jni$(HOST_SHLIB_SUFFIX) \
   $(HOST_LIBRARY_PATH)/libbrillo$(HOST_SHLIB_SUFFIX) \
   $(HOST_LIBRARY_PATH)/libbrillo-stream$(HOST_SHLIB_SUFFIX) \
   $(HOST_LIBRARY_PATH)/libchrome$(HOST_SHLIB_SUFFIX) \
@@ -4326,7 +4321,7 @@ $(INTERNAL_OTA_PACKAGE_TARGET): .KATI_IMPLICIT_OUTPUTS := $(INTERNAL_OTA_METADAT
 $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) \
 	    build/make/tools/releasetools/ota_from_target_files
 	@echo "Package OTA: $@"
-	$(call build-ota-package-target,$@,-k $(KEY_CERT_PAIR) --output_metadata_path $(INTERNAL_OTA_METADATA))
+	#$(call build-ota-package-target,$@,-k $(KEY_CERT_PAIR) --output_metadata_path $(INTERNAL_OTA_METADATA))
 
 .PHONY: otapackage
 otapackage: $(INTERNAL_OTA_PACKAGE_TARGET)
@@ -4351,7 +4346,7 @@ endif
 $(INTERNAL_OTA_RETROFIT_DYNAMIC_PARTITIONS_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) \
 	    build/make/tools/releasetools/ota_from_target_files
 	@echo "Package OTA (retrofit dynamic partitions): $@"
-	$(call build-ota-package-target,$@,-k $(KEY_CERT_PAIR) --retrofit_dynamic_partitions)
+	#$(call build-ota-package-target,$@,-k $(KEY_CERT_PAIR) --retrofit_dynamic_partitions)
 
 .PHONY: otardppackage
 
