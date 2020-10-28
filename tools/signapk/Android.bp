@@ -31,7 +31,4 @@ java_library_host {
 
     // The post-build signing tools need signapk.jar (and its shared libraries,
     // handled in their own Android.bp files)
-    dist: {
-        targets: ["droidcore"],
-    },
 }
