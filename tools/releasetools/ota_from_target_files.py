@@ -654,8 +654,8 @@ class Payload(object):
 def SignOutput(temp_zip_name, output_zip_name):
   pw = OPTIONS.key_passwords[OPTIONS.package_key]
 
-  common.SignFile(temp_zip_name, output_zip_name, OPTIONS.package_key, pw,
-                  whole_file=True)
+  #common.SignFile(temp_zip_name, output_zip_name, OPTIONS.package_key, pw,
+  #                whole_file=True)
 
 
 def _LoadOemDicts(oem_source):
