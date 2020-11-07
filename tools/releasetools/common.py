@@ -1520,6 +1520,8 @@ def ZipWrite(zip_file, filename, arcname=None, perms=0o644,
   if arcname is None:
     arcname = filename
 
+  if os.path.exists(filename) is False:
+    return
   saved_stat = os.stat(filename)
 
   try:

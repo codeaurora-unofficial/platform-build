@@ -60,6 +60,7 @@ import build_super_image
 import common
 import rangelib
 import sparse_img
+import stat
 
 if sys.hexversion < 0x02070000:
   print("Python 2.7 or newer is required.", file=sys.stderr)
@@ -163,7 +164,8 @@ def AddSystem(output_zip, recovery_img=None, boot_img=None):
   block_list = OutputFile(output_zip, OPTIONS.input_tmp, "IMAGES", "system.map")
   CreateImage(OPTIONS.input_tmp, OPTIONS.info_dict, "system", img,
               block_list=block_list)
-
+  #overlay system image in product out folder
+  ReplaceFile(img.name, "system.img")
   return img.name
 
 
@@ -186,11 +188,15 @@ def AddVendor(output_zip):
   img = OutputFile(output_zip, OPTIONS.input_tmp, "IMAGES", "vendor.img")
   if os.path.exists(img.name):
     logger.info("vendor.img already exists; no need to rebuild...")
+    #overlay vendor image in product out folder
+    ReplaceFile(img.name, "vendor.img")
     return img.name
 
   block_list = OutputFile(output_zip, OPTIONS.input_tmp, "IMAGES", "vendor.map")
   CreateImage(OPTIONS.input_tmp, OPTIONS.info_dict, "vendor", img,
               block_list=block_list)
+  #overlay vendor image in product out folder
+  ReplaceFile(img.name, "vendor.img")
   return img.name
 
 
@@ -208,6 +214,8 @@ def AddProduct(output_zip):
   CreateImage(
       OPTIONS.input_tmp, OPTIONS.info_dict, "product", img,
       block_list=block_list)
+  #overlay product image in product out folder
+  ReplaceFile(img.name, "product.img")
   return img.name
 
 
@@ -226,6 +234,8 @@ def AddProductServices(output_zip):
   CreateImage(
       OPTIONS.input_tmp, OPTIONS.info_dict, "product_services", img,
       block_list=block_list)
+  #overlay product_services image in product out folder
+  ReplaceFile(img.name, "product_services.img")
   return img.name
 
 
@@ -242,6 +252,8 @@ def AddOdm(output_zip):
   CreateImage(
       OPTIONS.input_tmp, OPTIONS.info_dict, "odm", img,
       block_list=block_list)
+  #overlay odm image in product out folder
+  ReplaceFile(img.name, "odm.img")
   return img.name
 
 
@@ -254,6 +266,8 @@ def AddDtbo(output_zip):
   img = OutputFile(output_zip, OPTIONS.input_tmp, "IMAGES", "dtbo.img")
   if os.path.exists(img.name):
     logger.info("dtbo.img already exists; no need to rebuild...")
+    #overlay dtbo image in product out folder
+    ReplaceFile(img.name, "dtbo.img")
     return img.name
 
   dtbo_prebuilt_path = os.path.join(
@@ -275,6 +289,8 @@ def AddDtbo(output_zip):
     common.RunAndCheckOutput(cmd)
 
   img.Write()
+  #overlay dtbo image in product out folder
+  ReplaceFile(img.name, "dtbo.img")
   return img.name
 
 
@@ -378,6 +394,8 @@ def AddUserdata(output_zip):
 
   common.CheckSize(img.name, "userdata.img", OPTIONS.info_dict)
   img.Write()
+  #overlay userdata image in product out folder
+  ReplaceFile(img.name, "userdata.img")
 
 
 def AppendVBMetaArgsForPartition(cmd, partition, image):
@@ -429,6 +447,8 @@ def AddVBMeta(output_zip, partitions, name, needed_partitions):
       output_zip, OPTIONS.input_tmp, "IMAGES", "{}.img".format(name))
   if os.path.exists(img.name):
     logger.info("%s.img already exists; not rebuilding...", name)
+    #overlay vbmeta image in product out folder
+    ReplaceFile(img.name, "{}.img".format(name))
     return img.name
 
   avbtool = OPTIONS.info_dict["avb_avbtool"]
@@ -471,6 +491,8 @@ def AddVBMeta(output_zip, partitions, name, needed_partitions):
 
   common.RunAndCheckOutput(cmd)
   img.Write()
+  #overlay vbmeta image in product out folder
+  ReplaceFile(img.name, "{}.img".format(name))
   return img.name
 
 
@@ -528,6 +550,8 @@ def AddCache(output_zip):
 
   common.CheckSize(img.name, "cache.img", OPTIONS.info_dict)
   img.Write()
+  #overlay userdata image in product out folder
+  ReplaceFile(img.name, "cache.img")
 
 
 def CheckAbOtaImages(output_zip, ab_partitions):
@@ -691,6 +715,35 @@ def ReplaceUpdatedFiles(zip_filename, files_list):
     common.ZipWrite(output_zip, file_path, arcname=item)
   common.ZipClose(output_zip)
 
+def ReplaceFile(source, target):
+  # overlay vbmeta image in product out folder
+  if outpath:
+    target_file = outpath + "/" + target
+    logger.info("\n\n++++ Replace " + target + " ++++\n\n")
+    shutil.copy(source, target_file)
+    os.chmod(target_file, stat.S_IRUSR|stat.S_IWUSR|stat.S_IRGRP|stat.S_IROTH)
+
+
+def zip_dir(maindir, subdir, zipfiledir, zipfilename):
+  target_zip = zipfiledir + '/' + zipfilename + '.zip'
+  dirname = maindir + '/' + subdir
+
+  print('compressing files of ' + dirname + ' to ' + target_zip)
+
+  filelist = []
+  if os.path.isfile(dirname):
+      filelist.append(dirname)
+  else :
+      #print(dirname)
+      for root, dirs, files in os.walk(dirname):
+          for name in files:
+            filelist.append(os.path.join(root, name))
+
+  zf = zipfile.ZipFile(target_zip, "a", zipfile.zlib.DEFLATED)
+  for tar in filelist:
+    common.ZipWrite(zf, tar, tar[tar.find(subdir):])
+  zf.close()
+
 
 def AddImagesToTargetFiles(filename):
   """Creates and adds images (boot/recovery/system/...) to a target_files.zip.
@@ -762,6 +815,12 @@ def AddImagesToTargetFiles(filename):
   # generating AVB vbmeta image.
   partitions = dict()
 
+  fstab = OPTIONS.info_dict["fstab"]
+  if fstab:
+    ubi_fs = (fstab["/system"].fs_type == "ubifs")
+  else:
+    ubi_fs = False
+
   def banner(s):
     logger.info("\n\n++++ " + s + " ++++\n\n")
 
@@ -778,6 +837,8 @@ def AddImagesToTargetFiles(filename):
         boot_image.WriteToDir(OPTIONS.input_tmp)
         if output_zip:
           boot_image.AddToZip(output_zip)
+        # overlay boot image in product out folder
+        ReplaceFile(os.path.join(OPTIONS.input_tmp, boot_image.name), 'boot.img')
 
   recovery_image = None
   if has_recovery:
@@ -791,6 +852,8 @@ def AddImagesToTargetFiles(filename):
       recovery_image.WriteToDir(OPTIONS.input_tmp)
       if output_zip:
         recovery_image.AddToZip(output_zip)
+      # overlay recovery image in product out folder
+      ReplaceFile(os.path.join(OPTIONS.input_tmp, recovery_image.name), 'recovery.img')
 
       banner("recovery (two-step image)")
       # The special recovery.img for two-step package use.
@@ -905,6 +968,29 @@ def AddImagesToTargetFiles(filename):
     with open(pack_radioimages_txt, 'r') as f:
       AddPackRadioImages(output_zip, f.readlines())
 
+  if outpath:
+    try:
+      os.remove(outpath  + '/oem_fota_meta.zip')
+    except:
+      print('no such file, but it is ok')
+    zip_dir(OPTIONS.input_tmp, 'META', outpath, 'oem_fota_meta')
+    zip_dir(OPTIONS.input_tmp, 'OTA', outpath, 'oem_fota_meta')
+    zip_dir(OPTIONS.input_tmp, 'RADIO', outpath, 'oem_fota_meta')
+    if ubi_fs:
+      zip_dir(OPTIONS.input_tmp, 'SYSTEM', outpath, 'oem_fota_meta')
+      zip_dir(OPTIONS.input_tmp, 'VENDOR', outpath, 'oem_fota_meta')
+    else:
+      zf = zipfile.ZipFile(outpath  + '/oem_fota_meta.zip', "a", zipfile.zlib.DEFLATED)
+      common.ZipWrite(zf, OPTIONS.input_tmp + '/IMAGES/system.map', '/IMAGES/system.map')
+      common.ZipWrite(zf, OPTIONS.input_tmp + '/IMAGES/vendor.map', '/IMAGES/vendor.map')
+      if os.path.exists(OPTIONS.input_tmp + '/IMAGES/product.map'):
+        common.ZipWrite(zf, OPTIONS.input_tmp + '/IMAGES/product.map', '/IMAGES/product.map')
+      if os.path.exists(OPTIONS.input_tmp + '/IMAGES/product_services.map'):
+        common.ZipWrite(zf, OPTIONS.input_tmp + '/IMAGES/product_services.map', '/IMAGES/product_services.map')
+      if os.path.exists(OPTIONS.input_tmp + '/IMAGES/odm.map'):
+        common.ZipWrite(zf, OPTIONS.input_tmp + '/IMAGES/odm.map', '/IMAGES/odm.map')
+      zf.close()
+
   if output_zip:
     common.ZipClose(output_zip)
     if OPTIONS.replace_updated_files_list:
@@ -937,8 +1023,12 @@ def main(argv):
       extra_option_handler=option_handler)
 
   if len(args) != 1:
-    common.Usage(__doc__)
-    sys.exit(1)
+    if len(args) == 2:
+      global outpath
+      outpath = args[1]
+    else:
+      common.Usage(__doc__)
+      sys.exit(1)
 
   common.InitLogging()
 
