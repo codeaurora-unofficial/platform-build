@@ -16,7 +16,7 @@
 
 # Base modules and settings for the system partition.
 # Disable below modules for building to save Memory.
-# idmap2d incidentd installd statsd traced traced_probes mediadrmserver lmkd  bpfloader
+# idmap2d incidentd installd statsd traced traced_probes mediadrmserver lmkd
 PRODUCT_PACKAGES += \
     abb \
     adbd \
@@ -45,6 +45,7 @@ PRODUCT_PACKAGES += \
     bmgr \
     bootanimation \
     bootstat \
+    bpfloader \
     bu \
     bugreport \
     bugreportz \
