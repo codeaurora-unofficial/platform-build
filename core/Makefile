@@ -2277,6 +2277,7 @@ define build-systemimage-target
   $(call generate-image-prop-dictionary, $(early_servicesimage_intermediates)/early_services_image_info.txt, \
       earlyservices,skip_fsck=true)
   if [ "$(BOARD_SUPPORTS_EARLY_INIT)" == "true" ]; then \
+	cp -ar $(PRODUCT_OUT)/vendor/firmware $(PRODUCT_OUT)/early_services/ ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.audio.common@4.0.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.audio.effect@4.0.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/android.hardware.audio@4.0.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
