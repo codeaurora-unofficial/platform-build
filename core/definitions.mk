@@ -3292,6 +3292,7 @@ DISABLED_USER_MODULES := \
     FakeOemFeatures \
     FusedLocation \
     LocalTransport \
+    mediametrics \
     OsuLogin \
     PackageInstaller \
     PrintSpooler \
