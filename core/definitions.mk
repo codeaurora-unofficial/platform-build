@@ -3353,22 +3353,13 @@ DISABLED_USER_MODULES := \
     mediadrmserver \
     AntHalService \
     am \
-    android.hardware.biometrics.fingerprint@2.1 \
-    android.hardware.broadcastradio@1.0 \
-    android.hardware.broadcastradio@1.1 \
-    android.hardware.broadcastradio@2.0 \
-    android.hardware.contexthub@1.0 \
     android.hardware.keymaster@3.0-service-qti \
-    android.hardware.ir@1.0 \
     android.hardware.light-V2.0-java \
     android.hardware.neuralnetworks@1.1 \
     android.hardware.neuralnetworks@1.2 \
     android.hardware.neuralnetworks@2.0 \
     android.hardware.renderscript@1.0 \
     android.hardware.renderscript@1.0-impl \
-    android.hardware.tv.cec@1.0 \
-    android.hardware.tv.input@1.0 \
-    android.hardware.vr@1.0 \
     android.hidl.base-V1.0-java \
     android.hidl.manager-V1.0-java \
     android.test.base \
