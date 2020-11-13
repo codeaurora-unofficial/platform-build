@@ -4815,7 +4815,7 @@ else
 sdk_atree_files += $(atree_dir)/sdk.atree
 endif
 
-# include $(BUILD_SYSTEM)/sdk_font.mk
+include $(BUILD_SYSTEM)/sdk_font.mk
 
 deps := \
 	$(target_notice_file_txt) \
