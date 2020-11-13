@@ -3481,10 +3481,6 @@ DISABLED_USER_MODULES := \
     wifi-service \
     wigig-service \
     xtra_t_app \
-    BootSignature \
-    VeritySigner \
-    delta_generator \
-    signapk \
 
 # broken:
 #	$(foreach file,$^,$(if $(findstring,.a,$(suffix $file)),-l$(file),$(file)))
