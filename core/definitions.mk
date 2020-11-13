@@ -3409,7 +3409,6 @@ DISABLED_USER_MODULES := \
     installd \
     javax.obex \
     libqcimsservice \
-    libpdfium \
     locksettings \
     media \
     monkeylib \
