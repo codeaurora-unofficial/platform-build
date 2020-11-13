@@ -3348,9 +3348,6 @@ DISABLED_USER_MODULES := \
     dexlayout \
     libart-disassembler \
     libart \
-    drmserver \
-    android.hardware.drm@1.0-service \
-    mediadrmserver \
 # broken:
 #	$(foreach file,$^,$(if $(findstring,.a,$(suffix $file)),-l$(file),$(file)))
 
