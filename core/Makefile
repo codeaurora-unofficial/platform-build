@@ -2285,6 +2285,9 @@ define build-systemimage-target
 	cp -r $(PRODUCT_OUT)/system/lib64/libbase.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libbinder.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libdexfile.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
+	cp -r $(PRODUCT_OUT)/system/apex/com.android.runtime.release/bin/linker64 $(PRODUCT_OUT)/early_services/system/bin/ ;\
+	cp -r $(PRODUCT_OUT)/system/apex/com.android.runtime.release/lib64/* $(PRODUCT_OUT)/early_services/system/lib64/ ;\
+	cp -r $(PRODUCT_OUT)/system/apex/com.android.runtime.release/lib64/bionic/* $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libhidlbase.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libhidltransport.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
 	cp -r $(PRODUCT_OUT)/system/lib64/libhwbinder.so $(PRODUCT_OUT)/early_services/system/lib64 ;\
