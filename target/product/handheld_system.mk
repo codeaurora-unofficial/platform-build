@@ -31,6 +31,8 @@ $(call inherit-product-if-exists, external/hyphenation-patterns/patterns.mk)
 $(call inherit-product-if-exists, frameworks/base/data/keyboards/keyboards.mk)
 $(call inherit-product-if-exists, frameworks/webview/chromium/chromium.mk)
 
+# Disable below modules for building to save Memory.
+# vr, Telecom
 PRODUCT_PACKAGES += \
     BasicDreams \
     BlockedNumberProvider \
@@ -64,12 +66,10 @@ PRODUCT_PACKAGES += \
     screenrecord \
     SharedStorageBackup \
     SimAppDialog \
-    Telecom \
     TelephonyProvider \
     Traceur \
     UserDictionaryProvider \
     VpnDialogs \
-    vr \
 
 ifneq ($(TARGET_HAS_LOW_RAM), true)
 PRODUCT_PACKAGES += \

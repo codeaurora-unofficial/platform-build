@@ -26,8 +26,10 @@ PRODUCT_PACKAGES += \
     $(TARGET_CORE_JARS)
 
 # Additional mixins to the boot classpath.
-PRODUCT_PACKAGES += \
-    android.test.base \
+# Disable below modules for building to save Memory.
+# android.test.base
+#PRODUCT_PACKAGES += \
+#    android.test.base \
 
 # Why are we pulling in ext, which is frameworks/base, depending on tagsoup and nist-sip?
 PRODUCT_PACKAGES += \

@@ -21,21 +21,16 @@
 $(call inherit-product, $(SRC_TARGET_DIR)/product/base_system.mk)
 
 # Disable below modules for building to save Memory.
-# drmserver
+# drmserver, com.android.future.usb.accessory, com.android.media.remotedisplay, com.android.mediadrm.signer, ethernet-service, requestsync
 PRODUCT_PACKAGES += \
-    com.android.future.usb.accessory \
-    com.android.mediadrm.signer \
-    com.android.media.remotedisplay \
     com.android.media.remotedisplay.xml \
     CompanionDeviceManager \
-    ethernet-service \
     fsck.f2fs \
     HTMLViewer \
     libfilterpack_imageproc \
     libwebviewchromium_loader \
     libwebviewchromium_plat_support \
     make_f2fs \
-    requestsync \
     StatementService \
     vndk_snapshot_package \
 
@@ -51,11 +46,10 @@ PRODUCT_COPY_FILES += \
 endif
 
 # The order here is the same order they end up on the classpath, so it matters.
+# Disable below modules for building to save Memory.
+# com.android.location.provider, ethernet-service, wifi-service
 PRODUCT_SYSTEM_SERVER_JARS := \
     services \
-    ethernet-service \
-    wifi-service \
-    com.android.location.provider \
 
 PRODUCT_COPY_FILES += \
     system/core/rootdir/etc/public.libraries.android.txt:system/etc/public.libraries.txt
