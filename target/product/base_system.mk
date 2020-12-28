@@ -16,25 +16,22 @@
 
 # Base modules and settings for the system partition.
 # Disable below modules for building to save Memory.
-# idmap2d incidentd installd statsd traced traced_probes mediadrmserver lmkd
+# idmap2d, incidentd, installd, statsd, traced, traced_probes, mediadrmserver, lmkd, android.test.base, android.test.mock, android.test.runner
+# com.android.location.provider, dpm, javax.obex, locksettings, monkey, org.apache.http.legacy, uiautomator, voip-common, wifi-service
+# bmgr, input, media, svc, sm, telecom, hid, content, bu, appwidget, am
 PRODUCT_PACKAGES += \
     abb \
     adbd \
-    am \
     android.hidl.allocator@1.0-service \
     android.hidl.base-V1.0-java \
     android.hidl.manager-V1.0-java \
     android.hidl.memory@1.0-impl \
     android.hidl.memory@1.0-impl.vendor \
     android.system.suspend@1.0-service \
-    android.test.base \
-    android.test.mock \
-    android.test.runner \
     apexd \
     applypatch \
     appops \
     app_process \
-    appwidget \
     ashmemd \
     atrace \
     audioserver \
@@ -42,24 +39,20 @@ PRODUCT_PACKAGES += \
     bcc \
     blank_screen \
     blkid \
-    bmgr \
     bootanimation \
     bootstat \
     bpfloader \
-    bu \
     bugreport \
     bugreportz \
     cgroups.json \
     charger \
     cmd \
     com.android.conscrypt \
-    com.android.location.provider \
     com.android.media \
     com.android.media.swcodec \
     com.android.resolv \
     com.android.tzdata \
     ContactsProvider \
-    content \
     crash_dump \
     CtsShimPrebuilt \
     CtsShimPrivPrebuilt \
@@ -68,7 +61,6 @@ PRODUCT_PACKAGES += \
     dmctl \
     dnsmasq \
     DownloadProvider \
-    dpm \
     dumpstate \
     dumpsys \
     DynamicSystemInstallationService \
@@ -88,7 +80,6 @@ PRODUCT_PACKAGES += \
     heapprofd_client \
     gatekeeperd \
     gpuservice \
-    hid \
     hwservicemanager \
     idmap \
     idmap2 \
@@ -99,13 +90,11 @@ PRODUCT_PACKAGES += \
     init.environ.rc \
     init.rc \
     init_system \
-    input \
     iorapd \
     ip \
     ip6tables \
     iptables \
     ip-up-vpn \
-    javax.obex \
     keystore \
     ld.config.txt \
     ld.mc \
@@ -188,13 +177,11 @@ PRODUCT_PACKAGES += \
     libwilhelm \
     linker \
     LocalTransport \
-    locksettings \
     logcat \
     logd \
     lpdump \
     lshal \
     mdnsd \
-    media \
     mediacodec.policy \
     mediaextractor \
     mediametrics \
@@ -202,12 +189,10 @@ PRODUCT_PACKAGES += \
     MediaProvider \
     mediaserver \
     mke2fs \
-    monkey \
     mtpd \
     ndc \
     netd \
     NetworkStack \
-    org.apache.http.legacy \
     PackageInstaller \
     perfetto \
     PermissionController \
@@ -236,27 +221,21 @@ PRODUCT_PACKAGES += \
     sgdisk \
     Shell \
     shell_and_utilities_system \
-    sm \
     storaged \
-    svc \
     task_profiles.json \
     tc \
-    telecom \
     telephony-common \
     tombstoned \
     tune2fs \
     tzdatacheck \
-    uiautomator \
     uncrypt \
     usbd \
     vdc \
     viewcompiler \
-    voip-common \
     vold \
     WallpaperBackup \
     watchdogd \
     wificond \
-    wifi-service \
     wm \
 
 ifneq ($(TARGET_HAS_LOW_RAM), true)
@@ -304,6 +283,7 @@ PRODUCT_HOST_PACKAGES += \
     unwind_reg_info \
     unwind_symbols \
     viewcompiler \
+    voip-common \
     tzdata_host \
     tzdata_host_runtime_apex \
     tzlookup.xml_host_runtime_apex \
@@ -340,8 +320,10 @@ PRODUCT_COPY_FILES += \
 ifeq ($(REMOVE_ATB_FROM_BCP),true)
 PRODUCT_PACKAGES += framework-atb-backward-compatibility
 PRODUCT_BOOT_JARS += framework-atb-backward-compatibility
-else
-PRODUCT_BOOT_JARS += android.test.base
+# Disable below modules for building to save Memory.
+# android.test.base
+#else
+#PRODUCT_BOOT_JARS += android.test.base
 endif
 
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += debug.atrace.tags.enableflags=0
