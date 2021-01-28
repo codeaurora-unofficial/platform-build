@@ -47,9 +47,11 @@ endif
 
 # The order here is the same order they end up on the classpath, so it matters.
 # Disable below modules for building to save Memory.
-# com.android.location.provider, ethernet-service, wifi-service
-PRODUCT_SYSTEM_SERVER_JARS := \
-    services \
+# com.android.location.provider, ethernet-service, wifi-service, services
+# Disable below modules for building to save Memory.
+# services
+#PRODUCT_SYSTEM_SERVER_JARS := \
+#    services \
 
 PRODUCT_COPY_FILES += \
     system/core/rootdir/etc/public.libraries.android.txt:system/etc/public.libraries.txt
