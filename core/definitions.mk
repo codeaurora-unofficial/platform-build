@@ -3277,6 +3277,8 @@ include $(BUILD_SYSTEM)/distdir.mk
 
 # -----------------------------------------------------------------
 # In-tree modules that should never be installed
+# Disable below modules for building to save Memory.
+# android.hidl.manager-V1.0-java, android.hidl.base-V1.0-java
 DISABLED_USER_MODULES := \
     BluetoothMidiService \
     app_prediction \
@@ -3335,6 +3337,8 @@ DISABLED_USER_MODULES := \
     PacProcessor \
     libjni_pacprocessor \
     ProxyHandler \
+    android.hidl.manager-V1.0-java \
+    android.hidl.base-V1.0-java \
 
 # broken:
 #	$(foreach file,$^,$(if $(findstring,.a,$(suffix $file)),-l$(file),$(file)))

@@ -96,8 +96,9 @@ _board_true_false_vars := $(_build_broken_var_list)
 _board_strip_readonly_list += $(_build_broken_var_list)
 
 # Conditional to building on linux, as dex2oat currently does not work on darwin.
+# Disable dex pre opt for building to save Memory.
 ifeq ($(HOST_OS),linux)
-  WITH_DEXPREOPT := true
+  WITH_DEXPREOPT := false
 endif
 
 # ###############################################################

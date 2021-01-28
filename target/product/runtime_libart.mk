@@ -32,8 +32,10 @@ PRODUCT_PACKAGES += \
 #    android.test.base \
 
 # Why are we pulling in ext, which is frameworks/base, depending on tagsoup and nist-sip?
-PRODUCT_PACKAGES += \
-    ext \
+# Disable below modules for building to save Memory.
+# ext
+#PRODUCT_PACKAGES += \
+#    ext \
 
 # Android Runtime APEX module.
 PRODUCT_PACKAGES += com.android.runtime

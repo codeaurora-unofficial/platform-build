@@ -18,7 +18,7 @@
 # Disable below modules for building to save Memory.
 # idmap2d, incidentd, installd, statsd, traced, traced_probes, mediadrmserver, lmkd, android.test.base, android.test.mock, android.test.runner
 # com.android.location.provider, dpm, javax.obex, locksettings, monkey, org.apache.http.legacy, uiautomator, voip-common, wifi-service
-# bmgr, input, media, svc, sm, telecom, hid, content, bu, appwidget, am
+# bmgr, input, media, svc, sm, telecom, hid, content, bu, appwidget, am, framework-res, framework, telephony-common, ims-common, services, voip-common
 PRODUCT_PACKAGES += \
     abb \
     adbd \
@@ -68,8 +68,6 @@ PRODUCT_PACKAGES += \
     ExtServices \
     ExtShared \
     flags_health_check \
-    framework \
-    framework-res \
     framework-sysconfig.xml \
     fsck_msdos \
     fs_config_files_system \
@@ -84,7 +82,6 @@ PRODUCT_PACKAGES += \
     idmap \
     idmap2 \
     ime \
-    ims-common \
     incident \
     incident_helper \
     init.environ.rc \
@@ -215,7 +212,6 @@ PRODUCT_PACKAGES += \
     sensorservice \
     service \
     servicemanager \
-    services \
     settings \
     SettingsProvider \
     sgdisk \
@@ -224,7 +220,6 @@ PRODUCT_PACKAGES += \
     storaged \
     task_profiles.json \
     tc \
-    telephony-common \
     tombstoned \
     tune2fs \
     tzdatacheck \
@@ -283,7 +278,6 @@ PRODUCT_HOST_PACKAGES += \
     unwind_reg_info \
     unwind_symbols \
     viewcompiler \
-    voip-common \
     tzdata_host \
     tzdata_host_runtime_apex \
     tzlookup.xml_host_runtime_apex \
